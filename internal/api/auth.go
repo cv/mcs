@@ -8,7 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/cv/cx90/internal/sensordata"
 )
 
 const (
@@ -82,7 +85,9 @@ type Client struct {
 	accessToken             string
 	accessTokenExpirationTs int64
 
-	httpClient *http.Client
+	httpClient        *http.Client
+	debug             bool
+	sensorDataBuilder *sensordata.SensorDataBuilder
 }
 
 // NewClient creates a new MyMazda API client
@@ -93,16 +98,23 @@ func NewClient(email, password, region string) (*Client, error) {
 	}
 
 	return &Client{
-		email:            email,
-		password:         password,
-		region:           region,
-		baseURL:          config.BaseURL,
-		usherURL:         config.UsherURL,
-		appCode:          config.AppCode,
-		baseAPIDeviceID:  GenerateUUIDFromSeed(email),
-		usherAPIDeviceID: GenerateUsherDeviceID(email),
-		httpClient:       &http.Client{Timeout: 30 * time.Second},
+		email:             email,
+		password:          password,
+		region:            region,
+		baseURL:           config.BaseURL,
+		usherURL:          config.UsherURL,
+		appCode:           config.AppCode,
+		baseAPIDeviceID:   GenerateUUIDFromSeed(email),
+		usherAPIDeviceID:  GenerateUsherDeviceID(email),
+		httpClient:        &http.Client{Timeout: 30 * time.Second},
+		debug:             false,
+		sensorDataBuilder: sensordata.NewSensorDataBuilder(),
 	}, nil
+}
+
+// SetDebug enables or disables debug logging
+func (c *Client) SetDebug(debug bool) {
+	c.debug = debug
 }
 
 // GetEncryptionKeys retrieves the encryption and signing keys from the API
@@ -307,37 +319,21 @@ func (c *Client) getSignFromTimestamp(timestamp string) string {
 		return ""
 	}
 
-	timestampExtended := timestamp + timestamp[6:] + timestamp[3:]
+	timestampExtended := strings.ToUpper(timestamp + timestamp[6:] + timestamp[3:])
 	temporarySignKey := c.getTemporarySignKeyFromAppCode()
 	return SignWithSHA256(timestampExtended + temporarySignKey)
 }
 
 func (c *Client) getTemporarySignKeyFromAppCode() string {
 	val1 := SignWithMD5(c.appCode + AppPackageID)
-	val2 := SignWithMD5(val1 + SignatureMD5)
-	val2Lower := val2[0:1] + string(val2[1]-'A'+'a') + val2[2:]
-	for i := 3; i < len(val2); i++ {
-		if val2[i] >= 'A' && val2[i] <= 'Z' {
-			val2Lower += string(val2[i] - 'A' + 'a')
-		} else {
-			val2Lower += string(val2[i])
-		}
-	}
-	return val2Lower[20:32] + val2Lower[0:10] + val2Lower[4:6]
+	val2 := strings.ToLower(SignWithMD5(val1 + SignatureMD5))
+	return val2[20:32] + val2[0:10] + val2[4:6]
 }
 
 func (c *Client) getDecryptionKeyFromAppCode() string {
 	val1 := SignWithMD5(c.appCode + AppPackageID)
-	val2 := SignWithMD5(val1 + SignatureMD5)
-	val2Lower := val2[0:1] + string(val2[1]-'A'+'a') + val2[2:]
-	for i := 3; i < len(val2); i++ {
-		if val2[i] >= 'A' && val2[i] <= 'Z' {
-			val2Lower += string(val2[i] - 'A' + 'a')
-		} else {
-			val2Lower += string(val2[i])
-		}
-	}
-	return val2Lower[4:20]
+	val2 := strings.ToLower(SignWithMD5(val1 + SignatureMD5))
+	return val2[4:20]
 }
 
 func (c *Client) decryptPayloadUsingAppCode(payload string) (map[string]interface{}, error) {

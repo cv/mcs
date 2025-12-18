@@ -115,17 +115,24 @@ func (c *Client) sendAPIRequest(method, uri string, queryParams map[string]strin
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
+	// Generate sensor data
+	sensorData, err := c.sensorDataBuilder.GenerateSensorData()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate sensor data: %w", err)
+	}
+
 	// Set headers
 	headers := map[string]string{
-		"device-id":     c.baseAPIDeviceID,
-		"app-code":      c.appCode,
-		"app-os":        AppOS,
-		"user-agent":    UserAgentBaseAPI,
-		"app-version":   AppVersion,
-		"app-unique-id": AppPackageID,
-		"req-id":        "req_" + timestamp,
-		"timestamp":     timestamp,
-		"Content-Type":  "application/json",
+		"device-id":          c.baseAPIDeviceID,
+		"app-code":           c.appCode,
+		"app-os":             AppOS,
+		"user-agent":         UserAgentBaseAPI,
+		"app-version":        AppVersion,
+		"app-unique-id":      AppPackageID,
+		"req-id":             "req_" + timestamp,
+		"timestamp":          timestamp,
+		"Content-Type":       "application/json",
+		"X-acf-sensor-data":  sensorData,
 	}
 
 	if needsAuth {
@@ -147,6 +154,22 @@ func (c *Client) sendAPIRequest(method, uri string, queryParams map[string]strin
 		req.Header.Set(k, v)
 	}
 
+	// Debug: Log request details
+	if c.debug {
+		fmt.Printf("DEBUG: %s %s\n", method, requestURL)
+		fmt.Printf("DEBUG: Headers:\n")
+		for k, v := range headers {
+			if k == "access-token" && v != "" {
+				fmt.Printf("  %s: [REDACTED]\n", k)
+			} else {
+				fmt.Printf("  %s: %s\n", k, v)
+			}
+		}
+		if originalBodyStr != "" {
+			fmt.Printf("DEBUG: Original body: %s\n", originalBodyStr)
+		}
+	}
+
 	// Send request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -158,6 +181,12 @@ func (c *Client) sendAPIRequest(method, uri string, queryParams map[string]strin
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Debug: Log response details
+	if c.debug {
+		fmt.Printf("DEBUG: Response status: %d\n", resp.StatusCode)
+		fmt.Printf("DEBUG: Response body: %s\n", string(body))
 	}
 
 	var response map[string]interface{}
