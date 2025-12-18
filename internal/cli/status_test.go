@@ -366,3 +366,191 @@ func TestRunStatus_Integration(t *testing.T) {
 	// We don't execute it here because it would need a real API client
 	// The actual execution tests would be in integration tests
 }
+
+// TestFormatHvacStatus tests HVAC status formatting
+func TestFormatHvacStatus(t *testing.T) {
+	tests := []struct {
+		name            string
+		hvacOn          bool
+		frontDefroster  bool
+		rearDefroster   bool
+		interiorTempC   float64
+		expectedOutput  string
+	}{
+		{
+			name:           "hvac on with both defrosters",
+			hvacOn:         true,
+			frontDefroster: true,
+			rearDefroster:  true,
+			interiorTempC:  21,
+			expectedOutput: "CLIMATE: On, 21°C (front and rear defrosters on)",
+		},
+		{
+			name:           "hvac on with front defroster only",
+			hvacOn:         true,
+			frontDefroster: true,
+			rearDefroster:  false,
+			interiorTempC:  19,
+			expectedOutput: "CLIMATE: On, 19°C (front defroster on)",
+		},
+		{
+			name:           "hvac on with rear defroster only",
+			hvacOn:         true,
+			frontDefroster: false,
+			rearDefroster:  true,
+			interiorTempC:  22,
+			expectedOutput: "CLIMATE: On, 22°C (rear defroster on)",
+		},
+		{
+			name:           "hvac on no defrosters",
+			hvacOn:         true,
+			frontDefroster: false,
+			rearDefroster:  false,
+			interiorTempC:  20,
+			expectedOutput: "CLIMATE: On, 20°C",
+		},
+		{
+			name:           "hvac off",
+			hvacOn:         false,
+			frontDefroster: false,
+			rearDefroster:  false,
+			interiorTempC:  15,
+			expectedOutput: "CLIMATE: Off, 15°C",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatHvacStatus(tt.hvacOn, tt.frontDefroster, tt.rearDefroster, tt.interiorTempC, false)
+			if result != tt.expectedOutput {
+				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
+			}
+		})
+	}
+}
+
+// TestFormatHvacStatus_JSON tests HVAC status JSON formatting
+func TestFormatHvacStatus_JSON(t *testing.T) {
+	result := formatHvacStatus(true, true, false, 21, true)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(result), &data); err != nil {
+		t.Fatalf("Expected valid JSON, got error: %v", err)
+	}
+
+	if data["hvac_on"] != true {
+		t.Errorf("Expected hvac_on true, got %v", data["hvac_on"])
+	}
+
+	if data["front_defroster"] != true {
+		t.Errorf("Expected front_defroster true, got %v", data["front_defroster"])
+	}
+
+	if data["rear_defroster"] != false {
+		t.Errorf("Expected rear_defroster false, got %v", data["rear_defroster"])
+	}
+
+	if data["interior_temperature_c"] != float64(21) {
+		t.Errorf("Expected interior_temperature_c 21, got %v", data["interior_temperature_c"])
+	}
+}
+
+// TestExtractHvacInfo tests extracting HVAC info from EV status
+func TestExtractHvacInfo(t *testing.T) {
+	evStatus := map[string]interface{}{
+		"resultData": []interface{}{
+			map[string]interface{}{
+				"PlusBInformation": map[string]interface{}{
+					"VehicleInfo": map[string]interface{}{
+						"RemoteHvacInfo": map[string]interface{}{
+							"HVAC":           float64(1),
+							"FrontDefroster": float64(1),
+							"RearDefogger":   float64(0),
+							"InCarTeDC":      float64(21.5),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	hvacOn, frontDefroster, rearDefroster, interiorTempC := extractHvacInfo(evStatus)
+
+	if !hvacOn {
+		t.Error("Expected hvacOn to be true")
+	}
+	if !frontDefroster {
+		t.Error("Expected frontDefroster to be true")
+	}
+	if rearDefroster {
+		t.Error("Expected rearDefroster to be false")
+	}
+	if interiorTempC != 21.5 {
+		t.Errorf("Expected interiorTempC 21.5, got %v", interiorTempC)
+	}
+}
+
+// TestExtractHvacInfo_MissingData tests extracting HVAC info when data is missing
+func TestExtractHvacInfo_MissingData(t *testing.T) {
+	evStatus := map[string]interface{}{
+		"resultData": []interface{}{
+			map[string]interface{}{
+				"PlusBInformation": map[string]interface{}{
+					"VehicleInfo": map[string]interface{}{
+						// No RemoteHvacInfo
+					},
+				},
+			},
+		},
+	}
+
+	hvacOn, frontDefroster, rearDefroster, interiorTempC := extractHvacInfo(evStatus)
+
+	if hvacOn {
+		t.Error("Expected hvacOn to be false when data missing")
+	}
+	if frontDefroster {
+		t.Error("Expected frontDefroster to be false when data missing")
+	}
+	if rearDefroster {
+		t.Error("Expected rearDefroster to be false when data missing")
+	}
+	if interiorTempC != 0 {
+		t.Errorf("Expected interiorTempC 0 when data missing, got %v", interiorTempC)
+	}
+}
+
+// TestExtractHvacData tests extracting HVAC data for JSON output
+func TestExtractHvacData(t *testing.T) {
+	evStatus := map[string]interface{}{
+		"resultData": []interface{}{
+			map[string]interface{}{
+				"PlusBInformation": map[string]interface{}{
+					"VehicleInfo": map[string]interface{}{
+						"RemoteHvacInfo": map[string]interface{}{
+							"HVAC":           float64(1),
+							"FrontDefroster": float64(0),
+							"RearDefogger":   float64(1),
+							"InCarTeDC":      float64(18),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	data := extractHvacData(evStatus)
+
+	if data["hvac_on"] != true {
+		t.Errorf("Expected hvac_on true, got %v", data["hvac_on"])
+	}
+	if data["front_defroster"] != false {
+		t.Errorf("Expected front_defroster false, got %v", data["front_defroster"])
+	}
+	if data["rear_defroster"] != true {
+		t.Errorf("Expected rear_defroster true, got %v", data["rear_defroster"])
+	}
+	if data["interior_temperature_c"] != float64(18) {
+		t.Errorf("Expected interior_temperature_c 18, got %v", data["interior_temperature_c"])
+	}
+}

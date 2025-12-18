@@ -208,6 +208,7 @@ func displayAllStatus(vecBaseInfos, vehicleStatus, evStatus map[string]interface
 			"location": extractLocationData(vehicleStatus),
 			"tires":    extractTiresData(vehicleStatus),
 			"doors":    extractDoorsData(vehicleStatus),
+			"climate":  extractHvacData(evStatus),
 		}
 		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
 		return string(jsonBytes)
@@ -216,10 +217,14 @@ func displayAllStatus(vecBaseInfos, vehicleStatus, evStatus map[string]interface
 	// Get timestamp from EV status
 	timestamp := getTimestamp(evStatus)
 
+	// Extract HVAC info
+	hvacOn, frontDefroster, rearDefroster, interiorTempC := extractHvacInfo(evStatus)
+
 	output := "\nCX-90 GT PHEV (2025)\n"
 	output += fmt.Sprintf("Last Updated: %s\n\n", timestamp)
 	output += displayBatteryStatus(evStatus, false) + "\n"
 	output += displayFuelStatus(vehicleStatus, false) + "\n"
+	output += formatHvacStatus(hvacOn, frontDefroster, rearDefroster, interiorTempC, false) + "\n"
 	output += displayDoorsStatus(vehicleStatus, false) + "\n"
 	output += displayTiresStatus(vehicleStatus, false) + "\n"
 
@@ -328,6 +333,34 @@ func extractDoorsInfo(vehicleStatus map[string]interface{}) bool {
 	return allLocked
 }
 
+// extractHvacInfo extracts HVAC information from EV status
+func extractHvacInfo(evStatus map[string]interface{}) (hvacOn, frontDefroster, rearDefroster bool, interiorTempC float64) {
+	resultData := evStatus["resultData"].([]interface{})
+	firstResult := resultData[0].(map[string]interface{})
+	plusBInfo := firstResult["PlusBInformation"].(map[string]interface{})
+	vehicleInfo := plusBInfo["VehicleInfo"].(map[string]interface{})
+
+	hvacInfo, ok := vehicleInfo["RemoteHvacInfo"].(map[string]interface{})
+	if !ok {
+		return false, false, false, 0
+	}
+
+	if v, ok := hvacInfo["HVAC"].(float64); ok {
+		hvacOn = int(v) == 1
+	}
+	if v, ok := hvacInfo["FrontDefroster"].(float64); ok {
+		frontDefroster = int(v) == 1
+	}
+	if v, ok := hvacInfo["RearDefogger"].(float64); ok {
+		rearDefroster = int(v) == 1
+	}
+	if v, ok := hvacInfo["InCarTeDC"].(float64); ok {
+		interiorTempC = v
+	}
+
+	return
+}
+
 // extractBatteryData extracts battery data for JSON output
 func extractBatteryData(evStatus map[string]interface{}) map[string]interface{} {
 	batteryLevel, range_, pluggedIn, charging := extractBatteryInfo(evStatus)
@@ -376,6 +409,17 @@ func extractDoorsData(vehicleStatus map[string]interface{}) map[string]interface
 	allLocked := extractDoorsInfo(vehicleStatus)
 	return map[string]interface{}{
 		"all_locked": allLocked,
+	}
+}
+
+// extractHvacData extracts HVAC data for JSON output
+func extractHvacData(evStatus map[string]interface{}) map[string]interface{} {
+	hvacOn, frontDefroster, rearDefroster, interiorTempC := extractHvacInfo(evStatus)
+	return map[string]interface{}{
+		"hvac_on":                    hvacOn,
+		"front_defroster":            frontDefroster,
+		"rear_defroster":             rearDefroster,
+		"interior_temperature_c":     interiorTempC,
 	}
 }
 
@@ -466,6 +510,44 @@ func formatDoorsStatus(allLocked bool, jsonOutput bool) string {
 		return "DOORS: All locked"
 	}
 	return "DOORS: Not all locked"
+}
+
+// formatHvacStatus formats HVAC status for display
+func formatHvacStatus(hvacOn, frontDefroster, rearDefroster bool, interiorTempC float64, jsonOutput bool) string {
+	if jsonOutput {
+		data := map[string]interface{}{
+			"hvac_on":                hvacOn,
+			"front_defroster":        frontDefroster,
+			"rear_defroster":         rearDefroster,
+			"interior_temperature_c": interiorTempC,
+		}
+		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
+		return string(jsonBytes)
+	}
+
+	var status string
+	if hvacOn {
+		status = fmt.Sprintf("CLIMATE: On, %.0f°C", interiorTempC)
+	} else {
+		status = fmt.Sprintf("CLIMATE: Off, %.0f°C", interiorTempC)
+	}
+
+	// Build defroster status
+	var defrosters []string
+	if frontDefroster {
+		defrosters = append(defrosters, "front")
+	}
+	if rearDefroster {
+		defrosters = append(defrosters, "rear")
+	}
+
+	if len(defrosters) == 2 {
+		status += " (front and rear defrosters on)"
+	} else if len(defrosters) == 1 {
+		status += fmt.Sprintf(" (%s defroster on)", defrosters[0])
+	}
+
+	return status
 }
 
 // getTimestamp extracts and formats timestamp from EV status
