@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -70,14 +68,4 @@ func Execute() error {
 	rootCmd.AddCommand(NewRawCmd())
 
 	return rootCmd.Execute()
-}
-
-// PrintConfigPath prints the configuration file path
-func PrintConfigPath(cmd *cobra.Command, args []string) error {
-	configPath := ConfigFile
-	if configPath == "" {
-		configPath = "~/.config/mcs/config.toml (default)"
-	}
-	fmt.Fprintf(cmd.OutOrStdout(), "Config path: %s\n", configPath)
-	return nil
 }

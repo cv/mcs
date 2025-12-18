@@ -1,7 +1,5 @@
 package api
 
-import "fmt"
-
 // APIError represents a general API error
 type APIError struct {
 	Message string
@@ -54,9 +52,4 @@ func NewRequestInProgressError() *RequestInProgressError {
 // NewEngineStartLimitError creates a new engine start limit error
 func NewEngineStartLimitError() *EngineStartLimitError {
 	return &EngineStartLimitError{APIError{Message: "The engine can only be remotely started 2 consecutive times. Please drive the vehicle to reset the counter."}}
-}
-
-// NewInvalidRegionError creates a new invalid region error
-func NewInvalidRegionError(region string) error {
-	return fmt.Errorf("invalid region: %s", region)
 }
