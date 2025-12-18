@@ -39,6 +39,9 @@ const (
 
 	// UsherSDKVersion is the Usher SDK version
 	UsherSDKVersion = "11.3.0700.001"
+
+	// InternalUserID is a placeholder used in API requests
+	InternalUserID = "__INTERNAL_ID__"
 )
 
 // RegionConfig holds configuration for a specific region

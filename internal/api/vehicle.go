@@ -8,7 +8,7 @@ import (
 // GetVecBaseInfos retrieves the base information for all vehicles associated with the account
 func (c *Client) GetVecBaseInfos() (*VecBaseInfosResponse, error) {
 	bodyParams := map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
+		"internaluserid": InternalUserID,
 	}
 
 	response, err := c.APIRequest("POST", "remoteServices/getVecBaseInfos/v4", nil, bodyParams, true, true)
@@ -33,7 +33,7 @@ func (c *Client) GetVecBaseInfos() (*VecBaseInfosResponse, error) {
 // GetVehicleStatus retrieves the current status of a vehicle
 func (c *Client) GetVehicleStatus(internalVIN string) (*VehicleStatusResponse, error) {
 	bodyParams := map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
+		"internaluserid": InternalUserID,
 		"internalvin":    internalVIN,
 		"limit":          1,
 		"offset":         0,
@@ -67,7 +67,7 @@ func (c *Client) GetVehicleStatus(internalVIN string) (*VehicleStatusResponse, e
 // GetEVVehicleStatus retrieves the current EV status of a vehicle (battery, charging, HVAC)
 func (c *Client) GetEVVehicleStatus(internalVIN string) (*EVVehicleStatusResponse, error) {
 	bodyParams := map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
+		"internaluserid": InternalUserID,
 		"internalvin":    internalVIN,
 		"limit":          1,
 		"offset":         0,

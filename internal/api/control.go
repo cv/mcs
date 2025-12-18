@@ -5,7 +5,7 @@ import "fmt"
 // executeControl sends a control command to the vehicle and validates the response.
 func (c *Client) executeControl(endpoint, actionDesc, internalVIN string) error {
 	bodyParams := map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
+		"internaluserid": InternalUserID,
 		"internalvin":    internalVIN,
 	}
 
