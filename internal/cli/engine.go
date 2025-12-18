@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cv/mcs/internal/api"
@@ -39,8 +40,8 @@ func NewStopCmd() *cobra.Command {
 
 // runStart executes the start command
 func runStart(cmd *cobra.Command) error {
-	return withVehicleClient(func(client *api.Client, internalVIN string) error {
-		if err := client.EngineStart(internalVIN); err != nil {
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+		if err := client.EngineStart(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to start engine: %w", err)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "Engine started successfully")
@@ -50,8 +51,8 @@ func runStart(cmd *cobra.Command) error {
 
 // runStop executes the stop command
 func runStop(cmd *cobra.Command) error {
-	return withVehicleClient(func(client *api.Client, internalVIN string) error {
-		if err := client.EngineStop(internalVIN); err != nil {
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+		if err := client.EngineStop(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to stop engine: %w", err)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "Engine stopped successfully")

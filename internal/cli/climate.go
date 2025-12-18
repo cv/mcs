@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cv/mcs/internal/api"
@@ -41,8 +42,8 @@ func NewClimateCmd() *cobra.Command {
 
 // runClimateOn executes the climate on command
 func runClimateOn(cmd *cobra.Command) error {
-	return withVehicleClient(func(client *api.Client, internalVIN string) error {
-		if err := client.HVACOn(internalVIN); err != nil {
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+		if err := client.HVACOn(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to turn HVAC on: %w", err)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "Climate turned on successfully")
@@ -52,8 +53,8 @@ func runClimateOn(cmd *cobra.Command) error {
 
 // runClimateOff executes the climate off command
 func runClimateOff(cmd *cobra.Command) error {
-	return withVehicleClient(func(client *api.Client, internalVIN string) error {
-		if err := client.HVACOff(internalVIN); err != nil {
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+		if err := client.HVACOff(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to turn HVAC off: %w", err)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "Climate turned off successfully")

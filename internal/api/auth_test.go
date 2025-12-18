@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -62,7 +63,7 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 	client.baseAPIDeviceID = GenerateUUIDFromSeed(client.email)
 	client.usherAPIDeviceID = GenerateUsherDeviceID(client.email)
 
-	err := client.GetEncryptionKeys()
+	err := client.GetEncryptionKeys(context.Background())
 	if err != nil {
 		t.Fatalf("GetEncryptionKeys() error = %v", err)
 	}
@@ -108,7 +109,7 @@ func TestClient_GetUsherEncryptionKey(t *testing.T) {
 	}
 	client.usherAPIDeviceID = GenerateUsherDeviceID(client.email)
 
-	pubKey, versionPrefix, err := client.GetUsherEncryptionKey()
+	pubKey, versionPrefix, err := client.GetUsherEncryptionKey(context.Background())
 	if err != nil {
 		t.Fatalf("GetUsherEncryptionKey() error = %v", err)
 	}
@@ -167,7 +168,7 @@ func TestClient_Login(t *testing.T) {
 	}
 	client.usherAPIDeviceID = GenerateUsherDeviceID(client.email)
 
-	err := client.Login()
+	err := client.Login(context.Background())
 	if err != nil {
 		t.Fatalf("Login() error = %v", err)
 	}

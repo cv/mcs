@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cv/mcs/internal/api"
@@ -39,8 +40,8 @@ func NewUnlockCmd() *cobra.Command {
 
 // runLock executes the lock command
 func runLock(cmd *cobra.Command) error {
-	return withVehicleClient(func(client *api.Client, internalVIN string) error {
-		if err := client.DoorLock(internalVIN); err != nil {
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+		if err := client.DoorLock(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to lock doors: %w", err)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "Doors locked successfully")
@@ -50,8 +51,8 @@ func runLock(cmd *cobra.Command) error {
 
 // runUnlock executes the unlock command
 func runUnlock(cmd *cobra.Command) error {
-	return withVehicleClient(func(client *api.Client, internalVIN string) error {
-		if err := client.DoorUnlock(internalVIN); err != nil {
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+		if err := client.DoorUnlock(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to unlock doors: %w", err)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "Doors unlocked successfully")

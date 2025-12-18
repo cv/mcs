@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -60,7 +61,7 @@ func TestDoorLock(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.DoorLock("INTERNAL123")
+	err := client.DoorLock(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("DoorLock failed: %v", err)
 	}
@@ -76,7 +77,7 @@ func TestDoorUnlock(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.DoorUnlock("INTERNAL123")
+	err := client.DoorUnlock(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("DoorUnlock failed: %v", err)
 	}
@@ -92,7 +93,7 @@ func TestLightsOn(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.LightsOn("INTERNAL123")
+	err := client.LightsOn(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("LightsOn failed: %v", err)
 	}
@@ -108,7 +109,7 @@ func TestLightsOff(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.LightsOff("INTERNAL123")
+	err := client.LightsOff(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("LightsOff failed: %v", err)
 	}
@@ -124,7 +125,7 @@ func TestEngineStart(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.EngineStart("INTERNAL123")
+	err := client.EngineStart(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("EngineStart failed: %v", err)
 	}
@@ -140,7 +141,7 @@ func TestEngineStop(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.EngineStop("INTERNAL123")
+	err := client.EngineStop(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("EngineStop failed: %v", err)
 	}
@@ -156,7 +157,7 @@ func TestChargeStart(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.ChargeStart("INTERNAL123")
+	err := client.ChargeStart(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("ChargeStart failed: %v", err)
 	}
@@ -172,7 +173,7 @@ func TestChargeStop(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.ChargeStop("INTERNAL123")
+	err := client.ChargeStop(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("ChargeStop failed: %v", err)
 	}
@@ -188,7 +189,7 @@ func TestHVACOn(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.HVACOn("INTERNAL123")
+	err := client.HVACOn(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("HVACOn failed: %v", err)
 	}
@@ -204,7 +205,7 @@ func TestHVACOff(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.HVACOff("INTERNAL123")
+	err := client.HVACOff(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("HVACOff failed: %v", err)
 	}
@@ -220,7 +221,7 @@ func TestRefreshVehicleStatus(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.RefreshVehicleStatus("INTERNAL123")
+	err := client.RefreshVehicleStatus(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("RefreshVehicleStatus failed: %v", err)
 	}
@@ -251,7 +252,7 @@ func TestControlError(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.DoorLock("INTERNAL123")
+	err := client.DoorLock(context.Background(), "INTERNAL123")
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}

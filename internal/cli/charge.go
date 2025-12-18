@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cv/mcs/internal/api"
@@ -41,8 +42,8 @@ func NewChargeCmd() *cobra.Command {
 
 // runChargeStart executes the charge start command
 func runChargeStart(cmd *cobra.Command) error {
-	return withVehicleClient(func(client *api.Client, internalVIN string) error {
-		if err := client.ChargeStart(internalVIN); err != nil {
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+		if err := client.ChargeStart(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to start charging: %w", err)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "Charging started successfully")
@@ -52,8 +53,8 @@ func runChargeStart(cmd *cobra.Command) error {
 
 // runChargeStop executes the charge stop command
 func runChargeStop(cmd *cobra.Command) error {
-	return withVehicleClient(func(client *api.Client, internalVIN string) error {
-		if err := client.ChargeStop(internalVIN); err != nil {
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+		if err := client.ChargeStop(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to stop charging: %w", err)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "Charging stopped successfully")

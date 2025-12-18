@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"testing"
 )
 
@@ -29,7 +30,7 @@ func TestGetVecBaseInfos(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetVecBaseInfos()
+	result, err := client.GetVecBaseInfos(context.Background())
 	if err != nil {
 		t.Fatalf("GetVecBaseInfos failed: %v", err)
 	}
@@ -78,7 +79,7 @@ func TestGetVehicleStatus(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetVehicleStatus("INTERNAL123")
+	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("GetVehicleStatus failed: %v", err)
 	}
@@ -103,7 +104,7 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	_, err := client.GetVehicleStatus("INTERNAL123")
+	_, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
@@ -144,7 +145,7 @@ func TestGetEVVehicleStatus(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetEVVehicleStatus("INTERNAL123")
+	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
 	if err != nil {
 		t.Fatalf("GetEVVehicleStatus failed: %v", err)
 	}
@@ -176,7 +177,7 @@ func TestGetEVVehicleStatus_Error(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	_, err := client.GetEVVehicleStatus("INTERNAL123")
+	_, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}

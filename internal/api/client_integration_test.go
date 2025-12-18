@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -68,7 +69,7 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 	client.signKey = "oldtestsignkey12"
 
 	// Make API request - should retry after encryption error
-	result, err := client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
+	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
 	if err != nil {
 		t.Fatalf("APIRequest failed: %v", err)
 	}
@@ -129,7 +130,7 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 	client.signKey = "testsignkey12345"
 
 	// Make API request - should fail after max retries
-	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
 	if err == nil {
 		t.Fatal("Expected error due to max retries, got nil")
 	}
@@ -164,7 +165,7 @@ func TestAPIRequest_EngineStartLimitError(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
 	if err == nil {
 		t.Fatal("Expected engine start limit error, got nil")
 	}
@@ -209,7 +210,7 @@ func TestAPIRequest_WithQueryParams(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	result, err := client.APIRequest("GET", "test/endpoint", map[string]string{"foo": "bar", "baz": "qux"}, nil, true, false)
+	result, err := client.APIRequest(context.Background(), "GET", "test/endpoint", map[string]string{"foo": "bar", "baz": "qux"}, nil, true, false)
 	if err != nil {
 		t.Fatalf("APIRequest failed: %v", err)
 	}

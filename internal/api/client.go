@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,43 +16,48 @@ const (
 )
 
 // APIRequest makes an API request with proper encryption, signing, and error handling
-func (c *Client) APIRequest(method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
-	return c.apiRequestWithRetry(method, uri, queryParams, bodyParams, needsKeys, needsAuth, 0)
+func (c *Client) APIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
+	return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, 0)
 }
 
-func (c *Client) apiRequestWithRetry(method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool, retryCount int) (map[string]interface{}, error) {
+func (c *Client) apiRequestWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool, retryCount int) (map[string]interface{}, error) {
 	if retryCount > MaxRetries {
 		return nil, NewAPIError("Request exceeded max number of retries")
 	}
 
+	// Check for context cancellation
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
 	if needsKeys {
-		if err := c.ensureKeysPresent(); err != nil {
+		if err := c.ensureKeysPresent(ctx); err != nil {
 			return nil, err
 		}
 	}
 
 	if needsAuth {
-		if err := c.ensureTokenValid(); err != nil {
+		if err := c.ensureTokenValid(ctx); err != nil {
 			return nil, err
 		}
 	}
 
-	response, err := c.sendAPIRequest(method, uri, queryParams, bodyParams, needsKeys, needsAuth)
+	response, err := c.sendAPIRequest(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
 	if err != nil {
 		// Handle retryable errors
 		switch err.(type) {
 		case *EncryptionError:
 			// Retrieve new encryption keys and retry
-			if err := c.GetEncryptionKeys(); err != nil {
+			if err := c.GetEncryptionKeys(ctx); err != nil {
 				return nil, fmt.Errorf("failed to retrieve encryption keys: %w", err)
 			}
-			return c.apiRequestWithRetry(method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
+			return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
 		case *TokenExpiredError:
 			// Login again and retry
-			if err := c.Login(); err != nil {
+			if err := c.Login(ctx); err != nil {
 				return nil, fmt.Errorf("failed to login: %w", err)
 			}
-			return c.apiRequestWithRetry(method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
+			return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
 		default:
 			return nil, err
 		}
@@ -60,7 +66,7 @@ func (c *Client) apiRequestWithRetry(method, uri string, queryParams map[string]
 	return response, nil
 }
 
-func (c *Client) sendAPIRequest(method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
+func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
 	timestamp := getTimestampStrMs()
 
 	// Prepare query parameters (encrypted if provided)
@@ -103,13 +109,13 @@ func (c *Client) sendAPIRequest(method, uri string, queryParams map[string]strin
 		requestURL += "?" + encryptedQueryParams.Encode()
 	}
 
-	// Create request
+	// Create request with context
 	var req *http.Request
 	var err error
 	if encryptedBody != "" {
-		req, err = http.NewRequest(method, requestURL, bytes.NewBufferString(encryptedBody))
+		req, err = http.NewRequestWithContext(ctx, method, requestURL, bytes.NewBufferString(encryptedBody))
 	} else {
-		req, err = http.NewRequest(method, requestURL, nil)
+		req, err = http.NewRequestWithContext(ctx, method, requestURL, nil)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -238,17 +244,17 @@ func (c *Client) sendAPIRequest(method, uri string, queryParams map[string]strin
 }
 
 // ensureKeysPresent ensures encryption keys are available
-func (c *Client) ensureKeysPresent() error {
+func (c *Client) ensureKeysPresent(ctx context.Context) error {
 	if c.encKey == "" || c.signKey == "" {
-		return c.GetEncryptionKeys()
+		return c.GetEncryptionKeys(ctx)
 	}
 	return nil
 }
 
 // ensureTokenValid ensures access token is valid
-func (c *Client) ensureTokenValid() error {
+func (c *Client) ensureTokenValid(ctx context.Context) error {
 	if !c.IsTokenValid() {
-		return c.Login()
+		return c.Login(ctx)
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -66,7 +67,7 @@ func TestAPIRequest_Success(t *testing.T) {
 	client.signKey = "testsignkey12345"
 
 	// Make API request
-	result, err := client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
+	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
 	if err != nil {
 		t.Fatalf("APIRequest failed: %v", err)
 	}
@@ -102,7 +103,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
@@ -138,7 +139,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
@@ -175,7 +176,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
@@ -307,7 +308,7 @@ func TestAPIRequest_MissingKeys(t *testing.T) {
 
 	// Don't set encryption keys, but request needsKeys=true
 	// APIRequest should attempt to get keys and fail
-	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
 	if err == nil {
 		t.Fatal("Expected error when keys are missing, got nil")
 	}
@@ -356,7 +357,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	result, err := client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	if err != nil {
 		t.Fatalf("APIRequest failed: %v", err)
 	}
@@ -413,7 +414,7 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	result, err := client.APIRequest("GET", "test/endpoint", map[string]string{"key": "value"}, nil, false, false)
+	result, err := client.APIRequest(context.Background(), "GET", "test/endpoint", map[string]string{"key": "value"}, nil, false, false)
 	if err != nil {
 		t.Fatalf("APIRequest failed: %v", err)
 	}

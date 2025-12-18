@@ -1,17 +1,18 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 )
 
 // GetVecBaseInfos retrieves the base information for all vehicles associated with the account
-func (c *Client) GetVecBaseInfos() (*VecBaseInfosResponse, error) {
+func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, error) {
 	bodyParams := map[string]interface{}{
 		"internaluserid": InternalUserID,
 	}
 
-	response, err := c.APIRequest("POST", "remoteServices/getVecBaseInfos/v4", nil, bodyParams, true, true)
+	response, err := c.APIRequest(ctx, "POST", "remoteServices/getVecBaseInfos/v4", nil, bodyParams, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +32,7 @@ func (c *Client) GetVecBaseInfos() (*VecBaseInfosResponse, error) {
 }
 
 // GetVehicleStatus retrieves the current status of a vehicle
-func (c *Client) GetVehicleStatus(internalVIN string) (*VehicleStatusResponse, error) {
+func (c *Client) GetVehicleStatus(ctx context.Context, internalVIN string) (*VehicleStatusResponse, error) {
 	bodyParams := map[string]interface{}{
 		"internaluserid": InternalUserID,
 		"internalvin":    internalVIN,
@@ -40,7 +41,7 @@ func (c *Client) GetVehicleStatus(internalVIN string) (*VehicleStatusResponse, e
 		"vecinfotype":    "0",
 	}
 
-	response, err := c.APIRequest("POST", "remoteServices/getVehicleStatus/v4", nil, bodyParams, true, true)
+	response, err := c.APIRequest(ctx, "POST", "remoteServices/getVehicleStatus/v4", nil, bodyParams, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func (c *Client) GetVehicleStatus(internalVIN string) (*VehicleStatusResponse, e
 }
 
 // GetEVVehicleStatus retrieves the current EV status of a vehicle (battery, charging, HVAC)
-func (c *Client) GetEVVehicleStatus(internalVIN string) (*EVVehicleStatusResponse, error) {
+func (c *Client) GetEVVehicleStatus(ctx context.Context, internalVIN string) (*EVVehicleStatusResponse, error) {
 	bodyParams := map[string]interface{}{
 		"internaluserid": InternalUserID,
 		"internalvin":    internalVIN,
@@ -74,7 +75,7 @@ func (c *Client) GetEVVehicleStatus(internalVIN string) (*EVVehicleStatusRespons
 		"vecinfotype":    "0",
 	}
 
-	response, err := c.APIRequest("POST", "remoteServices/getEVVehicleStatus/v4", nil, bodyParams, true, true)
+	response, err := c.APIRequest(ctx, "POST", "remoteServices/getEVVehicleStatus/v4", nil, bodyParams, true, true)
 	if err != nil {
 		return nil, err
 	}

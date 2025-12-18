@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -135,7 +136,7 @@ func (c *Client) GetCredentials() (accessToken string, accessTokenExpirationTs i
 }
 
 // GetEncryptionKeys retrieves the encryption and signing keys from the API
-func (c *Client) GetEncryptionKeys() error {
+func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 	timestamp := getTimestampStrMs()
 
 	headers := map[string]string{
@@ -152,7 +153,7 @@ func (c *Client) GetEncryptionKeys() error {
 		"Content-Type":    "application/json",
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL+"service/checkVersion", nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"service/checkVersion", nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -199,7 +200,7 @@ func (c *Client) GetEncryptionKeys() error {
 }
 
 // GetUsherEncryptionKey retrieves the RSA public key from Usher API
-func (c *Client) GetUsherEncryptionKey() (string, string, error) {
+func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, error) {
 	params := url.Values{
 		"appId":      []string{"MazdaApp"},
 		"locale":     []string{"en-US"},
@@ -207,7 +208,7 @@ func (c *Client) GetUsherEncryptionKey() (string, string, error) {
 		"sdkVersion": []string{UsherSDKVersion},
 	}
 
-	req, err := http.NewRequest("GET", c.usherURL+"system/encryptionKey?"+params.Encode(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", c.usherURL+"system/encryptionKey?"+params.Encode(), nil)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create request: %w", err)
 	}
@@ -242,9 +243,9 @@ func (c *Client) GetUsherEncryptionKey() (string, string, error) {
 }
 
 // Login authenticates with the API and retrieves an access token
-func (c *Client) Login() error {
+func (c *Client) Login(ctx context.Context) error {
 	// Get RSA public key for password encryption
-	publicKey, versionPrefix, err := c.GetUsherEncryptionKey()
+	publicKey, versionPrefix, err := c.GetUsherEncryptionKey(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get encryption key: %w", err)
 	}
@@ -271,7 +272,7 @@ func (c *Client) Login() error {
 		return fmt.Errorf("failed to marshal login data: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", c.usherURL+"user/login", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.usherURL+"user/login", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
