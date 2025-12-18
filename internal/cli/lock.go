@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -38,58 +39,22 @@ func NewUnlockCmd() *cobra.Command {
 
 // runLock executes the lock command
 func runLock(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
-
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
-
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Lock doors
-	if err := client.DoorLock(internalVIN); err != nil {
-		return fmt.Errorf("failed to lock doors: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Doors locked successfully")
-	return nil
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		if err := client.DoorLock(internalVIN); err != nil {
+			return fmt.Errorf("failed to lock doors: %w", err)
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Doors locked successfully")
+		return nil
+	})
 }
 
 // runUnlock executes the unlock command
 func runUnlock(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
-
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
-
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Unlock doors
-	if err := client.DoorUnlock(internalVIN); err != nil {
-		return fmt.Errorf("failed to unlock doors: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Doors unlocked successfully")
-	return nil
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		if err := client.DoorUnlock(internalVIN); err != nil {
+			return fmt.Errorf("failed to unlock doors: %w", err)
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Doors unlocked successfully")
+		return nil
+	})
 }

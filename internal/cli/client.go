@@ -70,3 +70,25 @@ func saveClientCache(client *api.Client) {
 		log.Printf("Warning: failed to save token cache: %v", err)
 	}
 }
+
+// withVehicleClient handles the common CLI setup: create client, get VIN, execute command, save cache.
+// The callback receives the authenticated client and the vehicle's internal VIN.
+func withVehicleClient(fn func(*api.Client, string) error) error {
+	client, err := createAPIClient()
+	if err != nil {
+		return err
+	}
+	defer saveClientCache(client)
+
+	vecBaseInfos, err := client.GetVecBaseInfos()
+	if err != nil {
+		return fmt.Errorf("failed to get vehicle info: %w", err)
+	}
+
+	internalVIN, err := vecBaseInfos.GetInternalVIN()
+	if err != nil {
+		return err
+	}
+
+	return fn(client, internalVIN)
+}

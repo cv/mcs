@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -40,58 +41,22 @@ func NewClimateCmd() *cobra.Command {
 
 // runClimateOn executes the climate on command
 func runClimateOn(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
-
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
-
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Turn HVAC on
-	if err := client.HVACOn(internalVIN); err != nil {
-		return fmt.Errorf("failed to turn HVAC on: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Climate turned on successfully")
-	return nil
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		if err := client.HVACOn(internalVIN); err != nil {
+			return fmt.Errorf("failed to turn HVAC on: %w", err)
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Climate turned on successfully")
+		return nil
+	})
 }
 
 // runClimateOff executes the climate off command
 func runClimateOff(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
-
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
-
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Turn HVAC off
-	if err := client.HVACOff(internalVIN); err != nil {
-		return fmt.Errorf("failed to turn HVAC off: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Climate turned off successfully")
-	return nil
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		if err := client.HVACOff(internalVIN); err != nil {
+			return fmt.Errorf("failed to turn HVAC off: %w", err)
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Climate turned off successfully")
+		return nil
+	})
 }

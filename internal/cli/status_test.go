@@ -332,7 +332,7 @@ func TestGetInternalVIN(t *testing.T) {
 		},
 	}
 
-	vin, err := getInternalVIN(vecBaseInfos)
+	vin, err := vecBaseInfos.GetInternalVIN()
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
@@ -349,7 +349,7 @@ func TestGetInternalVIN_NoVehicles(t *testing.T) {
 		VecBaseInfos: []api.VecBaseInfo{},
 	}
 
-	_, err := getInternalVIN(vecBaseInfos)
+	_, err := vecBaseInfos.GetInternalVIN()
 	if err == nil {
 		t.Fatal("Expected error for no vehicles, got nil")
 	}

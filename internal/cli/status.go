@@ -175,11 +175,6 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh b
 	return nil
 }
 
-// getInternalVIN extracts the internal VIN from vehicle base info (legacy function for raw.go)
-func getInternalVIN(vecBaseInfos *api.VecBaseInfosResponse) (string, error) {
-	return vecBaseInfos.GetInternalVIN()
-}
-
 // displayAllStatus displays all status information
 func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, jsonOutput bool) string {
 	if jsonOutput {

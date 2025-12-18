@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -40,58 +41,22 @@ func NewChargeCmd() *cobra.Command {
 
 // runChargeStart executes the charge start command
 func runChargeStart(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
-
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
-
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Start charging
-	if err := client.ChargeStart(internalVIN); err != nil {
-		return fmt.Errorf("failed to start charging: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Charging started successfully")
-	return nil
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		if err := client.ChargeStart(internalVIN); err != nil {
+			return fmt.Errorf("failed to start charging: %w", err)
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Charging started successfully")
+		return nil
+	})
 }
 
 // runChargeStop executes the charge stop command
 func runChargeStop(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
-
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
-
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Stop charging
-	if err := client.ChargeStop(internalVIN); err != nil {
-		return fmt.Errorf("failed to stop charging: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Charging stopped successfully")
-	return nil
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		if err := client.ChargeStop(internalVIN); err != nil {
+			return fmt.Errorf("failed to stop charging: %w", err)
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Charging stopped successfully")
+		return nil
+	})
 }

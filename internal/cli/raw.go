@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -41,72 +42,36 @@ func NewRawCmd() *cobra.Command {
 
 // runRawStatus executes the raw status command
 func runRawStatus(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		vehicleStatus, err := client.GetVehicleStatus(internalVIN)
+		if err != nil {
+			return fmt.Errorf("failed to get vehicle status: %w", err)
+		}
 
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
+		jsonBytes, err := json.MarshalIndent(vehicleStatus, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal JSON: %w", err)
+		}
 
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Get vehicle status
-	vehicleStatus, err := client.GetVehicleStatus(internalVIN)
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle status: %w", err)
-	}
-
-	// Output raw JSON
-	jsonBytes, err := json.MarshalIndent(vehicleStatus, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal JSON: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
-	return nil
+		fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+		return nil
+	})
 }
 
 // runRawEV executes the raw ev command
 func runRawEV(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		evStatus, err := client.GetEVVehicleStatus(internalVIN)
+		if err != nil {
+			return fmt.Errorf("failed to get EV status: %w", err)
+		}
 
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
+		jsonBytes, err := json.MarshalIndent(evStatus, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal JSON: %w", err)
+		}
 
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Get EV status
-	evStatus, err := client.GetEVVehicleStatus(internalVIN)
-	if err != nil {
-		return fmt.Errorf("failed to get EV status: %w", err)
-	}
-
-	// Output raw JSON
-	jsonBytes, err := json.MarshalIndent(evStatus, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal JSON: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
-	return nil
+		fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+		return nil
+	})
 }

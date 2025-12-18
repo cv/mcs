@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -38,58 +39,22 @@ func NewStopCmd() *cobra.Command {
 
 // runStart executes the start command
 func runStart(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
-
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
-
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Start engine
-	if err := client.EngineStart(internalVIN); err != nil {
-		return fmt.Errorf("failed to start engine: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Engine started successfully")
-	return nil
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		if err := client.EngineStart(internalVIN); err != nil {
+			return fmt.Errorf("failed to start engine: %w", err)
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Engine started successfully")
+		return nil
+	})
 }
 
 // runStop executes the stop command
 func runStop(cmd *cobra.Command) error {
-	// Create API client (with cached credentials if available)
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
-
-	// Get vehicle base info to retrieve internal VIN
-	vecBaseInfos, err := client.GetVecBaseInfos()
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
-
-	internalVIN, err := getInternalVIN(vecBaseInfos)
-	if err != nil {
-		return err
-	}
-
-	// Stop engine
-	if err := client.EngineStop(internalVIN); err != nil {
-		return fmt.Errorf("failed to stop engine: %w", err)
-	}
-
-	fmt.Fprintln(cmd.OutOrStdout(), "Engine stopped successfully")
-	return nil
+	return withVehicleClient(func(client *api.Client, internalVIN string) error {
+		if err := client.EngineStop(internalVIN); err != nil {
+			return fmt.Errorf("failed to stop engine: %w", err)
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "Engine stopped successfully")
+		return nil
+	})
 }
