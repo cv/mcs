@@ -1,8 +1,6 @@
 package sensordata
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
@@ -13,6 +11,8 @@ import (
 	mathrand "math/rand"
 	"strconv"
 	"time"
+
+	"github.com/cv/mcs/internal/crypto"
 )
 
 const (
@@ -200,7 +200,7 @@ func encryptSensorData(sensorData string) (string, error) {
 	}
 
 	// Encrypt sensor data with AES
-	encryptedBytes, err := encryptAES128CBC([]byte(sensorData), aesKey, aesIV)
+	encryptedBytes, err := crypto.EncryptAES128CBC([]byte(sensorData), aesKey, aesIV)
 	if err != nil {
 		return "", fmt.Errorf("failed to encrypt sensor data: %w", err)
 	}
@@ -255,33 +255,6 @@ func encryptSensorData(sensorData string) (string, error) {
 		hmacTimestamp,
 		base64Timestamp,
 	), nil
-}
-
-// encryptAES128CBC encrypts data using AES-128-CBC
-func encryptAES128CBC(data, key, iv []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cipher: %w", err)
-	}
-
-	// Apply PKCS7 padding
-	paddedData := pkcs7Pad(data, aes.BlockSize)
-
-	ciphertext := make([]byte, len(paddedData))
-	mode := cipher.NewCBCEncrypter(block, iv)
-	mode.CryptBlocks(ciphertext, paddedData)
-
-	return ciphertext, nil
-}
-
-// pkcs7Pad applies PKCS7 padding to data
-func pkcs7Pad(data []byte, blockSize int) []byte {
-	padding := blockSize - len(data)%blockSize
-	padtext := make([]byte, padding)
-	for i := range padtext {
-		padtext[i] = byte(padding)
-	}
-	return append(data, padtext...)
 }
 
 func countSeparators(s string) int {

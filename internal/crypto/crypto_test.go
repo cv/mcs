@@ -1,0 +1,143 @@
+package crypto
+
+import (
+	"bytes"
+	"crypto/aes"
+	"testing"
+)
+
+func TestPKCS7Pad(t *testing.T) {
+	tests := []struct {
+		name      string
+		data      []byte
+		blockSize int
+		wantLen   int
+	}{
+		{
+			name:      "empty data",
+			data:      []byte{},
+			blockSize: 16,
+			wantLen:   16, // Full block of padding
+		},
+		{
+			name:      "partial block",
+			data:      []byte("hello"),
+			blockSize: 16,
+			wantLen:   16, // Padded to full block
+		},
+		{
+			name:      "full block",
+			data:      []byte("1234567890123456"),
+			blockSize: 16,
+			wantLen:   32, // Additional full block of padding
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := PKCS7Pad(tt.data, tt.blockSize)
+			if len(result) != tt.wantLen {
+				t.Errorf("PKCS7Pad() length = %d, want %d", len(result), tt.wantLen)
+			}
+			if len(result)%tt.blockSize != 0 {
+				t.Errorf("PKCS7Pad() result not multiple of block size")
+			}
+		})
+	}
+}
+
+func TestPKCS7Unpad(t *testing.T) {
+	tests := []struct {
+		name    string
+		data    []byte
+		want    []byte
+		wantErr bool
+	}{
+		{
+			name:    "empty data",
+			data:    []byte{},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "valid padding",
+			data:    []byte{'h', 'e', 'l', 'l', 'o', 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11},
+			want:    []byte("hello"),
+			wantErr: false,
+		},
+		{
+			name:    "invalid padding bytes",
+			data:    []byte{'h', 'e', 'l', 'l', 'o', 1, 2, 3},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := PKCS7Unpad(tt.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PKCS7Unpad() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !bytes.Equal(result, tt.want) {
+				t.Errorf("PKCS7Unpad() = %v, want %v", result, tt.want)
+			}
+		})
+	}
+}
+
+func TestPKCS7PadUnpad_RoundTrip(t *testing.T) {
+	data := []byte("test data for padding")
+	padded := PKCS7Pad(data, aes.BlockSize)
+	unpadded, err := PKCS7Unpad(padded)
+	if err != nil {
+		t.Fatalf("PKCS7Unpad() error = %v", err)
+	}
+	if !bytes.Equal(unpadded, data) {
+		t.Errorf("Round trip failed: got %v, want %v", unpadded, data)
+	}
+}
+
+func TestEncryptDecryptAES128CBC(t *testing.T) {
+	key := []byte("0123456789abcdef") // 16 bytes for AES-128
+	iv := []byte("abcdef0123456789")  // 16 bytes
+	plaintext := []byte("Hello, World! This is a test message.")
+
+	encrypted, err := EncryptAES128CBC(plaintext, key, iv)
+	if err != nil {
+		t.Fatalf("EncryptAES128CBC() error = %v", err)
+	}
+
+	decrypted, err := DecryptAES128CBC(encrypted, key, iv)
+	if err != nil {
+		t.Fatalf("DecryptAES128CBC() error = %v", err)
+	}
+
+	if !bytes.Equal(decrypted, plaintext) {
+		t.Errorf("DecryptAES128CBC() = %v, want %v", decrypted, plaintext)
+	}
+}
+
+func TestEncryptAES128CBC_InvalidKey(t *testing.T) {
+	key := []byte("short") // Invalid key length
+	iv := []byte("abcdef0123456789")
+	plaintext := []byte("test")
+
+	_, err := EncryptAES128CBC(plaintext, key, iv)
+	if err == nil {
+		t.Error("EncryptAES128CBC() expected error for invalid key length")
+	}
+}
+
+func TestDecryptAES128CBC_InvalidCiphertext(t *testing.T) {
+	key := []byte("0123456789abcdef")
+	iv := []byte("abcdef0123456789")
+	// Invalid ciphertext length (not multiple of block size)
+	ciphertext := []byte("not valid")
+
+	_, err := DecryptAES128CBC(ciphertext, key, iv)
+	if err == nil {
+		t.Error("DecryptAES128CBC() expected error for invalid ciphertext")
+	}
+}

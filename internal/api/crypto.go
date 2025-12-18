@@ -1,8 +1,6 @@
 package api
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
@@ -13,22 +11,16 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/cv/mcs/internal/crypto"
 )
 
 // EncryptAES128CBC encrypts data using AES-128-CBC and returns base64 encoded string
 func EncryptAES128CBC(data []byte, key, iv string) (string, error) {
-	block, err := aes.NewCipher([]byte(key))
+	ciphertext, err := crypto.EncryptAES128CBC(data, []byte(key), []byte(iv))
 	if err != nil {
-		return "", fmt.Errorf("failed to create cipher: %w", err)
+		return "", err
 	}
-
-	// Apply PKCS7 padding
-	paddedData := pkcs7Pad(data, aes.BlockSize)
-
-	ciphertext := make([]byte, len(paddedData))
-	mode := cipher.NewCBCEncrypter(block, []byte(iv))
-	mode.CryptBlocks(ciphertext, paddedData)
-
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
@@ -39,26 +31,7 @@ func DecryptAES128CBC(encryptedBase64, key, iv string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to decode base64: %w", err)
 	}
 
-	block, err := aes.NewCipher([]byte(key))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cipher: %w", err)
-	}
-
-	if len(encrypted)%aes.BlockSize != 0 {
-		return nil, fmt.Errorf("ciphertext is not a multiple of block size")
-	}
-
-	plaintext := make([]byte, len(encrypted))
-	mode := cipher.NewCBCDecrypter(block, []byte(iv))
-	mode.CryptBlocks(plaintext, encrypted)
-
-	// Remove PKCS7 padding
-	unpaddedData, err := pkcs7Unpad(plaintext)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unpad: %w", err)
-	}
-
-	return unpaddedData, nil
+	return crypto.DecryptAES128CBC(encrypted, []byte(key), []byte(iv))
 }
 
 // EncryptRSA encrypts data using RSA-ECB-PKCS1 padding
@@ -125,34 +98,3 @@ func SignWithSHA256(data string) string {
 	return strings.ToUpper(hex.EncodeToString(hash[:]))
 }
 
-// pkcs7Pad applies PKCS7 padding to data
-func pkcs7Pad(data []byte, blockSize int) []byte {
-	padding := blockSize - len(data)%blockSize
-	padtext := make([]byte, padding)
-	for i := range padtext {
-		padtext[i] = byte(padding)
-	}
-	return append(data, padtext...)
-}
-
-// pkcs7Unpad removes PKCS7 padding from data
-func pkcs7Unpad(data []byte) ([]byte, error) {
-	length := len(data)
-	if length == 0 {
-		return nil, fmt.Errorf("invalid padding: empty data")
-	}
-
-	padding := int(data[length-1])
-	if padding > length || padding > aes.BlockSize {
-		return nil, fmt.Errorf("invalid padding size")
-	}
-
-	// Verify all padding bytes are correct
-	for i := 0; i < padding; i++ {
-		if data[length-1-i] != byte(padding) {
-			return nil, fmt.Errorf("invalid padding bytes")
-		}
-	}
-
-	return data[:length-padding], nil
-}
