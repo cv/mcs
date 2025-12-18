@@ -36,114 +36,34 @@ func TestStatusCommand_NoSubcommand(t *testing.T) {
 	}
 }
 
-// TestStatusCommand_BatterySubcommand tests battery subcommand
-func TestStatusCommand_BatterySubcommand(t *testing.T) {
-	cmd := NewStatusCmd()
+// TestStatusCommand_Subcommands tests all status subcommands using table-driven pattern
+func TestStatusCommand_Subcommands(t *testing.T) {
+	subcommands := []string{"battery", "fuel", "location", "tires", "doors"}
 
-	// Find battery subcommand
-	var batteryCmd *cobra.Command
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == "battery" {
-			batteryCmd = subCmd
-			break
-		}
-	}
+	for _, name := range subcommands {
+		t.Run(name, func(t *testing.T) {
+			cmd := NewStatusCmd()
+			subCmd := findSubcommand(cmd, name)
 
-	if batteryCmd == nil {
-		t.Fatal("Expected battery subcommand to exist")
-	}
+			if subCmd == nil {
+				t.Fatalf("Expected %s subcommand to exist", name)
+			}
 
-	if batteryCmd.Short == "" {
-		t.Error("Expected battery subcommand to have a description")
+			if subCmd.Short == "" {
+				t.Errorf("Expected %s subcommand to have a description", name)
+			}
+		})
 	}
 }
 
-// TestStatusCommand_FuelSubcommand tests fuel subcommand
-func TestStatusCommand_FuelSubcommand(t *testing.T) {
-	cmd := NewStatusCmd()
-
-	// Find fuel subcommand
-	var fuelCmd *cobra.Command
+// findSubcommand finds a subcommand by name
+func findSubcommand(cmd *cobra.Command, name string) *cobra.Command {
 	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == "fuel" {
-			fuelCmd = subCmd
-			break
+		if subCmd.Use == name {
+			return subCmd
 		}
 	}
-
-	if fuelCmd == nil {
-		t.Fatal("Expected fuel subcommand to exist")
-	}
-
-	if fuelCmd.Short == "" {
-		t.Error("Expected fuel subcommand to have a description")
-	}
-}
-
-// TestStatusCommand_LocationSubcommand tests location subcommand
-func TestStatusCommand_LocationSubcommand(t *testing.T) {
-	cmd := NewStatusCmd()
-
-	// Find location subcommand
-	var locationCmd *cobra.Command
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == "location" {
-			locationCmd = subCmd
-			break
-		}
-	}
-
-	if locationCmd == nil {
-		t.Fatal("Expected location subcommand to exist")
-	}
-
-	if locationCmd.Short == "" {
-		t.Error("Expected location subcommand to have a description")
-	}
-}
-
-// TestStatusCommand_TiresSubcommand tests tires subcommand
-func TestStatusCommand_TiresSubcommand(t *testing.T) {
-	cmd := NewStatusCmd()
-
-	// Find tires subcommand
-	var tiresCmd *cobra.Command
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == "tires" {
-			tiresCmd = subCmd
-			break
-		}
-	}
-
-	if tiresCmd == nil {
-		t.Fatal("Expected tires subcommand to exist")
-	}
-
-	if tiresCmd.Short == "" {
-		t.Error("Expected tires subcommand to have a description")
-	}
-}
-
-// TestStatusCommand_DoorsSubcommand tests doors subcommand
-func TestStatusCommand_DoorsSubcommand(t *testing.T) {
-	cmd := NewStatusCmd()
-
-	// Find doors subcommand
-	var doorsCmd *cobra.Command
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == "doors" {
-			doorsCmd = subCmd
-			break
-		}
-	}
-
-	if doorsCmd == nil {
-		t.Fatal("Expected doors subcommand to exist")
-	}
-
-	if doorsCmd.Short == "" {
-		t.Error("Expected doors subcommand to have a description")
-	}
+	return nil
 }
 
 // TestStatusCommand_JSONFlag tests the JSON output flag

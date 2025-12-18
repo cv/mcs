@@ -1,70 +1,33 @@
 package api
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 )
 
 // TestGetVecBaseInfos tests getting vehicle base information
 func TestGetVecBaseInfos(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify endpoint
-		if r.URL.Path != "/remoteServices/getVecBaseInfos/v4" {
-			t.Errorf("Expected path /remoteServices/getVecBaseInfos/v4, got %s", r.URL.Path)
-		}
-
-		// Verify method
-		if r.Method != "POST" {
-			t.Errorf("Expected POST method, got %s", r.Method)
-		}
-
-		// Return mock response
-		testResponse := map[string]interface{}{
-			"resultCode": "200S00",
-			"vecBaseInfos": []map[string]interface{}{
-				{
-					"vin": "TEST123456789",
-					"Vehicle": map[string]interface{}{
-						"CvInformation": map[string]interface{}{
-							"internalVin": "INTERNAL123",
-						},
+	responseData := map[string]interface{}{
+		"resultCode": "200S00",
+		"vecBaseInfos": []map[string]interface{}{
+			{
+				"vin": "TEST123456789",
+				"Vehicle": map[string]interface{}{
+					"CvInformation": map[string]interface{}{
+						"internalVin": "INTERNAL123",
 					},
-					"econnectType": 1,
 				},
+				"econnectType": 1,
 			},
-			"vehicleFlags": []map[string]interface{}{
-				{
-					"vinRegistStatus": 3,
-				},
-			},
-		}
+		},
+		"vehicleFlags": []map[string]interface{}{
+			{"vinRegistStatus": 3},
+		},
+	}
 
-		responseJSON, _ := json.Marshal(testResponse)
-		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
-
-		response := map[string]interface{}{
-			"state":   "S",
-			"payload": encrypted,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
-	}))
+	server := createSuccessServer(t, "/remoteServices/getVecBaseInfos/v4", responseData)
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
-	client.accessToken = "test-token"
-	client.accessTokenExpirationTs = 9999999999
+	client := createTestClient(t, server.URL)
 
 	result, err := client.GetVecBaseInfos()
 	if err != nil {
@@ -82,97 +45,38 @@ func TestGetVecBaseInfos(t *testing.T) {
 
 // TestGetVehicleStatus tests getting vehicle status
 func TestGetVehicleStatus(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify endpoint
-		if r.URL.Path != "/remoteServices/getVehicleStatus/v4" {
-			t.Errorf("Expected path /remoteServices/getVehicleStatus/v4, got %s", r.URL.Path)
-		}
-
-		// Verify method
-		if r.Method != "POST" {
-			t.Errorf("Expected POST method, got %s", r.Method)
-		}
-
-		// Return mock response
-		testResponse := map[string]interface{}{
-			"resultCode": "200S00",
-			"alertInfos": []map[string]interface{}{
-				{
-					"OccurrenceDate": "20231201120000",
-					"Door": map[string]interface{}{
-						"DrStatDrv":        0,
-						"DrStatPsngr":      0,
-						"DrStatRl":         0,
-						"DrStatRr":         0,
-						"DrStatTrnkLg":     0,
-						"DrStatHood":       0,
-						"FuelLidOpenStatus": 0,
-						"LockLinkSwDrv":    0,
-						"LockLinkSwPsngr":  0,
-						"LockLinkSwRl":     0,
-						"LockLinkSwRr":     0,
-					},
-					"Pw": map[string]interface{}{
-						"PwPosDrv":   0,
-						"PwPosPsngr": 0,
-						"PwPosRl":    0,
-						"PwPosRr":    0,
-					},
-					"HazardLamp": map[string]interface{}{
-						"HazardSw": 0,
-					},
+	responseData := map[string]interface{}{
+		"resultCode": "200S00",
+		"alertInfos": []map[string]interface{}{
+			{
+				"OccurrenceDate": "20231201120000",
+				"Door": map[string]interface{}{
+					"DrStatDrv": 0, "DrStatPsngr": 0, "DrStatRl": 0, "DrStatRr": 0,
+					"DrStatTrnkLg": 0, "DrStatHood": 0, "FuelLidOpenStatus": 0,
+					"LockLinkSwDrv": 0, "LockLinkSwPsngr": 0, "LockLinkSwRl": 0, "LockLinkSwRr": 0,
 				},
+				"Pw":         map[string]interface{}{"PwPosDrv": 0, "PwPosPsngr": 0, "PwPosRl": 0, "PwPosRr": 0},
+				"HazardLamp": map[string]interface{}{"HazardSw": 0},
 			},
-			"remoteInfos": []map[string]interface{}{
-				{
-					"PositionInfo": map[string]interface{}{
-						"Latitude":          37.7749,
-						"LatitudeFlag":      0,
-						"Longitude":         122.4194,
-						"LongitudeFlag":     1,
-						"AcquisitionDatetime": "20231201120000",
-					},
-					"ResidualFuel": map[string]interface{}{
-						"FuelSegementDActl": 75.5,
-						"RemDrvDistDActlKm": 350.2,
-					},
-					"DriveInformation": map[string]interface{}{
-						"OdoDispValue": 12345.6,
-					},
-					"TPMSInformation": map[string]interface{}{
-						"FLTPrsDispPsi": 32.5,
-						"FRTPrsDispPsi": 32.0,
-						"RLTPrsDispPsi": 31.5,
-						"RRTPrsDispPsi": 31.8,
-					},
+		},
+		"remoteInfos": []map[string]interface{}{
+			{
+				"PositionInfo": map[string]interface{}{
+					"Latitude": 37.7749, "LatitudeFlag": 0,
+					"Longitude": 122.4194, "LongitudeFlag": 1,
+					"AcquisitionDatetime": "20231201120000",
 				},
+				"ResidualFuel":     map[string]interface{}{"FuelSegementDActl": 75.5, "RemDrvDistDActlKm": 350.2},
+				"DriveInformation": map[string]interface{}{"OdoDispValue": 12345.6},
+				"TPMSInformation":  map[string]interface{}{"FLTPrsDispPsi": 32.5, "FRTPrsDispPsi": 32.0, "RLTPrsDispPsi": 31.5, "RRTPrsDispPsi": 31.8},
 			},
-		}
+		},
+	}
 
-		responseJSON, _ := json.Marshal(testResponse)
-		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
-
-		response := map[string]interface{}{
-			"state":   "S",
-			"payload": encrypted,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
-	}))
+	server := createSuccessServer(t, "/remoteServices/getVehicleStatus/v4", responseData)
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
-	client.accessToken = "test-token"
-	client.accessTokenExpirationTs = 9999999999
+	client := createTestClient(t, server.URL)
 
 	result, err := client.GetVehicleStatus("INTERNAL123")
 	if err != nil {
@@ -194,39 +98,12 @@ func TestGetVehicleStatus(t *testing.T) {
 
 // TestGetVehicleStatus_Error tests error handling
 func TestGetVehicleStatus_Error(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Return error response
-		testResponse := map[string]interface{}{
-			"resultCode": "500E00",
-			"message":    "Internal error",
-		}
-
-		responseJSON, _ := json.Marshal(testResponse)
-		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
-
-		response := map[string]interface{}{
-			"state":   "S",
-			"payload": encrypted,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
-	}))
+	server := createErrorServer(t, "500E00", "Internal error")
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
-	client.accessToken = "test-token"
-	client.accessTokenExpirationTs = 9999999999
+	client := createTestClient(t, server.URL)
 
-	_, err = client.GetVehicleStatus("INTERNAL123")
+	_, err := client.GetVehicleStatus("INTERNAL123")
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
@@ -239,72 +116,33 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 
 // TestGetEVVehicleStatus tests getting EV vehicle status
 func TestGetEVVehicleStatus(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify endpoint
-		if r.URL.Path != "/remoteServices/getEVVehicleStatus/v4" {
-			t.Errorf("Expected path /remoteServices/getEVVehicleStatus/v4, got %s", r.URL.Path)
-		}
-
-		// Verify method
-		if r.Method != "POST" {
-			t.Errorf("Expected POST method, got %s", r.Method)
-		}
-
-		// Return mock response
-		testResponse := map[string]interface{}{
-			"resultCode": "200S00",
-			"resultData": []map[string]interface{}{
-				{
-					"OccurrenceDate": "20231201120000",
-					"PlusBInformation": map[string]interface{}{
-						"VehicleInfo": map[string]interface{}{
-							"ChargeInfo": map[string]interface{}{
-								"SmaphSOC":                 85,
-								"SmaphRemDrvDistKm":        245.5,
-								"ChargerConnectorFitting":  1,
-								"ChargeStatusSub":          6,
-								"MaxChargeMinuteAC":        180,
-								"MaxChargeMinuteQBC":       45,
-								"CstmzStatBatHeatAutoSW":   1,
-								"BatteryHeaterON":          0,
-							},
-							"RemoteHvacInfo": map[string]interface{}{
-								"HVAC":                1,
-								"FrontDefroster":      0,
-								"RearDefogger":        0,
-								"InteriorTemp":        22,
-								"TargetTemp":          21,
-							},
+	responseData := map[string]interface{}{
+		"resultCode": "200S00",
+		"resultData": []map[string]interface{}{
+			{
+				"OccurrenceDate": "20231201120000",
+				"PlusBInformation": map[string]interface{}{
+					"VehicleInfo": map[string]interface{}{
+						"ChargeInfo": map[string]interface{}{
+							"SmaphSOC": 85, "SmaphRemDrvDistKm": 245.5,
+							"ChargerConnectorFitting": 1, "ChargeStatusSub": 6,
+							"MaxChargeMinuteAC": 180, "MaxChargeMinuteQBC": 45,
+							"CstmzStatBatHeatAutoSW": 1, "BatteryHeaterON": 0,
+						},
+						"RemoteHvacInfo": map[string]interface{}{
+							"HVAC": 1, "FrontDefroster": 0, "RearDefogger": 0,
+							"InteriorTemp": 22, "TargetTemp": 21,
 						},
 					},
 				},
 			},
-		}
+		},
+	}
 
-		responseJSON, _ := json.Marshal(testResponse)
-		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
-
-		response := map[string]interface{}{
-			"state":   "S",
-			"payload": encrypted,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
-	}))
+	server := createSuccessServer(t, "/remoteServices/getEVVehicleStatus/v4", responseData)
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
-	client.accessToken = "test-token"
-	client.accessTokenExpirationTs = 9999999999
+	client := createTestClient(t, server.URL)
 
 	result, err := client.GetEVVehicleStatus("INTERNAL123")
 	if err != nil {
@@ -333,39 +171,12 @@ func TestGetEVVehicleStatus(t *testing.T) {
 
 // TestGetEVVehicleStatus_Error tests error handling
 func TestGetEVVehicleStatus_Error(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Return error response
-		testResponse := map[string]interface{}{
-			"resultCode": "500E00",
-			"message":    "Internal error",
-		}
-
-		responseJSON, _ := json.Marshal(testResponse)
-		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
-
-		response := map[string]interface{}{
-			"state":   "S",
-			"payload": encrypted,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
-	}))
+	server := createErrorServer(t, "500E00", "Internal error")
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
-	client.accessToken = "test-token"
-	client.accessTokenExpirationTs = 9999999999
+	client := createTestClient(t, server.URL)
 
-	_, err = client.GetEVVehicleStatus("INTERNAL123")
+	_, err := client.GetEVVehicleStatus("INTERNAL123")
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}

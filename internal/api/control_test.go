@@ -8,36 +8,33 @@ import (
 	"testing"
 )
 
-// Helper function to create test server for control endpoints
+// createControlTestServer creates a test server for control endpoints
+// Uses shared test helpers from test_helpers_test.go
 func createControlTestServer(t *testing.T, expectedPath string, expectedBody map[string]interface{}) *httptest.Server {
+	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify endpoint
 		if r.URL.Path != expectedPath {
 			t.Errorf("Expected path %s, got %s", expectedPath, r.URL.Path)
 		}
 
-		// Verify method
 		if r.Method != "POST" {
 			t.Errorf("Expected POST method, got %s", r.Method)
 		}
 
-		// Verify body if provided
 		if expectedBody != nil {
 			body, _ := io.ReadAll(r.Body)
-			// Body is encrypted, so we just check it's not empty
 			if len(body) == 0 {
 				t.Error("Expected non-empty body")
 			}
 		}
 
-		// Return success response
 		testResponse := map[string]interface{}{
 			"resultCode": "200S00",
 			"message":    "Success",
 		}
 
 		responseJSON, _ := json.Marshal(testResponse)
-		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+		encrypted, _ := EncryptAES128CBC(responseJSON, testEncKey, IV)
 
 		response := map[string]interface{}{
 			"state":   "S",
@@ -51,19 +48,7 @@ func createControlTestServer(t *testing.T, expectedPath string, expectedBody map
 	}))
 }
 
-// Helper function to create test client
-func createTestClient(t *testing.T, serverURL string) *Client {
-	client, err := NewClient("test@example.com", "password", "MNAO")
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	client.baseURL = serverURL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
-	client.accessToken = "test-token"
-	client.accessTokenExpirationTs = 9999999999
-	return client
-}
+// Note: createTestClient is defined in test_helpers_test.go
 
 // TestDoorLock tests locking doors
 func TestDoorLock(t *testing.T) {
