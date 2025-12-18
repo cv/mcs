@@ -296,17 +296,21 @@ func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]interface
 	}
 }
 
+// toJSON converts a map to formatted JSON string
+func toJSON(data map[string]interface{}) string {
+	jsonBytes, _ := json.MarshalIndent(data, "", "  ")
+	return string(jsonBytes)
+}
+
 // formatBatteryStatus formats battery status for display
 func formatBatteryStatus(batteryLevel, range_ float64, pluggedIn, charging bool, jsonOutput bool) string {
 	if jsonOutput {
-		data := map[string]interface{}{
+		return toJSON(map[string]interface{}{
 			"battery_level": batteryLevel,
 			"range_km":      range_,
 			"plugged_in":    pluggedIn,
 			"charging":      charging,
-		}
-		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
-		return string(jsonBytes)
+		})
 	}
 
 	status := fmt.Sprintf("BATTERY: %.0f%% (%.1f km range)", batteryLevel, range_)
@@ -324,12 +328,10 @@ func formatBatteryStatus(batteryLevel, range_ float64, pluggedIn, charging bool,
 // formatFuelStatus formats fuel status for display
 func formatFuelStatus(fuelLevel, range_ float64, jsonOutput bool) string {
 	if jsonOutput {
-		data := map[string]interface{}{
+		return toJSON(map[string]interface{}{
 			"fuel_level": fuelLevel,
 			"range_km":   range_,
-		}
-		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
-		return string(jsonBytes)
+		})
 	}
 
 	return fmt.Sprintf("FUEL: %.0f%% (%.1f km range)", fuelLevel, range_)
@@ -337,33 +339,28 @@ func formatFuelStatus(fuelLevel, range_ float64, jsonOutput bool) string {
 
 // formatLocationStatus formats location status for display
 func formatLocationStatus(lat, lon float64, timestamp string, jsonOutput bool) string {
+	mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", lat, lon)
 	if jsonOutput {
-		mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", lat, lon)
-		data := map[string]interface{}{
+		return toJSON(map[string]interface{}{
 			"latitude":  lat,
 			"longitude": lon,
 			"timestamp": timestamp,
 			"maps_url":  mapsURL,
-		}
-		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
-		return string(jsonBytes)
+		})
 	}
 
-	mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", lat, lon)
 	return fmt.Sprintf("LOCATION: %.6f, %.6f\n  %s", lat, lon, mapsURL)
 }
 
 // formatTiresStatus formats tire status for display
 func formatTiresStatus(fl, fr, rl, rr float64, jsonOutput bool) string {
 	if jsonOutput {
-		data := map[string]interface{}{
+		return toJSON(map[string]interface{}{
 			"front_left_psi":  fl,
 			"front_right_psi": fr,
 			"rear_left_psi":   rl,
 			"rear_right_psi":  rr,
-		}
-		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
-		return string(jsonBytes)
+		})
 	}
 
 	return fmt.Sprintf("TIRES: FL:%.1f FR:%.1f RL:%.1f RR:%.1f PSI", fl, fr, rl, rr)
@@ -372,11 +369,9 @@ func formatTiresStatus(fl, fr, rl, rr float64, jsonOutput bool) string {
 // formatDoorsStatus formats door status for display
 func formatDoorsStatus(allLocked bool, jsonOutput bool) string {
 	if jsonOutput {
-		data := map[string]interface{}{
+		return toJSON(map[string]interface{}{
 			"all_locked": allLocked,
-		}
-		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
-		return string(jsonBytes)
+		})
 	}
 
 	if allLocked {
@@ -388,14 +383,12 @@ func formatDoorsStatus(allLocked bool, jsonOutput bool) string {
 // formatHvacStatus formats HVAC status for display
 func formatHvacStatus(hvacOn, frontDefroster, rearDefroster bool, interiorTempC float64, jsonOutput bool) string {
 	if jsonOutput {
-		data := map[string]interface{}{
+		return toJSON(map[string]interface{}{
 			"hvac_on":                hvacOn,
 			"front_defroster":        frontDefroster,
 			"rear_defroster":         rearDefroster,
 			"interior_temperature_c": interiorTempC,
-		}
-		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
-		return string(jsonBytes)
+		})
 	}
 
 	var status string
