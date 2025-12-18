@@ -160,21 +160,7 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 		req.Header.Set(k, v)
 	}
 
-	// Debug: Log request details
-	if c.debug {
-		fmt.Printf("DEBUG: %s %s\n", method, requestURL)
-		fmt.Printf("DEBUG: Headers:\n")
-		for k, v := range headers {
-			if k == "access-token" && v != "" {
-				fmt.Printf("  %s: [REDACTED]\n", k)
-			} else {
-				fmt.Printf("  %s: %s\n", k, v)
-			}
-		}
-		if originalBodyStr != "" {
-			fmt.Printf("DEBUG: Original body: %s\n", originalBodyStr)
-		}
-	}
+	c.logRequest(method, requestURL, headers, originalBodyStr)
 
 	// Send request
 	resp, err := c.httpClient.Do(req)
@@ -189,11 +175,7 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	// Debug: Log response details
-	if c.debug {
-		fmt.Printf("DEBUG: Response status: %d\n", resp.StatusCode)
-		fmt.Printf("DEBUG: Response body: %s\n", string(body))
-	}
+	c.logResponse(resp.StatusCode, body)
 
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
@@ -303,4 +285,34 @@ func (c *Client) getSignFromPayloadAndTimestamp(payload, timestamp string) strin
 	dataToSign := encryptedPayload + timestampExtended + c.signKey
 
 	return SignWithSHA256(dataToSign)
+}
+
+// logRequest logs request details when debug mode is enabled
+func (c *Client) logRequest(method, url string, headers map[string]string, body string) {
+	if !c.debug {
+		return
+	}
+
+	fmt.Printf("DEBUG: %s %s\n", method, url)
+	fmt.Printf("DEBUG: Headers:\n")
+	for k, v := range headers {
+		if k == "access-token" && v != "" {
+			fmt.Printf("  %s: [REDACTED]\n", k)
+		} else {
+			fmt.Printf("  %s: %s\n", k, v)
+		}
+	}
+	if body != "" {
+		fmt.Printf("DEBUG: Original body: %s\n", body)
+	}
+}
+
+// logResponse logs response details when debug mode is enabled
+func (c *Client) logResponse(statusCode int, body []byte) {
+	if !c.debug {
+		return
+	}
+
+	fmt.Printf("DEBUG: Response status: %d\n", statusCode)
+	fmt.Printf("DEBUG: Response body: %s\n", string(body))
 }
