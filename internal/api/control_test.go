@@ -241,7 +241,7 @@ func TestSetHVACSetting(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 22.0, "c", true, false)
+	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 22.0, Celsius, true, false)
 	if err != nil {
 		t.Fatalf("SetHVACSetting failed: %v", err)
 	}
@@ -261,27 +261,9 @@ func TestSetHVACSetting_Fahrenheit(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 72.0, "f", false, true)
+	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 72.0, Fahrenheit, false, true)
 	if err != nil {
 		t.Fatalf("SetHVACSetting failed: %v", err)
-	}
-}
-
-// TestSetHVACSetting_InvalidUnit tests invalid temperature unit
-func TestSetHVACSetting_InvalidUnit(t *testing.T) {
-	client, err := NewClient("test@example.com", "password", "MNAO")
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-
-	err = client.SetHVACSetting(context.Background(), "INTERNAL123", 22.0, "k", false, false)
-	if err == nil {
-		t.Fatal("Expected error for invalid unit, got nil")
-	}
-
-	expectedError := "invalid temperature unit: k (must be 'c' or 'f')"
-	if err.Error() != expectedError {
-		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
 	}
 }
 

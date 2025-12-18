@@ -395,3 +395,57 @@ func TestAPIBaseResponse_Unmarshal(t *testing.T) {
 		})
 	}
 }
+
+// TemperatureUnit tests
+
+func TestTemperatureUnit_String(t *testing.T) {
+	tests := []struct {
+		unit TemperatureUnit
+		want string
+	}{
+		{Celsius, "C"},
+		{Fahrenheit, "F"},
+		{TemperatureUnit(99), "unknown"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.want, func(t *testing.T) {
+			if got := tt.unit.String(); got != tt.want {
+				t.Errorf("TemperatureUnit.String() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseTemperatureUnit(t *testing.T) {
+	tests := []struct {
+		input   string
+		want    TemperatureUnit
+		wantErr bool
+	}{
+		{"c", Celsius, false},
+		{"C", Celsius, false},
+		{"celsius", Celsius, false},
+		{"Celsius", Celsius, false},
+		{"f", Fahrenheit, false},
+		{"F", Fahrenheit, false},
+		{"fahrenheit", Fahrenheit, false},
+		{"Fahrenheit", Fahrenheit, false},
+		{"invalid", 0, true},
+		{"", 0, true},
+		{"kelvin", 0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got, err := ParseTemperatureUnit(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseTemperatureUnit(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("ParseTemperatureUnit(%q) = %v, want %v", tt.input, got, tt.want)
+			}
+		})
+	}
+}

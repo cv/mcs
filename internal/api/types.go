@@ -283,3 +283,38 @@ type LoginResponse struct {
 	Status string    `json:"status"`
 	Data   LoginData `json:"data"`
 }
+
+// TemperatureUnit represents the unit for temperature values
+type TemperatureUnit int
+
+const (
+	// Celsius represents temperatures in Celsius
+	Celsius TemperatureUnit = 1
+	// Fahrenheit represents temperatures in Fahrenheit
+	Fahrenheit TemperatureUnit = 2
+)
+
+// String returns the string representation of the temperature unit
+func (t TemperatureUnit) String() string {
+	switch t {
+	case Celsius:
+		return "C"
+	case Fahrenheit:
+		return "F"
+	default:
+		return "unknown"
+	}
+}
+
+// ParseTemperatureUnit converts a string to a TemperatureUnit.
+// Accepts "c", "C", "celsius" for Celsius and "f", "F", "fahrenheit" for Fahrenheit.
+func ParseTemperatureUnit(s string) (TemperatureUnit, error) {
+	switch s {
+	case "c", "C", "celsius", "Celsius":
+		return Celsius, nil
+	case "f", "F", "fahrenheit", "Fahrenheit":
+		return Fahrenheit, nil
+	default:
+		return 0, fmt.Errorf("invalid temperature unit: %s (must be 'c' or 'f')", s)
+	}
+}

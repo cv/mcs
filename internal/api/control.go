@@ -81,18 +81,7 @@ func (c *Client) RefreshVehicleStatus(ctx context.Context, internalVIN string) e
 }
 
 // SetHVACSetting sets HVAC temperature and defroster settings
-// tempUnit should be "c" for Celsius or "f" for Fahrenheit
-func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, temperature float64, tempUnit string, frontDefroster, rearDefroster bool) error {
-	var tempType int
-	switch tempUnit {
-	case "c", "C":
-		tempType = 1
-	case "f", "F":
-		tempType = 2
-	default:
-		return fmt.Errorf("invalid temperature unit: %s (must be 'c' or 'f')", tempUnit)
-	}
-
+func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, temperature float64, tempUnit TemperatureUnit, frontDefroster, rearDefroster bool) error {
 	frontDefrost := 0
 	if frontDefroster {
 		frontDefrost = 1
@@ -106,7 +95,7 @@ func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, tempera
 		"internaluserid":  InternalUserID,
 		"internalvin":     internalVIN,
 		"Temperature":     temperature,
-		"TemperatureType": tempType,
+		"TemperatureType": int(tempUnit),
 		"FrontDefroster":  frontDefrost,
 		"RearDefogger":    rearDefrost,
 	}

@@ -100,16 +100,17 @@ func runClimateOff(cmd *cobra.Command) error {
 
 // runClimateSet executes the climate set command
 func runClimateSet(cmd *cobra.Command, temperature float64, tempUnit string, frontDefroster, rearDefroster bool) error {
+	unit, err := api.ParseTemperatureUnit(tempUnit)
+	if err != nil {
+		return err
+	}
+
 	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-		if err := client.SetHVACSetting(ctx, internalVIN, temperature, tempUnit, frontDefroster, rearDefroster); err != nil {
+		if err := client.SetHVACSetting(ctx, internalVIN, temperature, unit, frontDefroster, rearDefroster); err != nil {
 			return fmt.Errorf("failed to set HVAC settings: %w", err)
 		}
 
-		unitSymbol := "C"
-		if tempUnit == "f" || tempUnit == "F" {
-			unitSymbol = "F"
-		}
-		msg := fmt.Sprintf("Climate set to %.1f%s", temperature, unitSymbol)
+		msg := fmt.Sprintf("Climate set to %.1f%s", temperature, unit.String())
 		if frontDefroster {
 			msg += " with front defroster on"
 		}
