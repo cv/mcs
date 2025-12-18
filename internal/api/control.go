@@ -5,6 +5,14 @@ import (
 	"fmt"
 )
 
+// boolToInt converts a boolean to an integer (true=1, false=0)
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
 // executeControl sends a control command to the vehicle and validates the response.
 func (c *Client) executeControl(ctx context.Context, endpoint, actionDesc, internalVIN string) error {
 	bodyParams := map[string]interface{}{
@@ -82,22 +90,13 @@ func (c *Client) RefreshVehicleStatus(ctx context.Context, internalVIN string) e
 
 // SetHVACSetting sets HVAC temperature and defroster settings
 func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, temperature float64, tempUnit TemperatureUnit, frontDefroster, rearDefroster bool) error {
-	frontDefrost := 0
-	if frontDefroster {
-		frontDefrost = 1
-	}
-	rearDefrost := 0
-	if rearDefroster {
-		rearDefrost = 1
-	}
-
 	bodyParams := map[string]interface{}{
 		"internaluserid":  InternalUserID,
 		"internalvin":     internalVIN,
 		"Temperature":     temperature,
 		"TemperatureType": int(tempUnit),
-		"FrontDefroster":  frontDefrost,
-		"RearDefogger":    rearDefrost,
+		"FrontDefroster":  boolToInt(frontDefroster),
+		"RearDefogger":    boolToInt(rearDefroster),
 	}
 
 	response, err := c.APIRequest(ctx, "POST", "remoteServices/updateHVACSetting/v4", nil, bodyParams, true, true)

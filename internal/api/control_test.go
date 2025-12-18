@@ -302,3 +302,20 @@ func TestControlError(t *testing.T) {
 		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
 	}
 }
+
+// TestBoolToInt tests the boolToInt helper function
+func TestBoolToInt(t *testing.T) {
+	tests := []struct {
+		input bool
+		want  int
+	}{
+		{true, 1},
+		{false, 0},
+	}
+
+	for _, tt := range tests {
+		if got := boolToInt(tt.input); got != tt.want {
+			t.Errorf("boolToInt(%v) = %d, want %d", tt.input, got, tt.want)
+		}
+	}
+}
