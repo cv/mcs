@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -373,38 +374,5 @@ func (c *Client) encryptPasswordWithPublicKey(password, publicKey string) (strin
 		return "", err
 	}
 
-	return base64Encode(encrypted), nil
-}
-
-func base64Encode(data []byte) string {
-	const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-	var result []byte
-
-	for i := 0; i < len(data); i += 3 {
-		b1 := data[i]
-		var b2, b3 byte
-		if i+1 < len(data) {
-			b2 = data[i+1]
-		}
-		if i+2 < len(data) {
-			b3 = data[i+2]
-		}
-
-		result = append(result, base64Chars[b1>>2])
-		result = append(result, base64Chars[((b1&0x03)<<4)|(b2>>4)])
-
-		if i+1 < len(data) {
-			result = append(result, base64Chars[((b2&0x0f)<<2)|(b3>>6)])
-		} else {
-			result = append(result, '=')
-		}
-
-		if i+2 < len(data) {
-			result = append(result, base64Chars[b3&0x3f])
-		} else {
-			result = append(result, '=')
-		}
-	}
-
-	return string(result)
+	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
