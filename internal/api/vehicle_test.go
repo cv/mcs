@@ -251,3 +251,150 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
 	}
 }
+
+// TestGetEVVehicleStatus tests getting EV vehicle status
+func TestGetEVVehicleStatus(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify endpoint
+		if r.URL.Path != "/remoteServices/getEVVehicleStatus/v4" {
+			t.Errorf("Expected path /remoteServices/getEVVehicleStatus/v4, got %s", r.URL.Path)
+		}
+
+		// Verify method
+		if r.Method != "POST" {
+			t.Errorf("Expected POST method, got %s", r.Method)
+		}
+
+		// Return mock response
+		testResponse := map[string]interface{}{
+			"resultCode": "200S00",
+			"resultData": []map[string]interface{}{
+				{
+					"OccurrenceDate": "20231201120000",
+					"PlusBInformation": map[string]interface{}{
+						"VehicleInfo": map[string]interface{}{
+							"ChargeInfo": map[string]interface{}{
+								"SmaphSOC":                 85,
+								"SmaphRemDrvDistKm":        245.5,
+								"ChargerConnectorFitting":  1,
+								"ChargeStatusSub":          6,
+								"MaxChargeMinuteAC":        180,
+								"MaxChargeMinuteQBC":       45,
+								"CstmzStatBatHeatAutoSW":   1,
+								"BatteryHeaterON":          0,
+							},
+							"RemoteHvacInfo": map[string]interface{}{
+								"HVAC":                1,
+								"FrontDefroster":      0,
+								"RearDefogger":        0,
+								"InteriorTemp":        22,
+								"TargetTemp":          21,
+							},
+						},
+					},
+				},
+			},
+		}
+
+		responseJSON, _ := json.Marshal(testResponse)
+		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+
+		response := map[string]interface{}{
+			"state":   "S",
+			"payload": encrypted,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test@example.com", "password", "MNAO")
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+	client.baseURL = server.URL + "/"
+	client.encKey = "testenckey123456"
+	client.signKey = "testsignkey12345"
+	client.accessToken = "test-token"
+	client.accessTokenExpirationTs = 9999999999
+
+	result, err := client.GetEVVehicleStatus("INTERNAL123")
+	if err != nil {
+		t.Fatalf("GetEVVehicleStatus failed: %v", err)
+	}
+
+	if result["resultCode"] != "200S00" {
+		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
+	}
+
+	resultData, ok := result["resultData"].([]interface{})
+	if !ok {
+		t.Fatal("Expected resultData to be an array")
+	}
+
+	if len(resultData) != 1 {
+		t.Errorf("Expected 1 result data, got %d", len(resultData))
+	}
+
+	// Verify charge info
+	firstResult := resultData[0].(map[string]interface{})
+	plusBInfo := firstResult["PlusBInformation"].(map[string]interface{})
+	vehicleInfo := plusBInfo["VehicleInfo"].(map[string]interface{})
+	chargeInfo := vehicleInfo["ChargeInfo"].(map[string]interface{})
+
+	if chargeInfo["SmaphSOC"] != float64(85) {
+		t.Errorf("Expected battery level 85, got %v", chargeInfo["SmaphSOC"])
+	}
+
+	if chargeInfo["ChargerConnectorFitting"] != float64(1) {
+		t.Errorf("Expected plugged in (1), got %v", chargeInfo["ChargerConnectorFitting"])
+	}
+}
+
+// TestGetEVVehicleStatus_Error tests error handling
+func TestGetEVVehicleStatus_Error(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return error response
+		testResponse := map[string]interface{}{
+			"resultCode": "500E00",
+			"message":    "Internal error",
+		}
+
+		responseJSON, _ := json.Marshal(testResponse)
+		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+
+		response := map[string]interface{}{
+			"state":   "S",
+			"payload": encrypted,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test@example.com", "password", "MNAO")
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+	client.baseURL = server.URL + "/"
+	client.encKey = "testenckey123456"
+	client.signKey = "testsignkey12345"
+	client.accessToken = "test-token"
+	client.accessTokenExpirationTs = 9999999999
+
+	_, err = client.GetEVVehicleStatus("INTERNAL123")
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	expectedError := "Failed to get EV vehicle status: result code 500E00"
+	if err.Error() != expectedError {
+		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
+	}
+}
