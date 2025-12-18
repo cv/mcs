@@ -67,6 +67,7 @@ func Execute() error {
 	rootCmd.AddCommand(NewStopCmd())
 	rootCmd.AddCommand(NewChargeCmd())
 	rootCmd.AddCommand(NewClimateCmd())
+	rootCmd.AddCommand(NewRawCmd())
 
 	return rootCmd.Execute()
 }
