@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+
+	"github.com/cv/cx90/internal/cli"
+)
 
 func main() {
-	fmt.Println("cx90 - Mazda CX-90 PHEV CLI")
+	if err := cli.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }
