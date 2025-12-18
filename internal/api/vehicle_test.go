@@ -1,0 +1,253 @@
+package api
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+// TestGetVecBaseInfos tests getting vehicle base information
+func TestGetVecBaseInfos(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify endpoint
+		if r.URL.Path != "/remoteServices/getVecBaseInfos/v4" {
+			t.Errorf("Expected path /remoteServices/getVecBaseInfos/v4, got %s", r.URL.Path)
+		}
+
+		// Verify method
+		if r.Method != "POST" {
+			t.Errorf("Expected POST method, got %s", r.Method)
+		}
+
+		// Return mock response
+		testResponse := map[string]interface{}{
+			"resultCode": "200S00",
+			"vecBaseInfos": []map[string]interface{}{
+				{
+					"vin": "TEST123456789",
+					"Vehicle": map[string]interface{}{
+						"CvInformation": map[string]interface{}{
+							"internalVin": "INTERNAL123",
+						},
+					},
+					"econnectType": 1,
+				},
+			},
+			"vehicleFlags": []map[string]interface{}{
+				{
+					"vinRegistStatus": 3,
+				},
+			},
+		}
+
+		responseJSON, _ := json.Marshal(testResponse)
+		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+
+		response := map[string]interface{}{
+			"state":   "S",
+			"payload": encrypted,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test@example.com", "password", "MNAO")
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+	client.baseURL = server.URL + "/"
+	client.encKey = "testenckey123456"
+	client.signKey = "testsignkey12345"
+	client.accessToken = "test-token"
+	client.accessTokenExpirationTs = 9999999999
+
+	result, err := client.GetVecBaseInfos()
+	if err != nil {
+		t.Fatalf("GetVecBaseInfos failed: %v", err)
+	}
+
+	if result["resultCode"] != "200S00" {
+		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
+	}
+
+	vecBaseInfos, ok := result["vecBaseInfos"].([]interface{})
+	if !ok {
+		t.Fatal("Expected vecBaseInfos to be an array")
+	}
+
+	if len(vecBaseInfos) != 1 {
+		t.Errorf("Expected 1 vehicle, got %d", len(vecBaseInfos))
+	}
+}
+
+// TestGetVehicleStatus tests getting vehicle status
+func TestGetVehicleStatus(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify endpoint
+		if r.URL.Path != "/remoteServices/getVehicleStatus/v4" {
+			t.Errorf("Expected path /remoteServices/getVehicleStatus/v4, got %s", r.URL.Path)
+		}
+
+		// Verify method
+		if r.Method != "POST" {
+			t.Errorf("Expected POST method, got %s", r.Method)
+		}
+
+		// Return mock response
+		testResponse := map[string]interface{}{
+			"resultCode": "200S00",
+			"alertInfos": []map[string]interface{}{
+				{
+					"OccurrenceDate": "20231201120000",
+					"Door": map[string]interface{}{
+						"DrStatDrv":        0,
+						"DrStatPsngr":      0,
+						"DrStatRl":         0,
+						"DrStatRr":         0,
+						"DrStatTrnkLg":     0,
+						"DrStatHood":       0,
+						"FuelLidOpenStatus": 0,
+						"LockLinkSwDrv":    0,
+						"LockLinkSwPsngr":  0,
+						"LockLinkSwRl":     0,
+						"LockLinkSwRr":     0,
+					},
+					"Pw": map[string]interface{}{
+						"PwPosDrv":   0,
+						"PwPosPsngr": 0,
+						"PwPosRl":    0,
+						"PwPosRr":    0,
+					},
+					"HazardLamp": map[string]interface{}{
+						"HazardSw": 0,
+					},
+				},
+			},
+			"remoteInfos": []map[string]interface{}{
+				{
+					"PositionInfo": map[string]interface{}{
+						"Latitude":          37.7749,
+						"LatitudeFlag":      0,
+						"Longitude":         122.4194,
+						"LongitudeFlag":     1,
+						"AcquisitionDatetime": "20231201120000",
+					},
+					"ResidualFuel": map[string]interface{}{
+						"FuelSegementDActl": 75.5,
+						"RemDrvDistDActlKm": 350.2,
+					},
+					"DriveInformation": map[string]interface{}{
+						"OdoDispValue": 12345.6,
+					},
+					"TPMSInformation": map[string]interface{}{
+						"FLTPrsDispPsi": 32.5,
+						"FRTPrsDispPsi": 32.0,
+						"RLTPrsDispPsi": 31.5,
+						"RRTPrsDispPsi": 31.8,
+					},
+				},
+			},
+		}
+
+		responseJSON, _ := json.Marshal(testResponse)
+		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+
+		response := map[string]interface{}{
+			"state":   "S",
+			"payload": encrypted,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test@example.com", "password", "MNAO")
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+	client.baseURL = server.URL + "/"
+	client.encKey = "testenckey123456"
+	client.signKey = "testsignkey12345"
+	client.accessToken = "test-token"
+	client.accessTokenExpirationTs = 9999999999
+
+	result, err := client.GetVehicleStatus("INTERNAL123")
+	if err != nil {
+		t.Fatalf("GetVehicleStatus failed: %v", err)
+	}
+
+	if result["resultCode"] != "200S00" {
+		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
+	}
+
+	alertInfos, ok := result["alertInfos"].([]interface{})
+	if !ok {
+		t.Fatal("Expected alertInfos to be an array")
+	}
+
+	if len(alertInfos) != 1 {
+		t.Errorf("Expected 1 alert info, got %d", len(alertInfos))
+	}
+
+	remoteInfos, ok := result["remoteInfos"].([]interface{})
+	if !ok {
+		t.Fatal("Expected remoteInfos to be an array")
+	}
+
+	if len(remoteInfos) != 1 {
+		t.Errorf("Expected 1 remote info, got %d", len(remoteInfos))
+	}
+}
+
+// TestGetVehicleStatus_Error tests error handling
+func TestGetVehicleStatus_Error(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return error response
+		testResponse := map[string]interface{}{
+			"resultCode": "500E00",
+			"message":    "Internal error",
+		}
+
+		responseJSON, _ := json.Marshal(testResponse)
+		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+
+		response := map[string]interface{}{
+			"state":   "S",
+			"payload": encrypted,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test@example.com", "password", "MNAO")
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+	client.baseURL = server.URL + "/"
+	client.encKey = "testenckey123456"
+	client.signKey = "testsignkey12345"
+	client.accessToken = "test-token"
+	client.accessTokenExpirationTs = 9999999999
+
+	_, err = client.GetVehicleStatus("INTERNAL123")
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	expectedError := "Failed to get vehicle status: result code 500E00"
+	if err.Error() != expectedError {
+		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
+	}
+}
