@@ -9,11 +9,6 @@ import (
 	"testing"
 )
 
-// contains checks if s contains substr
-func contains(s, substr string) bool {
-	return strings.Contains(s, substr)
-}
-
 // TestAPIRequest_Success tests successful API request with encryption
 func TestAPIRequest_Success(t *testing.T) {
 	// Create a mock server
@@ -111,7 +106,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 	// APIRequest retries on EncryptionError by fetching new keys
 	// Since our mock server always returns the same error, it eventually fails with wrapped error
 	expectedMsg := "failed to retrieve encryption keys"
-	if !contains(err.Error(), expectedMsg) {
+	if !strings.Contains(err.Error(), expectedMsg) {
 		t.Errorf("Expected error containing %q, got: %v", expectedMsg, err)
 	}
 }
@@ -147,7 +142,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 	// APIRequest retries on TokenExpiredError by re-logging in
 	// Since re-login will fail (mock server only handles one endpoint), we get a wrapped error
 	expectedMsg := "failed to login"
-	if !contains(err.Error(), expectedMsg) {
+	if !strings.Contains(err.Error(), expectedMsg) {
 		t.Errorf("Expected error containing %q, got: %v", expectedMsg, err)
 	}
 }
