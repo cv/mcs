@@ -152,7 +152,17 @@ func getInternalVIN(vecBaseInfos map[string]interface{}) (string, error) {
 	firstVehicle := vecInfos[0].(map[string]interface{})
 	vehicle := firstVehicle["Vehicle"].(map[string]interface{})
 	cvInfo := vehicle["CvInformation"].(map[string]interface{})
-	internalVIN := cvInfo["internalVin"].(string)
+
+	// Handle internalVin which can be string or number
+	var internalVIN string
+	switch v := cvInfo["internalVin"].(type) {
+	case string:
+		internalVIN = v
+	case float64:
+		internalVIN = fmt.Sprintf("%.0f", v)
+	default:
+		return "", fmt.Errorf("unexpected type for internalVin: %T", v)
+	}
 
 	return internalVIN, nil
 }
