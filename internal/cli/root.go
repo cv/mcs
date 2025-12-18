@@ -63,6 +63,8 @@ func Execute() error {
 	rootCmd.AddCommand(NewStatusCmd())
 	rootCmd.AddCommand(NewLockCmd())
 	rootCmd.AddCommand(NewUnlockCmd())
+	rootCmd.AddCommand(NewStartCmd())
+	rootCmd.AddCommand(NewStopCmd())
 
 	return rootCmd.Execute()
 }
