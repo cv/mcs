@@ -58,6 +58,10 @@ Example config.toml:
 // Execute runs the root command
 func Execute() error {
 	rootCmd := NewRootCmd()
+
+	// Add subcommands
+	rootCmd.AddCommand(NewStatusCmd())
+
 	return rootCmd.Execute()
 }
 

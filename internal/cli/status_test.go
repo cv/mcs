@@ -1,0 +1,368 @@
+package cli
+
+import (
+	"bytes"
+	"encoding/json"
+	"strings"
+	"testing"
+
+	"github.com/spf13/cobra"
+)
+
+// TestStatusCommand tests the status command
+func TestStatusCommand(t *testing.T) {
+	cmd := NewStatusCmd()
+
+	if cmd.Use != "status" {
+		t.Errorf("Expected Use to be 'status', got '%s'", cmd.Use)
+	}
+
+	if cmd.Short == "" {
+		t.Error("Expected Short description to be set")
+	}
+}
+
+// TestStatusCommand_NoSubcommand tests status command without subcommand
+func TestStatusCommand_NoSubcommand(t *testing.T) {
+	// This should show all status information
+	cmd := NewStatusCmd()
+	cmd.SetArgs([]string{})
+
+	// We need to inject a mock client - this will be handled in the actual implementation
+	// For now, we test that the command structure is correct
+	if err := cmd.ValidateArgs([]string{}); err != nil {
+		t.Errorf("Status command should accept no arguments: %v", err)
+	}
+}
+
+// TestStatusCommand_BatterySubcommand tests battery subcommand
+func TestStatusCommand_BatterySubcommand(t *testing.T) {
+	cmd := NewStatusCmd()
+
+	// Find battery subcommand
+	var batteryCmd *cobra.Command
+	for _, subCmd := range cmd.Commands() {
+		if subCmd.Use == "battery" {
+			batteryCmd = subCmd
+			break
+		}
+	}
+
+	if batteryCmd == nil {
+		t.Fatal("Expected battery subcommand to exist")
+	}
+
+	if batteryCmd.Short == "" {
+		t.Error("Expected battery subcommand to have a description")
+	}
+}
+
+// TestStatusCommand_FuelSubcommand tests fuel subcommand
+func TestStatusCommand_FuelSubcommand(t *testing.T) {
+	cmd := NewStatusCmd()
+
+	// Find fuel subcommand
+	var fuelCmd *cobra.Command
+	for _, subCmd := range cmd.Commands() {
+		if subCmd.Use == "fuel" {
+			fuelCmd = subCmd
+			break
+		}
+	}
+
+	if fuelCmd == nil {
+		t.Fatal("Expected fuel subcommand to exist")
+	}
+
+	if fuelCmd.Short == "" {
+		t.Error("Expected fuel subcommand to have a description")
+	}
+}
+
+// TestStatusCommand_LocationSubcommand tests location subcommand
+func TestStatusCommand_LocationSubcommand(t *testing.T) {
+	cmd := NewStatusCmd()
+
+	// Find location subcommand
+	var locationCmd *cobra.Command
+	for _, subCmd := range cmd.Commands() {
+		if subCmd.Use == "location" {
+			locationCmd = subCmd
+			break
+		}
+	}
+
+	if locationCmd == nil {
+		t.Fatal("Expected location subcommand to exist")
+	}
+
+	if locationCmd.Short == "" {
+		t.Error("Expected location subcommand to have a description")
+	}
+}
+
+// TestStatusCommand_TiresSubcommand tests tires subcommand
+func TestStatusCommand_TiresSubcommand(t *testing.T) {
+	cmd := NewStatusCmd()
+
+	// Find tires subcommand
+	var tiresCmd *cobra.Command
+	for _, subCmd := range cmd.Commands() {
+		if subCmd.Use == "tires" {
+			tiresCmd = subCmd
+			break
+		}
+	}
+
+	if tiresCmd == nil {
+		t.Fatal("Expected tires subcommand to exist")
+	}
+
+	if tiresCmd.Short == "" {
+		t.Error("Expected tires subcommand to have a description")
+	}
+}
+
+// TestStatusCommand_DoorsSubcommand tests doors subcommand
+func TestStatusCommand_DoorsSubcommand(t *testing.T) {
+	cmd := NewStatusCmd()
+
+	// Find doors subcommand
+	var doorsCmd *cobra.Command
+	for _, subCmd := range cmd.Commands() {
+		if subCmd.Use == "doors" {
+			doorsCmd = subCmd
+			break
+		}
+	}
+
+	if doorsCmd == nil {
+		t.Fatal("Expected doors subcommand to exist")
+	}
+
+	if doorsCmd.Short == "" {
+		t.Error("Expected doors subcommand to have a description")
+	}
+}
+
+// TestStatusCommand_JSONFlag tests the JSON output flag
+func TestStatusCommand_JSONFlag(t *testing.T) {
+	cmd := NewStatusCmd()
+
+	// Check if json flag exists
+	jsonFlag := cmd.PersistentFlags().Lookup("json")
+	if jsonFlag == nil {
+		t.Fatal("Expected --json flag to exist")
+	}
+
+	if jsonFlag.Value.Type() != "bool" {
+		t.Errorf("Expected --json flag to be bool, got %s", jsonFlag.Value.Type())
+	}
+}
+
+// TestFormatBatteryStatus tests battery status formatting
+func TestFormatBatteryStatus(t *testing.T) {
+	tests := []struct {
+		name           string
+		batteryLevel   float64
+		range_         float64
+		pluggedIn      bool
+		charging       bool
+		expectedOutput string
+	}{
+		{
+			name:           "charging",
+			batteryLevel:   66,
+			range_:         245.5,
+			pluggedIn:      true,
+			charging:       true,
+			expectedOutput: "BATTERY: 66% (245.5 km range) [plugged in, charging]",
+		},
+		{
+			name:           "plugged not charging",
+			batteryLevel:   100,
+			range_:         300.0,
+			pluggedIn:      true,
+			charging:       false,
+			expectedOutput: "BATTERY: 100% (300.0 km range) [plugged in, not charging]",
+		},
+		{
+			name:           "unplugged",
+			batteryLevel:   50,
+			range_:         150.0,
+			pluggedIn:      false,
+			charging:       false,
+			expectedOutput: "BATTERY: 50% (150.0 km range)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatBatteryStatus(tt.batteryLevel, tt.range_, tt.pluggedIn, tt.charging, false)
+			if !strings.Contains(result, tt.expectedOutput) {
+				t.Errorf("Expected output to contain '%s', got '%s'", tt.expectedOutput, result)
+			}
+		})
+	}
+}
+
+// TestFormatBatteryStatus_JSON tests battery status JSON formatting
+func TestFormatBatteryStatus_JSON(t *testing.T) {
+	result := formatBatteryStatus(66, 245.5, true, true, true)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(result), &data); err != nil {
+		t.Fatalf("Expected valid JSON, got error: %v", err)
+	}
+
+	if data["battery_level"] != float64(66) {
+		t.Errorf("Expected battery_level 66, got %v", data["battery_level"])
+	}
+
+	if data["range_km"] != 245.5 {
+		t.Errorf("Expected range_km 245.5, got %v", data["range_km"])
+	}
+
+	if data["plugged_in"] != true {
+		t.Errorf("Expected plugged_in true, got %v", data["plugged_in"])
+	}
+
+	if data["charging"] != true {
+		t.Errorf("Expected charging true, got %v", data["charging"])
+	}
+}
+
+// TestFormatFuelStatus tests fuel status formatting
+func TestFormatFuelStatus(t *testing.T) {
+	result := formatFuelStatus(92, 630.0, false)
+	expected := "FUEL: 92% (630.0 km range)"
+
+	if !strings.Contains(result, expected) {
+		t.Errorf("Expected output to contain '%s', got '%s'", expected, result)
+	}
+}
+
+// TestFormatFuelStatus_JSON tests fuel status JSON formatting
+func TestFormatFuelStatus_JSON(t *testing.T) {
+	result := formatFuelStatus(92, 630.0, true)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(result), &data); err != nil {
+		t.Fatalf("Expected valid JSON, got error: %v", err)
+	}
+
+	if data["fuel_level"] != float64(92) {
+		t.Errorf("Expected fuel_level 92, got %v", data["fuel_level"])
+	}
+
+	if data["range_km"] != 630.0 {
+		t.Errorf("Expected range_km 630.0, got %v", data["range_km"])
+	}
+}
+
+// TestFormatDoorsStatus tests doors status formatting
+func TestFormatDoorsStatus(t *testing.T) {
+	tests := []struct {
+		name           string
+		allLocked      bool
+		expectedOutput string
+	}{
+		{
+			name:           "all locked",
+			allLocked:      true,
+			expectedOutput: "DOORS: All locked",
+		},
+		{
+			name:           "not all locked",
+			allLocked:      false,
+			expectedOutput: "DOORS: Not all locked",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatDoorsStatus(tt.allLocked, false)
+			if !strings.Contains(result, tt.expectedOutput) {
+				t.Errorf("Expected output to contain '%s', got '%s'", tt.expectedOutput, result)
+			}
+		})
+	}
+}
+
+// TestFormatTiresStatus tests tire status formatting
+func TestFormatTiresStatus(t *testing.T) {
+	result := formatTiresStatus(32.5, 32.0, 31.5, 31.8, false)
+	expected := "TIRES: FL:32.5 FR:32.0 RL:31.5 RR:31.8 PSI"
+
+	if !strings.Contains(result, expected) {
+		t.Errorf("Expected output to contain '%s', got '%s'", expected, result)
+	}
+}
+
+// TestFormatLocationStatus tests location status formatting
+func TestFormatLocationStatus(t *testing.T) {
+	result := formatLocationStatus(37.7749, 122.4194, "20231201120000", false)
+
+	if !strings.Contains(result, "LOCATION:") {
+		t.Error("Expected output to contain 'LOCATION:'")
+	}
+
+	if !strings.Contains(result, "37.7749") {
+		t.Error("Expected output to contain latitude")
+	}
+
+	if !strings.Contains(result, "122.4194") {
+		t.Error("Expected output to contain longitude")
+	}
+}
+
+// TestGetInternalVIN tests getting internal VIN from vehicle base info
+func TestGetInternalVIN(t *testing.T) {
+	vecBaseInfos := map[string]interface{}{
+		"vecBaseInfos": []interface{}{
+			map[string]interface{}{
+				"Vehicle": map[string]interface{}{
+					"CvInformation": map[string]interface{}{
+						"internalVin": "INTERNAL123",
+					},
+				},
+			},
+		},
+	}
+
+	vin, err := getInternalVIN(vecBaseInfos)
+	if err != nil {
+		t.Fatalf("Expected no error, got: %v", err)
+	}
+
+	if vin != "INTERNAL123" {
+		t.Errorf("Expected VIN 'INTERNAL123', got '%s'", vin)
+	}
+}
+
+// TestGetInternalVIN_NoVehicles tests error when no vehicles found
+func TestGetInternalVIN_NoVehicles(t *testing.T) {
+	vecBaseInfos := map[string]interface{}{
+		"vecBaseInfos": []interface{}{},
+	}
+
+	_, err := getInternalVIN(vecBaseInfos)
+	if err == nil {
+		t.Fatal("Expected error for no vehicles, got nil")
+	}
+}
+
+// TestRunStatus_Integration tests the full status command integration
+func TestRunStatus_Integration(t *testing.T) {
+	// This would require mocking the API client
+	// For now, we just test that the function signature is correct
+	cmd := NewStatusCmd()
+
+	// Test that we can execute the command (it will fail due to missing config, but that's expected)
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+
+	// We don't execute it here because it would need a real API client
+	// The actual execution tests would be in integration tests
+}
