@@ -194,14 +194,14 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 
 	// Handle errors
 	switch int(response.ErrorCode) {
-	case 600001:
+	case ErrorCodeEncryption:
 		return nil, NewEncryptionError()
-	case 600002:
+	case ErrorCodeTokenExpired:
 		return nil, NewTokenExpiredError()
-	case 920000:
-		if response.ExtraCode == "400S01" {
+	case ErrorCodeRequestIssue:
+		if response.ExtraCode == ExtraCodeRequestInProgress {
 			return nil, NewRequestInProgressError()
-		} else if response.ExtraCode == "400S11" {
+		} else if response.ExtraCode == ExtraCodeEngineStartLimit {
 			return nil, NewEngineStartLimitError()
 		}
 	}

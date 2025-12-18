@@ -1,5 +1,27 @@
 package api
 
+// API error codes returned by the server
+const (
+	// ErrorCodeEncryption indicates the server rejected an encrypted request (600001)
+	ErrorCodeEncryption = 600001
+
+	// ErrorCodeTokenExpired indicates the access token has expired (600002)
+	ErrorCodeTokenExpired = 600002
+
+	// ErrorCodeRequestIssue indicates a request-level issue (920000)
+	// Check ExtraCode for specific error type
+	ErrorCodeRequestIssue = 920000
+)
+
+// Extra error codes used with ErrorCodeRequestIssue
+const (
+	// ExtraCodeRequestInProgress indicates a request is already in progress
+	ExtraCodeRequestInProgress = "400S01"
+
+	// ExtraCodeEngineStartLimit indicates the engine start limit has been reached
+	ExtraCodeEngineStartLimit = "400S11"
+)
+
 // APIError represents a general API error
 type APIError struct {
 	Message string
