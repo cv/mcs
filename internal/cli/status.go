@@ -307,10 +307,12 @@ func extractFuelData(vehicleStatus map[string]interface{}) map[string]interface{
 // extractLocationData extracts location data for JSON output
 func extractLocationData(vehicleStatus map[string]interface{}) map[string]interface{} {
 	lat, lon, timestamp := extractLocationInfo(vehicleStatus)
+	mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", lat, lon)
 	return map[string]interface{}{
 		"latitude":  lat,
 		"longitude": lon,
 		"timestamp": timestamp,
+		"maps_url":  mapsURL,
 	}
 }
 
@@ -375,16 +377,19 @@ func formatFuelStatus(fuelLevel, range_ float64, jsonOutput bool) string {
 // formatLocationStatus formats location status for display
 func formatLocationStatus(lat, lon float64, timestamp string, jsonOutput bool) string {
 	if jsonOutput {
+		mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", lat, lon)
 		data := map[string]interface{}{
 			"latitude":  lat,
 			"longitude": lon,
 			"timestamp": timestamp,
+			"maps_url":  mapsURL,
 		}
 		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
 		return string(jsonBytes)
 	}
 
-	return fmt.Sprintf("LOCATION: %.6f, %.6f (updated: %s)", lat, lon, formatTimestamp(timestamp))
+	mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", lat, lon)
+	return fmt.Sprintf("LOCATION: %.6f, %.6f\n  %s", lat, lon, mapsURL)
 }
 
 // formatTiresStatus formats tire status for display
