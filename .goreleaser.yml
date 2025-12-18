@@ -34,18 +34,6 @@ archives:
       - goos: windows
         formats: [zip]
 
-brews:
-  - repository:
-      owner: cv
-      name: homebrew-tap
-    homepage: "https://github.com/cv/mcs"
-    description: "CLI tool for controlling Mazda Connected Services vehicles"
-    license: "MIT"
-    install: |
-      bin.install "mcs"
-    test: |
-      system "#{bin}/mcs --version"
-
 changelog:
   sort: asc
   filters:
