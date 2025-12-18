@@ -196,8 +196,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	// Extract HVAC info
 	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
 
-	output := "\nCX-90 GT PHEV (2025)\n"
-	output += fmt.Sprintf("Last Updated: %s\n\n", timestamp)
+	output := fmt.Sprintf("\nVehicle Status (Last Updated: %s)\n\n", timestamp)
 	output += displayBatteryStatus(evStatus, false) + "\n"
 	output += displayFuelStatus(vehicleStatus, false) + "\n"
 	output += formatHvacStatus(hvacOn, frontDefroster, rearDefroster, interiorTempC, false) + "\n"
