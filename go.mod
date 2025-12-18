@@ -1,4 +1,4 @@
-module github.com/cv/cx90
+module github.com/cv/mcs
 
 go 1.25.5
 

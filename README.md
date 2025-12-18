@@ -1,17 +1,17 @@
-# cx90
+# mcs
 
-CLI for Mazda CX-90 PHEV via MyMazda Connected Services.
+CLI for connected vehicle services.
 
 ## Install
 
 ```bash
-go build -o cx90 ./cmd/cx90
-mv cx90 /usr/local/bin/  # or anywhere in PATH
+go build -o mcs ./cmd/mcs
+mv mcs /usr/local/bin/  # or anywhere in PATH
 ```
 
 ## Configuration
 
-Create `~/.config/cx90/config.toml`:
+Create `~/.config/mcs/config.toml`:
 
 ```toml
 email = "your@email.com"
@@ -19,49 +19,49 @@ password = "yourpassword"
 region = "MNAO"  # MNAO=North America, MME=Europe, MJO=Japan
 ```
 
-Or use environment variables: `MYMAZDA_EMAIL`, `MYMAZDA_PASSWORD`, `MYMAZDA_REGION`
+Or use environment variables: `MCS_EMAIL`, `MCS_PASSWORD`, `MCS_REGION`
 
 ## Usage
 
 ```bash
 # Status
-cx90 status              # Full summary
-cx90 status battery      # Battery/charging only
-cx90 status fuel         # Fuel level
-cx90 status location     # GPS + Google Maps link
-cx90 status tires        # Tire pressures
-cx90 status doors        # Lock status
-cx90 status --json       # JSON output
+mcs status              # Full summary
+mcs status battery      # Battery/charging only
+mcs status fuel         # Fuel level
+mcs status location     # GPS + Google Maps link
+mcs status tires        # Tire pressures
+mcs status doors        # Lock status
+mcs status --json       # JSON output
 
 # Control
-cx90 lock                # Lock doors
-cx90 unlock              # Unlock doors
-cx90 start               # Remote start engine
-cx90 stop                # Stop engine
+mcs lock                # Lock doors
+mcs unlock              # Unlock doors
+mcs start               # Remote start engine
+mcs stop                # Stop engine
 
 # Charging
-cx90 charge start        # Start charging
-cx90 charge stop         # Stop charging
+mcs charge start        # Start charging
+mcs charge stop         # Stop charging
 
 # Climate
-cx90 climate on          # Turn on HVAC
-cx90 climate off         # Turn off HVAC
-cx90 climate set 21      # Set temperature (Celsius)
+mcs climate on          # Turn on HVAC
+mcs climate off         # Turn off HVAC
+mcs climate set 21      # Set temperature (Celsius)
 
 # Debug
-cx90 raw status          # Raw vehicle status JSON
-cx90 raw ev              # Raw EV status JSON
+mcs raw status          # Raw vehicle status JSON
+mcs raw ev              # Raw EV status JSON
 
 # Shell completions
-cx90 completion bash     # Also: zsh, fish, powershell
+mcs completion bash     # Also: zsh, fish, powershell
 ```
 
 ## Example
 
 ```
-$ cx90 status
+$ mcs status
 
-CX-90 GT PHEV (2025)
+Vehicle Status (2025 Model)
 Last Updated: 2025-12-18 05:32:39
 
 BATTERY: 66% (630.0 km range) [plugged in, charging]
@@ -72,7 +72,7 @@ TIRES: FL:32.0 FR:32.0 RL:32.0 RR:32.0 PSI
 
 ## Notes
 
-- Uses unofficial MyMazda API (reverse-engineered from Android app)
-- Tokens cached in `~/.cache/cx90/token.json`
+- Uses vehicle manufacturer's API (reverse-engineered from mobile app)
+- Tokens cached in `~/.cache/mcs/token.json`
 - Remote start limited to 2 consecutive starts without driving
-- If Mazda updates the app, constants in `internal/api/auth.go` may need updating
+- If the manufacturer updates the app, constants in `internal/api/auth.go` may need updating

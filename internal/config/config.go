@@ -15,16 +15,16 @@ type Config struct {
 	Region   string
 }
 
-// validRegions contains the list of valid Mazda API regions
+// validRegions contains the list of valid API regions
 var validRegions = map[string]bool{
-	"MNAO": true, // Mazda North America Operations
-	"MME":  true, // Mazda Europe
-	"MJO":  true, // Mazda Japan
+	"MNAO": true, // North America
+	"MME":  true, // Europe
+	"MJO":  true, // Japan
 }
 
 // Load loads configuration from file and environment variables
 // Environment variables take precedence over file values
-// configPath can be empty to use default location (~/.config/cx90/config.toml)
+// configPath can be empty to use default location (~/.config/mcs/config.toml)
 func Load(configPath string) (*Config, error) {
 	v := viper.New()
 
@@ -44,7 +44,7 @@ func Load(configPath string) (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user home directory: %w", err)
 		}
-		configDir := filepath.Join(homeDir, ".config", "cx90")
+		configDir := filepath.Join(homeDir, ".config", "mcs")
 		v.AddConfigPath(configDir)
 	}
 
@@ -52,7 +52,7 @@ func Load(configPath string) (*Config, error) {
 	_ = v.ReadInConfig()
 
 	// Bind environment variables
-	v.SetEnvPrefix("MYMAZDA")
+	v.SetEnvPrefix("MCS")
 	v.AutomaticEnv()
 
 	// Load config
@@ -85,5 +85,5 @@ func DefaultConfigPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
-	return filepath.Join(homeDir, ".config", "cx90", "config.toml"), nil
+	return filepath.Join(homeDir, ".config", "mcs", "config.toml"), nil
 }

@@ -19,7 +19,7 @@ func TestRootCmd_Version(t *testing.T) {
 	}
 
 	result := output.String()
-	if !strings.Contains(result, "cx90 version") {
+	if !strings.Contains(result, "mcs version") {
 		t.Errorf("Expected version output, got: %s", result)
 	}
 }
@@ -37,12 +37,12 @@ func TestRootCmd_Help(t *testing.T) {
 	}
 
 	result := output.String()
-	if !strings.Contains(result, "cx90") {
-		t.Errorf("Expected help output to contain 'cx90', got: %s", result)
+	if !strings.Contains(result, "mcs") {
+		t.Errorf("Expected help output to contain 'mcs', got: %s", result)
 	}
 	// Check for content from the Long description
-	if !strings.Contains(result, "MyMazda API") {
-		t.Errorf("Expected help output to contain 'MyMazda API', got: %s", result)
+	if !strings.Contains(result, "manufacturer API") {
+		t.Errorf("Expected help output to contain 'manufacturer API', got: %s", result)
 	}
 }
 

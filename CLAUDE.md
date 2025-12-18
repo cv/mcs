@@ -1,9 +1,9 @@
-# cx90 Developer Guide
+# mcs Developer Guide
 
 ## Project Structure
 
 ```
-cmd/cx90/main.go           Entry point
+cmd/mcs/main.go           Entry point
 internal/
   api/
     auth.go                Authentication, encryption keys, login
@@ -12,7 +12,7 @@ internal/
     endpoints.go           Vehicle control endpoints (lock, start, etc.)
     errors.go              Custom error types
   cache/
-    cache.go               Token caching (~/.cache/cx90/token.json)
+    cache.go               Token caching (~/.cache/mcs/token.json)
   cli/
     root.go                Cobra root command
     status.go              Status command + subcommands
@@ -45,12 +45,12 @@ Every request needs:
 ### Key Constants (internal/api/auth.go)
 
 ```go
-AppVersion = "9.0.5"           // Must match MyMazda Android app version
+AppVersion = "9.0.5"           // Must match mobile app version
 IV = "0102030405060708"        // AES initialization vector
 SignatureMD5 = "C383D8C4..."   // For key derivation
 ```
 
-If Mazda updates the app, `AppVersion` and related user-agent strings may need updating.
+If the manufacturer updates the app, `AppVersion` and related user-agent strings may need updating.
 
 ## Common Gotchas
 
@@ -73,7 +73,7 @@ case float64:
 ```
 
 ### Token Caching
-Credentials are cached in `~/.cache/cx90/token.json`. The cache stores:
+Credentials are cached in `~/.cache/mcs/token.json`. The cache stores:
 - `accessToken` + expiration timestamp
 - `encKey` and `signKey`
 
@@ -93,9 +93,9 @@ Uses `bd` (bead) for issue tracking. Database in `.beads/`.
 ```bash
 bd list              # List issues
 bd create "title"    # Create issue
-bd close cx90-XX     # Close issue
+bd close mcs-XX      # Close issue
 ```
 
 ## Reference Implementation
 
-This was ported from [pymazda](https://github.com/bdr99/pymazda). The Python code in `../pymazda/` (if present) can be referenced for API behavior.
+This was ported from a reference Python implementation. The core API behavior follows the manufacturer's mobile app protocol.

@@ -8,13 +8,13 @@ import (
 
 func TestLoad(t *testing.T) {
 	// Save and restore env vars
-	oldEmail := os.Getenv("MYMAZDA_EMAIL")
-	oldPassword := os.Getenv("MYMAZDA_PASSWORD")
-	oldRegion := os.Getenv("MYMAZDA_REGION")
+	oldEmail := os.Getenv("MCS_EMAIL")
+	oldPassword := os.Getenv("MCS_PASSWORD")
+	oldRegion := os.Getenv("MCS_REGION")
 	defer func() {
-		os.Setenv("MYMAZDA_EMAIL", oldEmail)
-		os.Setenv("MYMAZDA_PASSWORD", oldPassword)
-		os.Setenv("MYMAZDA_REGION", oldRegion)
+		os.Setenv("MCS_EMAIL", oldEmail)
+		os.Setenv("MCS_PASSWORD", oldPassword)
+		os.Setenv("MCS_REGION", oldRegion)
 	}()
 
 	tests := []struct {
@@ -27,9 +27,9 @@ func TestLoad(t *testing.T) {
 		{
 			name: "load from environment variables",
 			envVars: map[string]string{
-				"MYMAZDA_EMAIL":    "test@example.com",
-				"MYMAZDA_PASSWORD": "password123",
-				"MYMAZDA_REGION":   "MNAO",
+				"MCS_EMAIL":    "test@example.com",
+				"MCS_PASSWORD": "password123",
+				"MCS_REGION":   "MNAO",
 			},
 			wantEmail:  "test@example.com",
 			wantRegion: "MNAO",
@@ -38,8 +38,8 @@ func TestLoad(t *testing.T) {
 		{
 			name: "default region when not specified",
 			envVars: map[string]string{
-				"MYMAZDA_EMAIL":    "test@example.com",
-				"MYMAZDA_PASSWORD": "password123",
+				"MCS_EMAIL":    "test@example.com",
+				"MCS_PASSWORD": "password123",
 			},
 			wantEmail:  "test@example.com",
 			wantRegion: "MNAO",
@@ -50,9 +50,9 @@ func TestLoad(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Clear env vars
-			os.Unsetenv("MYMAZDA_EMAIL")
-			os.Unsetenv("MYMAZDA_PASSWORD")
-			os.Unsetenv("MYMAZDA_REGION")
+			os.Unsetenv("MCS_EMAIL")
+			os.Unsetenv("MCS_PASSWORD")
+			os.Unsetenv("MCS_REGION")
 
 			// Set test env vars
 			for k, v := range tt.envVars {
@@ -92,10 +92,18 @@ region = "MME"
 		t.Fatalf("Failed to create test config file: %v", err)
 	}
 
-	// Clear env vars
-	os.Unsetenv("MYMAZDA_EMAIL")
-	os.Unsetenv("MYMAZDA_PASSWORD")
-	os.Unsetenv("MYMAZDA_REGION")
+	// Clear env vars to ensure file values are used
+	oldEmail := os.Getenv("MCS_EMAIL")
+	oldPassword := os.Getenv("MCS_PASSWORD")
+	oldRegion := os.Getenv("MCS_REGION")
+	os.Unsetenv("MCS_EMAIL")
+	os.Unsetenv("MCS_PASSWORD")
+	os.Unsetenv("MCS_REGION")
+	defer func() {
+		os.Setenv("MCS_EMAIL", oldEmail)
+		os.Setenv("MCS_PASSWORD", oldPassword)
+		os.Setenv("MCS_REGION", oldRegion)
+	}()
 
 	cfg, err := Load(configPath)
 	if err != nil {
@@ -125,12 +133,14 @@ region = "MME"
 		t.Fatalf("Failed to create test config file: %v", err)
 	}
 
-	// Set env vars to override
-	os.Setenv("MYMAZDA_EMAIL", "env@example.com")
-	os.Setenv("MYMAZDA_REGION", "MNAO")
+	// Save and clear existing env vars, then set test values
+	oldEmail := os.Getenv("MCS_EMAIL")
+	oldRegion := os.Getenv("MCS_REGION")
+	os.Setenv("MCS_EMAIL", "env@example.com")
+	os.Setenv("MCS_REGION", "MNAO")
 	defer func() {
-		os.Unsetenv("MYMAZDA_EMAIL")
-		os.Unsetenv("MYMAZDA_REGION")
+		os.Setenv("MCS_EMAIL", oldEmail)
+		os.Setenv("MCS_REGION", oldRegion)
 	}()
 
 	cfg, err := Load(configPath)

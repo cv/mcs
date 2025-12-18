@@ -17,9 +17,9 @@ var (
 // NewRootCmd creates the root command
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "cx90",
-		Short: "Control your Mazda CX-90 PHEV",
-		Long: `cx90 is a CLI tool for controlling your Mazda CX-90 PHEV via the MyMazda API.
+		Use:   "mcs",
+		Short: "Control your connected vehicle",
+		Long: `mcs is a CLI tool for controlling your connected vehicle via manufacturer API.
 
 Features:
   - Check vehicle status (battery, fuel, location, etc.)
@@ -29,12 +29,12 @@ Features:
   - Control climate (HVAC)
 
 Configuration:
-  Configuration can be loaded from ~/.config/cx90/config.toml or via environment variables.
+  Configuration can be loaded from ~/.config/mcs/config.toml or via environment variables.
 
   Environment variables:
-    MYMAZDA_EMAIL     - Your MyMazda account email
-    MYMAZDA_PASSWORD  - Your MyMazda account password
-    MYMAZDA_REGION    - Region (MNAO, MME, or MJO)
+    MCS_EMAIL     - Your account email
+    MCS_PASSWORD  - Your account password
+    MCS_REGION    - Region (MNAO, MME, or MJO)
 
 Example config.toml:
   email = "your.email@example.com"
@@ -47,10 +47,10 @@ Example config.toml:
 
 	// Add version flag
 	rootCmd.Version = Version
-	rootCmd.SetVersionTemplate("cx90 version {{.Version}}\n")
+	rootCmd.SetVersionTemplate("mcs version {{.Version}}\n")
 
 	// Add global flags
-	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "c", "", "config file (default is ~/.config/cx90/config.toml)")
+	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "c", "", "config file (default is ~/.config/mcs/config.toml)")
 
 	return rootCmd
 }
@@ -76,7 +76,7 @@ func Execute() error {
 func PrintConfigPath(cmd *cobra.Command, args []string) error {
 	configPath := ConfigFile
 	if configPath == "" {
-		configPath = "~/.config/cx90/config.toml (default)"
+		configPath = "~/.config/mcs/config.toml (default)"
 	}
 	fmt.Fprintf(cmd.OutOrStdout(), "Config path: %s\n", configPath)
 	return nil

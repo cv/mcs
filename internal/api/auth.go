@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cv/cx90/internal/sensordata"
+	"github.com/cv/mcs/internal/sensordata"
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 	// SignatureMD5 is used for key derivation
 	SignatureMD5 = "C383D8C4D279B78130AD52DC71D95CAA"
 
-	// AppPackageID identifies the MyMazda Android app
+	// AppPackageID identifies the mobile app package
 	AppPackageID = "com.interrait.mymazda"
 
 	// UserAgentBaseAPI is the User-Agent for base API requests
@@ -33,7 +33,7 @@ const (
 	// AppOS identifies the operating system
 	AppOS = "Android"
 
-	// AppVersion is the MyMazda app version
+	// AppVersion is the mobile app version
 	AppVersion = "9.0.5"
 
 	// UsherSDKVersion is the Usher SDK version
@@ -66,7 +66,7 @@ var RegionConfigs = map[string]RegionConfig{
 	},
 }
 
-// Client represents a MyMazda API client
+// Client represents an API client
 type Client struct {
 	email    string
 	password string
@@ -90,7 +90,7 @@ type Client struct {
 	sensorDataBuilder *sensordata.SensorDataBuilder
 }
 
-// NewClient creates a new MyMazda API client
+// NewClient creates a new API client
 func NewClient(email, password, region string) (*Client, error) {
 	config, ok := RegionConfigs[region]
 	if !ok {
@@ -237,7 +237,7 @@ func (c *Client) GetUsherEncryptionKey() (string, string, error) {
 	return publicKey, versionPrefix, nil
 }
 
-// Login authenticates with the MyMazda API and retrieves an access token
+// Login authenticates with the API and retrieves an access token
 func (c *Client) Login() error {
 	// Get RSA public key for password encryption
 	publicKey, versionPrefix, err := c.GetUsherEncryptionKey()

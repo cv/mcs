@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/cv/cx90/internal/api"
-	"github.com/cv/cx90/internal/cache"
-	"github.com/cv/cx90/internal/config"
+	"github.com/cv/mcs/internal/api"
+	"github.com/cv/mcs/internal/cache"
+	"github.com/cv/mcs/internal/config"
 )
 
 // createAPIClient creates an API client with cached credentials if available

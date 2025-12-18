@@ -85,7 +85,7 @@ func TestSaveAndLoad(t *testing.T) {
 	}
 
 	// Verify cache file was created with correct permissions
-	cachePath := filepath.Join(tmpDir, ".cache", "cx90", "token.json")
+	cachePath := filepath.Join(tmpDir, ".cache", "mcs", "token.json")
 	info, err := os.Stat(cachePath)
 	if err != nil {
 		t.Fatalf("Cache file not created: %v", err)
@@ -143,7 +143,7 @@ func TestLoad_InvalidJSON(t *testing.T) {
 	defer os.Setenv("HOME", originalHomeDir)
 
 	// Create cache directory and invalid JSON file
-	cachePath := filepath.Join(tmpDir, ".cache", "cx90", "token.json")
+	cachePath := filepath.Join(tmpDir, ".cache", "mcs", "token.json")
 	err := os.MkdirAll(filepath.Dir(cachePath), 0700)
 	if err != nil {
 		t.Fatalf("Failed to create cache directory: %v", err)

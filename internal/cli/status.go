@@ -11,26 +11,30 @@ import (
 // NewStatusCmd creates the status command
 func NewStatusCmd() *cobra.Command {
 	var jsonOutput bool
+	var refresh bool
+	var refreshWait int
 
 	statusCmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show vehicle status",
 		Long:  `Show comprehensive vehicle status including battery, fuel, location, tires, and doors.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "all")
+			return runStatus(cmd, jsonOutput, "all", refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	}
 
 	// Add persistent JSON flag
 	statusCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "output in JSON format")
+	statusCmd.PersistentFlags().BoolVar(&refresh, "refresh", false, "request fresh status from vehicle (PHEV/EV only)")
+	statusCmd.PersistentFlags().IntVar(&refreshWait, "refresh-wait", 90, "max seconds to wait for vehicle response")
 
 	// Add subcommands
 	statusCmd.AddCommand(&cobra.Command{
 		Use:   "battery",
 		Short: "Show battery status",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "battery")
+			return runStatus(cmd, jsonOutput, "battery", refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -39,7 +43,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "fuel",
 		Short: "Show fuel status",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "fuel")
+			return runStatus(cmd, jsonOutput, "fuel", refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -48,7 +52,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "location",
 		Short: "Show vehicle location",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "location")
+			return runStatus(cmd, jsonOutput, "location", refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -57,7 +61,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "tires",
 		Short: "Show tire pressure",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "tires")
+			return runStatus(cmd, jsonOutput, "tires", refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -66,7 +70,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "doors",
 		Short: "Show door lock status",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "doors")
+			return runStatus(cmd, jsonOutput, "doors", refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -75,7 +79,7 @@ func NewStatusCmd() *cobra.Command {
 }
 
 // runStatus executes the status command
-func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string) error {
+func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh bool, refreshWait int) error {
 	// Create API client (with cached credentials if available)
 	client, err := createAPIClient()
 	if err != nil {
@@ -94,16 +98,55 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string) error {
 		return err
 	}
 
+	// Get initial EV status (needed for refresh comparison and final display)
+	evStatus, err := client.GetEVVehicleStatus(internalVIN)
+	if err != nil {
+		return fmt.Errorf("failed to get EV status: %w", err)
+	}
+
+	// If refresh requested, trigger status refresh and poll until timestamp changes
+	if refresh {
+		initialTimestamp := getTimestampRaw(evStatus)
+		fmt.Fprintf(cmd.OutOrStdout(), "Current status from: %s\n", formatTimestamp(initialTimestamp))
+		fmt.Fprintln(cmd.OutOrStdout(), "Requesting fresh status from vehicle...")
+
+		if err := client.RefreshVehicleStatus(internalVIN); err != nil {
+			return fmt.Errorf("failed to refresh vehicle status: %w", err)
+		}
+
+		// Poll every 30 seconds until timestamp changes or timeout
+		pollInterval := 30 * time.Second
+		maxWait := time.Duration(refreshWait) * time.Second
+		elapsed := time.Duration(0)
+
+		for elapsed < maxWait {
+			fmt.Fprintf(cmd.OutOrStdout(), "Waiting for vehicle response... (%ds/%ds)\n", int(elapsed.Seconds()), refreshWait)
+			time.Sleep(pollInterval)
+			elapsed += pollInterval
+
+			// Fetch new EV status
+			newEvStatus, err := client.GetEVVehicleStatus(internalVIN)
+			if err != nil {
+				continue // Keep trying on error
+			}
+
+			newTimestamp := getTimestampRaw(newEvStatus)
+			if newTimestamp != initialTimestamp {
+				fmt.Fprintf(cmd.OutOrStdout(), "Got fresh status from: %s\n", formatTimestamp(newTimestamp))
+				evStatus = newEvStatus
+				break
+			}
+		}
+
+		if getTimestampRaw(evStatus) == initialTimestamp {
+			fmt.Fprintln(cmd.OutOrStdout(), "Warning: status did not update within timeout period")
+		}
+	}
+
 	// Get vehicle status
 	vehicleStatus, err := client.GetVehicleStatus(internalVIN)
 	if err != nil {
 		return fmt.Errorf("failed to get vehicle status: %w", err)
-	}
-
-	// Get EV status
-	evStatus, err := client.GetEVVehicleStatus(internalVIN)
-	if err != nil {
-		return fmt.Errorf("failed to get EV status: %w", err)
 	}
 
 	// Display status based on type
@@ -427,10 +470,14 @@ func formatDoorsStatus(allLocked bool, jsonOutput bool) string {
 
 // getTimestamp extracts and formats timestamp from EV status
 func getTimestamp(evStatus map[string]interface{}) string {
+	return formatTimestamp(getTimestampRaw(evStatus))
+}
+
+// getTimestampRaw extracts raw timestamp string from EV status (for comparison)
+func getTimestampRaw(evStatus map[string]interface{}) string {
 	resultData := evStatus["resultData"].([]interface{})
 	firstResult := resultData[0].(map[string]interface{})
-	timestamp := firstResult["OccurrenceDate"].(string)
-	return formatTimestamp(timestamp)
+	return firstResult["OccurrenceDate"].(string)
 }
 
 // formatTimestamp converts timestamp from API format to readable format

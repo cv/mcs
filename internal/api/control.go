@@ -202,14 +202,14 @@ func (c *Client) HVACOff(internalVIN string) error {
 	return nil
 }
 
-// RefreshVehicleStatus requests the vehicle to refresh its status
+// RefreshVehicleStatus requests the vehicle to refresh its status (PHEV/EV only)
 func (c *Client) RefreshVehicleStatus(internalVIN string) error {
 	bodyParams := map[string]interface{}{
 		"internaluserid": "__INTERNAL_ID__",
 		"internalvin":    internalVIN,
 	}
 
-	response, err := c.APIRequest("POST", "remoteServices/refreshVehicleStatus/v4", nil, bodyParams, true, true)
+	response, err := c.APIRequest("POST", "remoteServices/activeRealTimeVehicleStatus/v4", nil, bodyParams, true, true)
 	if err != nil {
 		return err
 	}

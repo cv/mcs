@@ -227,7 +227,7 @@ func TestHVACOff(t *testing.T) {
 
 // TestRefreshVehicleStatus tests refreshing vehicle status
 func TestRefreshVehicleStatus(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/refreshVehicleStatus/v4", map[string]interface{}{
+	server := createControlTestServer(t, "/remoteServices/activeRealTimeVehicleStatus/v4", map[string]interface{}{
 		"internaluserid": "__INTERNAL_ID__",
 		"internalvin":    "INTERNAL123",
 	})
