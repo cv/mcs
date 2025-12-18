@@ -117,6 +117,19 @@ func (c *Client) SetDebug(debug bool) {
 	c.debug = debug
 }
 
+// SetCachedCredentials sets the client's cached authentication credentials
+func (c *Client) SetCachedCredentials(accessToken string, accessTokenExpirationTs int64, encKey, signKey string) {
+	c.accessToken = accessToken
+	c.accessTokenExpirationTs = accessTokenExpirationTs
+	c.encKey = encKey
+	c.signKey = signKey
+}
+
+// GetCredentials returns the current authentication credentials for caching
+func (c *Client) GetCredentials() (accessToken string, accessTokenExpirationTs int64, encKey, signKey string) {
+	return c.accessToken, c.accessTokenExpirationTs, c.encKey, c.signKey
+}
+
 // GetEncryptionKeys retrieves the encryption and signing keys from the API
 func (c *Client) GetEncryptionKeys() error {
 	timestamp := getTimestampStrMs()

@@ -3,8 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/cv/cx90/internal/api"
-	"github.com/cv/cx90/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -42,21 +40,12 @@ func NewClimateCmd() *cobra.Command {
 
 // runClimateOn executes the climate on command
 func runClimateOn(cmd *cobra.Command) error {
-	// Load configuration
-	cfg, err := config.Load(ConfigFile)
+	// Create API client (with cached credentials if available)
+	client, err := createAPIClient()
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	if err := cfg.Validate(); err != nil {
-		return fmt.Errorf("invalid config: %w", err)
-	}
-
-	// Create API client
-	client, err := api.NewClient(cfg.Email, cfg.Password, cfg.Region)
-	if err != nil {
-		return fmt.Errorf("failed to create API client: %w", err)
-	}
+	defer saveClientCache(client)
 
 	// Get vehicle base info to retrieve internal VIN
 	vecBaseInfos, err := client.GetVecBaseInfos()
@@ -80,21 +69,12 @@ func runClimateOn(cmd *cobra.Command) error {
 
 // runClimateOff executes the climate off command
 func runClimateOff(cmd *cobra.Command) error {
-	// Load configuration
-	cfg, err := config.Load(ConfigFile)
+	// Create API client (with cached credentials if available)
+	client, err := createAPIClient()
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	if err := cfg.Validate(); err != nil {
-		return fmt.Errorf("invalid config: %w", err)
-	}
-
-	// Create API client
-	client, err := api.NewClient(cfg.Email, cfg.Password, cfg.Region)
-	if err != nil {
-		return fmt.Errorf("failed to create API client: %w", err)
-	}
+	defer saveClientCache(client)
 
 	// Get vehicle base info to retrieve internal VIN
 	vecBaseInfos, err := client.GetVecBaseInfos()
