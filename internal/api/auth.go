@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cv/mcs/internal/cache"
 	"github.com/cv/mcs/internal/sensordata"
 )
 
@@ -312,10 +313,7 @@ func (c *Client) Login(ctx context.Context) error {
 
 // IsTokenValid checks if the access token is present and not expired
 func (c *Client) IsTokenValid() bool {
-	if c.accessToken == "" || c.accessTokenExpirationTs == 0 {
-		return false
-	}
-	return c.accessTokenExpirationTs > time.Now().Unix()
+	return cache.IsTokenValid(c.accessToken, c.accessTokenExpirationTs)
 }
 
 // Helper functions

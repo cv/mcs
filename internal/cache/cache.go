@@ -16,12 +16,18 @@ type TokenCache struct {
 	SignKey                 string `json:"sign_key"`
 }
 
-// IsValid checks if the cached token is still valid
-func (tc *TokenCache) IsValid() bool {
-	if tc.AccessToken == "" || tc.AccessTokenExpirationTs == 0 {
+// IsTokenValid checks if a token is present and not expired.
+// This is a shared validation function used by both TokenCache and API Client.
+func IsTokenValid(accessToken string, accessTokenExpirationTs int64) bool {
+	if accessToken == "" || accessTokenExpirationTs == 0 {
 		return false
 	}
-	return tc.AccessTokenExpirationTs > time.Now().Unix()
+	return accessTokenExpirationTs > time.Now().Unix()
+}
+
+// IsValid checks if the cached token is still valid
+func (tc *TokenCache) IsValid() bool {
+	return IsTokenValid(tc.AccessToken, tc.AccessTokenExpirationTs)
 }
 
 // Load reads the token cache from disk

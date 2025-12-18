@@ -159,3 +159,45 @@ func TestLoad_InvalidJSON(t *testing.T) {
 		t.Error("Load() should fail with invalid JSON")
 	}
 }
+
+func TestIsTokenValid(t *testing.T) {
+	tests := []struct {
+		name            string
+		accessToken     string
+		expirationTs    int64
+		want            bool
+	}{
+		{
+			name:         "valid token",
+			accessToken:  "test-token",
+			expirationTs: time.Now().Unix() + 3600,
+			want:         true,
+		},
+		{
+			name:         "expired token",
+			accessToken:  "test-token",
+			expirationTs: time.Now().Unix() - 3600,
+			want:         false,
+		},
+		{
+			name:         "empty token",
+			accessToken:  "",
+			expirationTs: time.Now().Unix() + 3600,
+			want:         false,
+		},
+		{
+			name:         "zero expiration",
+			accessToken:  "test-token",
+			expirationTs: 0,
+			want:         false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsTokenValid(tt.accessToken, tt.expirationTs); got != tt.want {
+				t.Errorf("IsTokenValid() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
