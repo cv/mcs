@@ -271,7 +271,7 @@ func TestControlError(t *testing.T) {
 		t.Fatal("Expected error, got nil")
 	}
 
-	expectedError := "Failed to lock doors: result code 500E00"
+	expectedError := "failed to lock doors: result code 500E00"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
 	}
