@@ -4,8 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
+
+// contains checks if s contains substr
+func contains(s, substr string) bool {
+	return strings.Contains(s, substr)
+}
 
 // TestAPIRequest_Success tests successful API request with encryption
 func TestAPIRequest_Success(t *testing.T) {
@@ -96,7 +102,17 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	// Test will be implemented when APIRequest exists
+	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	// APIRequest retries on EncryptionError by fetching new keys
+	// Since our mock server always returns the same error, it eventually fails with wrapped error
+	expectedMsg := "failed to retrieve encryption keys"
+	if !contains(err.Error(), expectedMsg) {
+		t.Errorf("Expected error containing %q, got: %v", expectedMsg, err)
+	}
 }
 
 // TestAPIRequest_TokenExpired tests handling of expired token error
@@ -122,7 +138,17 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	// Test will be implemented when APIRequest exists
+	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	// APIRequest retries on TokenExpiredError by re-logging in
+	// Since re-login will fail (mock server only handles one endpoint), we get a wrapped error
+	expectedMsg := "failed to login"
+	if !contains(err.Error(), expectedMsg) {
+		t.Errorf("Expected error containing %q, got: %v", expectedMsg, err)
+	}
 }
 
 // TestAPIRequest_RequestInProgress tests handling of request in progress error
@@ -149,7 +175,15 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	// Test will be implemented when APIRequest exists
+	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	// Verify it's a RequestInProgressError
+	if _, ok := err.(*RequestInProgressError); !ok {
+		t.Errorf("Expected RequestInProgressError, got %T: %v", err, err)
+	}
 }
 
 // TestEncryptPayloadUsingKey tests payload encryption
@@ -250,17 +284,33 @@ func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
 	}
 }
 
-// TestAPIRequest_MissingKeys tests that APIRequest returns error when keys are missing
+// TestAPIRequest_MissingKeys tests that APIRequest attempts to get keys when missing
 func TestAPIRequest_MissingKeys(t *testing.T) {
+	// Create a server that returns error for checkVersion (key retrieval)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := map[string]interface{}{
+			"state":   "E",
+			"message": "Server error",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
 	client, err := NewClient("test@example.com", "password", "MNAO")
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
+	client.baseURL = server.URL + "/"
 
-	// Don't set encryption keys
-	// APIRequest should return error
-	// Test will be implemented when APIRequest exists
-	_ = client
+	// Don't set encryption keys, but request needsKeys=true
+	// APIRequest should attempt to get keys and fail
+	_, err = client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
+	if err == nil {
+		t.Fatal("Expected error when keys are missing, got nil")
+	}
 }
 
 // TestAPIRequest_POST_WithBody tests POST request with body encryption
@@ -279,9 +329,17 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 			t.Error("sign header is missing")
 		}
 
+		// Return encrypted success response
+		testResponse := map[string]interface{}{
+			"resultCode": "200S00",
+			"success":    true,
+		}
+		responseJSON, _ := json.Marshal(testResponse)
+		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+
 		response := map[string]interface{}{
-			"state": "S",
-			"payload": "test-encrypted-response",
+			"state":   "S",
+			"payload": encrypted,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -298,9 +356,18 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	// Test will be completed when APIRequest is implemented
-	_ = requestReceived
-	_ = client
+	result, err := client.APIRequest("POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	if err != nil {
+		t.Fatalf("APIRequest failed: %v", err)
+	}
+
+	if !requestReceived {
+		t.Error("Request was not received by server")
+	}
+
+	if result["resultCode"] != "200S00" {
+		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
+	}
 }
 
 // TestAPIRequest_GET_WithQuery tests GET request with query parameter encryption
@@ -319,9 +386,17 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 			t.Error("params query parameter is missing")
 		}
 
+		// Return encrypted success response
+		testResponse := map[string]interface{}{
+			"resultCode": "200S00",
+			"data":       "test-data",
+		}
+		responseJSON, _ := json.Marshal(testResponse)
+		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+
 		response := map[string]interface{}{
-			"state": "S",
-			"payload": "test-encrypted-response",
+			"state":   "S",
+			"payload": encrypted,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -338,7 +413,16 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 	client.encKey = "testenckey123456"
 	client.signKey = "testsignkey12345"
 
-	// Test will be completed when APIRequest is implemented
-	_ = requestReceived
-	_ = client
+	result, err := client.APIRequest("GET", "test/endpoint", map[string]string{"key": "value"}, nil, false, false)
+	if err != nil {
+		t.Fatalf("APIRequest failed: %v", err)
+	}
+
+	if !requestReceived {
+		t.Error("Request was not received by server")
+	}
+
+	if result["resultCode"] != "200S00" {
+		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
+	}
 }
