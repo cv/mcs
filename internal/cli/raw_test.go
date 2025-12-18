@@ -1,10 +1,6 @@
 package cli
 
-import (
-	"testing"
-
-	"github.com/spf13/cobra"
-)
+import "testing"
 
 // TestRawCommand tests the raw command
 func TestRawCommand(t *testing.T) {
@@ -19,56 +15,26 @@ func TestRawCommand(t *testing.T) {
 	}
 }
 
-// TestRawCommand_StatusSubcommand tests raw status subcommand
-func TestRawCommand_StatusSubcommand(t *testing.T) {
-	cmd := NewRawCmd()
+// TestRawCommand_Subcommands tests raw subcommands
+func TestRawCommand_Subcommands(t *testing.T) {
+	subcommands := []string{"status", "ev"}
 
-	// Find status subcommand
-	var statusCmd *cobra.Command
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == "status" {
-			statusCmd = subCmd
-			break
-		}
-	}
+	for _, name := range subcommands {
+		t.Run(name, func(t *testing.T) {
+			cmd := NewRawCmd()
+			subCmd := findSubcommand(cmd, name)
 
-	if statusCmd == nil {
-		t.Fatal("Expected status subcommand to exist")
-	}
+			if subCmd == nil {
+				t.Fatalf("Expected %s subcommand to exist", name)
+			}
 
-	if statusCmd.Short == "" {
-		t.Error("Expected status subcommand to have a description")
-	}
+			if subCmd.Short == "" {
+				t.Errorf("Expected %s subcommand to have a description", name)
+			}
 
-	// Should accept no args
-	if err := statusCmd.ValidateArgs([]string{}); err != nil {
-		t.Errorf("Status subcommand should accept no arguments: %v", err)
-	}
-}
-
-// TestRawCommand_EVSubcommand tests raw ev subcommand
-func TestRawCommand_EVSubcommand(t *testing.T) {
-	cmd := NewRawCmd()
-
-	// Find ev subcommand
-	var evCmd *cobra.Command
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == "ev" {
-			evCmd = subCmd
-			break
-		}
-	}
-
-	if evCmd == nil {
-		t.Fatal("Expected ev subcommand to exist")
-	}
-
-	if evCmd.Short == "" {
-		t.Error("Expected ev subcommand to have a description")
-	}
-
-	// Should accept no args
-	if err := evCmd.ValidateArgs([]string{}); err != nil {
-		t.Errorf("EV subcommand should accept no arguments: %v", err)
+			if err := subCmd.ValidateArgs([]string{}); err != nil {
+				t.Errorf("%s subcommand should accept no arguments: %v", name, err)
+			}
+		})
 	}
 }

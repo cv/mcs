@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/cv/mcs/internal/api"
-	"github.com/spf13/cobra"
 )
 
 // TestStatusCommand tests the status command
@@ -54,16 +53,6 @@ func TestStatusCommand_Subcommands(t *testing.T) {
 			}
 		})
 	}
-}
-
-// findSubcommand finds a subcommand by name
-func findSubcommand(cmd *cobra.Command, name string) *cobra.Command {
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == name {
-			return subCmd
-		}
-	}
-	return nil
 }
 
 // TestStatusCommand_JSONFlag tests the JSON output flag

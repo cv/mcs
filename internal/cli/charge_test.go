@@ -1,10 +1,6 @@
 package cli
 
-import (
-	"testing"
-
-	"github.com/spf13/cobra"
-)
+import "testing"
 
 // TestChargeCommand tests the charge command
 func TestChargeCommand(t *testing.T) {
@@ -19,56 +15,26 @@ func TestChargeCommand(t *testing.T) {
 	}
 }
 
-// TestChargeCommand_StartSubcommand tests charge start subcommand
-func TestChargeCommand_StartSubcommand(t *testing.T) {
-	cmd := NewChargeCmd()
+// TestChargeCommand_Subcommands tests charge subcommands
+func TestChargeCommand_Subcommands(t *testing.T) {
+	subcommands := []string{"start", "stop"}
 
-	// Find start subcommand
-	var startCmd *cobra.Command
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == "start" {
-			startCmd = subCmd
-			break
-		}
-	}
+	for _, name := range subcommands {
+		t.Run(name, func(t *testing.T) {
+			cmd := NewChargeCmd()
+			subCmd := findSubcommand(cmd, name)
 
-	if startCmd == nil {
-		t.Fatal("Expected start subcommand to exist")
-	}
+			if subCmd == nil {
+				t.Fatalf("Expected %s subcommand to exist", name)
+			}
 
-	if startCmd.Short == "" {
-		t.Error("Expected start subcommand to have a description")
-	}
+			if subCmd.Short == "" {
+				t.Errorf("Expected %s subcommand to have a description", name)
+			}
 
-	// Should accept no args
-	if err := startCmd.ValidateArgs([]string{}); err != nil {
-		t.Errorf("Start subcommand should accept no arguments: %v", err)
-	}
-}
-
-// TestChargeCommand_StopSubcommand tests charge stop subcommand
-func TestChargeCommand_StopSubcommand(t *testing.T) {
-	cmd := NewChargeCmd()
-
-	// Find stop subcommand
-	var stopCmd *cobra.Command
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Use == "stop" {
-			stopCmd = subCmd
-			break
-		}
-	}
-
-	if stopCmd == nil {
-		t.Fatal("Expected stop subcommand to exist")
-	}
-
-	if stopCmd.Short == "" {
-		t.Error("Expected stop subcommand to have a description")
-	}
-
-	// Should accept no args
-	if err := stopCmd.ValidateArgs([]string{}); err != nil {
-		t.Errorf("Stop subcommand should accept no arguments: %v", err)
+			if err := subCmd.ValidateArgs([]string{}); err != nil {
+				t.Errorf("%s subcommand should accept no arguments: %v", name, err)
+			}
+		})
 	}
 }
