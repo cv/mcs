@@ -1,0 +1,244 @@
+package api
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// InternalVIN is a custom type that handles the API returning internalVin as either string or number
+type InternalVIN string
+
+// UnmarshalJSON handles unmarshaling internalVin from either string or number JSON values
+func (v *InternalVIN) UnmarshalJSON(data []byte) error {
+	// Try string first
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		*v = InternalVIN(s)
+		return nil
+	}
+
+	// Try number
+	var f float64
+	if err := json.Unmarshal(data, &f); err == nil {
+		*v = InternalVIN(fmt.Sprintf("%.0f", f))
+		return nil
+	}
+
+	return fmt.Errorf("internalVin must be string or number, got: %s", string(data))
+}
+
+// String returns the string representation of InternalVIN
+func (v InternalVIN) String() string {
+	return string(v)
+}
+
+// VecBaseInfosResponse represents the response from GetVecBaseInfos API
+type VecBaseInfosResponse struct {
+	ResultCode   string        `json:"resultCode"`
+	VecBaseInfos []VecBaseInfo `json:"vecBaseInfos"`
+}
+
+// VecBaseInfo represents a single vehicle's base information
+type VecBaseInfo struct {
+	Vehicle Vehicle `json:"Vehicle"`
+}
+
+// Vehicle represents vehicle information
+type Vehicle struct {
+	CvInformation CvInformation `json:"CvInformation"`
+}
+
+// CvInformation represents connected vehicle information
+type CvInformation struct {
+	InternalVIN InternalVIN `json:"internalVin"`
+}
+
+// VehicleStatusResponse represents the response from GetVehicleStatus API
+type VehicleStatusResponse struct {
+	ResultCode  string       `json:"resultCode"`
+	RemoteInfos []RemoteInfo `json:"remoteInfos"`
+	AlertInfos  []AlertInfo  `json:"alertInfos"`
+}
+
+// RemoteInfo contains remote vehicle information
+type RemoteInfo struct {
+	ResidualFuel    ResidualFuel    `json:"ResidualFuel"`
+	TPMSInformation TPMSInformation `json:"TPMSInformation"`
+}
+
+// ResidualFuel contains fuel information
+type ResidualFuel struct {
+	FuelSegmentDActl  float64 `json:"FuelSegementDActl"`
+	RemDrvDistDActlKm float64 `json:"RemDrvDistDActlKm"`
+}
+
+// TPMSInformation contains tire pressure information
+type TPMSInformation struct {
+	FLTPrsDispPsi float64 `json:"FLTPrsDispPsi"`
+	FRTPrsDispPsi float64 `json:"FRTPrsDispPsi"`
+	RLTPrsDispPsi float64 `json:"RLTPrsDispPsi"`
+	RRTPrsDispPsi float64 `json:"RRTPrsDispPsi"`
+}
+
+// AlertInfo contains alert and position information
+type AlertInfo struct {
+	PositionInfo PositionInfo `json:"PositionInfo"`
+	Door         DoorInfo     `json:"Door"`
+}
+
+// PositionInfo contains GPS location information
+type PositionInfo struct {
+	Latitude            float64 `json:"Latitude"`
+	Longitude           float64 `json:"Longitude"`
+	AcquisitionDatetime string  `json:"AcquisitionDatetime"`
+}
+
+// DoorInfo contains door lock status
+type DoorInfo struct {
+	DrStatDrv    float64 `json:"DrStatDrv"`
+	DrStatPsngr  float64 `json:"DrStatPsngr"`
+	DrStatRl     float64 `json:"DrStatRl"`
+	DrStatRr     float64 `json:"DrStatRr"`
+	DrStatTrnkLg float64 `json:"DrStatTrnkLg"`
+}
+
+// EVVehicleStatusResponse represents the response from GetEVVehicleStatus API
+type EVVehicleStatusResponse struct {
+	ResultCode string       `json:"resultCode"`
+	ResultData []EVResultData `json:"resultData"`
+}
+
+// EVResultData contains EV-specific vehicle data
+type EVResultData struct {
+	OccurrenceDate   string           `json:"OccurrenceDate"`
+	PlusBInformation PlusBInformation `json:"PlusBInformation"`
+}
+
+// PlusBInformation contains Plus-B (PHEV/EV) information
+type PlusBInformation struct {
+	VehicleInfo EVVehicleInfo `json:"VehicleInfo"`
+}
+
+// EVVehicleInfo contains EV vehicle information
+type EVVehicleInfo struct {
+	ChargeInfo     ChargeInfo      `json:"ChargeInfo"`
+	RemoteHvacInfo *RemoteHvacInfo `json:"RemoteHvacInfo,omitempty"`
+}
+
+// ChargeInfo contains battery and charging information
+type ChargeInfo struct {
+	SmaphSOC               float64 `json:"SmaphSOC"`
+	SmaphRemDrvDistKm      float64 `json:"SmaphRemDrvDistKm"`
+	ChargerConnectorFitting float64 `json:"ChargerConnectorFitting"`
+	ChargeStatusSub        float64 `json:"ChargeStatusSub"`
+}
+
+// RemoteHvacInfo contains HVAC system information
+type RemoteHvacInfo struct {
+	HVAC           float64 `json:"HVAC"`
+	FrontDefroster float64 `json:"FrontDefroster"`
+	RearDefogger   float64 `json:"RearDefogger"`
+	InCarTeDC      float64 `json:"InCarTeDC"`
+}
+
+// Helper methods for extracting data
+
+// GetInternalVIN extracts the internal VIN from the first vehicle in the response
+func (r *VecBaseInfosResponse) GetInternalVIN() (string, error) {
+	if len(r.VecBaseInfos) == 0 {
+		return "", fmt.Errorf("no vehicles found")
+	}
+	return string(r.VecBaseInfos[0].Vehicle.CvInformation.InternalVIN), nil
+}
+
+// GetBatteryInfo extracts battery information from the EV status response
+func (r *EVVehicleStatusResponse) GetBatteryInfo() (batteryLevel, rangeKm float64, pluggedIn, charging bool, err error) {
+	if len(r.ResultData) == 0 {
+		err = fmt.Errorf("no EV status data available")
+		return
+	}
+	chargeInfo := r.ResultData[0].PlusBInformation.VehicleInfo.ChargeInfo
+	batteryLevel = chargeInfo.SmaphSOC
+	rangeKm = chargeInfo.SmaphRemDrvDistKm
+	pluggedIn = int(chargeInfo.ChargerConnectorFitting) == 1
+	charging = int(chargeInfo.ChargeStatusSub) == 6
+	return
+}
+
+// GetHvacInfo extracts HVAC information from the EV status response
+func (r *EVVehicleStatusResponse) GetHvacInfo() (hvacOn, frontDefroster, rearDefroster bool, interiorTempC float64) {
+	if len(r.ResultData) == 0 {
+		return false, false, false, 0
+	}
+	hvacInfo := r.ResultData[0].PlusBInformation.VehicleInfo.RemoteHvacInfo
+	if hvacInfo == nil {
+		return false, false, false, 0
+	}
+	hvacOn = int(hvacInfo.HVAC) == 1
+	frontDefroster = int(hvacInfo.FrontDefroster) == 1
+	rearDefroster = int(hvacInfo.RearDefogger) == 1
+	interiorTempC = hvacInfo.InCarTeDC
+	return
+}
+
+// GetOccurrenceDate returns the occurrence date from the first result
+func (r *EVVehicleStatusResponse) GetOccurrenceDate() string {
+	if len(r.ResultData) == 0 {
+		return ""
+	}
+	return r.ResultData[0].OccurrenceDate
+}
+
+// GetFuelInfo extracts fuel information from the vehicle status response
+func (r *VehicleStatusResponse) GetFuelInfo() (fuelLevel, rangeKm float64, err error) {
+	if len(r.RemoteInfos) == 0 {
+		err = fmt.Errorf("no vehicle status data available")
+		return
+	}
+	fuel := r.RemoteInfos[0].ResidualFuel
+	fuelLevel = fuel.FuelSegmentDActl
+	rangeKm = fuel.RemDrvDistDActlKm
+	return
+}
+
+// GetTiresInfo extracts tire pressure information from the vehicle status response
+func (r *VehicleStatusResponse) GetTiresInfo() (fl, fr, rl, rr float64, err error) {
+	if len(r.RemoteInfos) == 0 {
+		err = fmt.Errorf("no vehicle status data available")
+		return
+	}
+	tpms := r.RemoteInfos[0].TPMSInformation
+	fl = tpms.FLTPrsDispPsi
+	fr = tpms.FRTPrsDispPsi
+	rl = tpms.RLTPrsDispPsi
+	rr = tpms.RRTPrsDispPsi
+	return
+}
+
+// GetLocationInfo extracts location information from the vehicle status response
+func (r *VehicleStatusResponse) GetLocationInfo() (lat, lon float64, timestamp string, err error) {
+	if len(r.AlertInfos) == 0 {
+		err = fmt.Errorf("no alert info available")
+		return
+	}
+	pos := r.AlertInfos[0].PositionInfo
+	lat = pos.Latitude
+	lon = pos.Longitude
+	timestamp = pos.AcquisitionDatetime
+	return
+}
+
+// GetDoorsInfo extracts door lock status from the vehicle status response
+func (r *VehicleStatusResponse) GetDoorsInfo() (allLocked bool, err error) {
+	if len(r.AlertInfos) == 0 {
+		err = fmt.Errorf("no alert info available")
+		return
+	}
+	door := r.AlertInfos[0].Door
+	allLocked = door.DrStatDrv == 0 &&
+		door.DrStatPsngr == 0 &&
+		door.DrStatRl == 0 &&
+		door.DrStatRr == 0 &&
+		door.DrStatTrnkLg == 0
+	return
+}

@@ -1,18 +1,37 @@
 package api
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // GetVecBaseInfos retrieves the base information for all vehicles associated with the account
-func (c *Client) GetVecBaseInfos() (map[string]interface{}, error) {
+func (c *Client) GetVecBaseInfos() (*VecBaseInfosResponse, error) {
 	bodyParams := map[string]interface{}{
 		"internaluserid": "__INTERNAL_ID__",
 	}
 
-	return c.APIRequest("POST", "remoteServices/getVecBaseInfos/v4", nil, bodyParams, true, true)
+	response, err := c.APIRequest("POST", "remoteServices/getVecBaseInfos/v4", nil, bodyParams, true, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert map to typed response
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response: %w", err)
+	}
+
+	var typed VecBaseInfosResponse
+	if err := json.Unmarshal(jsonBytes, &typed); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return &typed, nil
 }
 
 // GetVehicleStatus retrieves the current status of a vehicle
-func (c *Client) GetVehicleStatus(internalVIN string) (map[string]interface{}, error) {
+func (c *Client) GetVehicleStatus(internalVIN string) (*VehicleStatusResponse, error) {
 	bodyParams := map[string]interface{}{
 		"internaluserid": "__INTERNAL_ID__",
 		"internalvin":    internalVIN,
@@ -26,17 +45,27 @@ func (c *Client) GetVehicleStatus(internalVIN string) (map[string]interface{}, e
 		return nil, err
 	}
 
-	// Check result code
-	resultCode, ok := response["resultCode"].(string)
-	if !ok || resultCode != "200S00" {
-		return nil, fmt.Errorf("Failed to get vehicle status: result code %s", resultCode)
+	// Convert map to typed response
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response: %w", err)
 	}
 
-	return response, nil
+	var typed VehicleStatusResponse
+	if err := json.Unmarshal(jsonBytes, &typed); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	// Check result code
+	if typed.ResultCode != "200S00" {
+		return nil, fmt.Errorf("failed to get vehicle status: result code %s", typed.ResultCode)
+	}
+
+	return &typed, nil
 }
 
 // GetEVVehicleStatus retrieves the current EV status of a vehicle (battery, charging, HVAC)
-func (c *Client) GetEVVehicleStatus(internalVIN string) (map[string]interface{}, error) {
+func (c *Client) GetEVVehicleStatus(internalVIN string) (*EVVehicleStatusResponse, error) {
 	bodyParams := map[string]interface{}{
 		"internaluserid": "__INTERNAL_ID__",
 		"internalvin":    internalVIN,
@@ -50,11 +79,21 @@ func (c *Client) GetEVVehicleStatus(internalVIN string) (map[string]interface{},
 		return nil, err
 	}
 
-	// Check result code
-	resultCode, ok := response["resultCode"].(string)
-	if !ok || resultCode != "200S00" {
-		return nil, fmt.Errorf("Failed to get EV vehicle status: result code %s", resultCode)
+	// Convert map to typed response
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response: %w", err)
 	}
 
-	return response, nil
+	var typed EVVehicleStatusResponse
+	if err := json.Unmarshal(jsonBytes, &typed); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	// Check result code
+	if typed.ResultCode != "200S00" {
+		return nil, fmt.Errorf("failed to get EV vehicle status: result code %s", typed.ResultCode)
+	}
+
+	return &typed, nil
 }

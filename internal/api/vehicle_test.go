@@ -71,17 +71,12 @@ func TestGetVecBaseInfos(t *testing.T) {
 		t.Fatalf("GetVecBaseInfos failed: %v", err)
 	}
 
-	if result["resultCode"] != "200S00" {
-		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
+	if result.ResultCode != "200S00" {
+		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
 	}
 
-	vecBaseInfos, ok := result["vecBaseInfos"].([]interface{})
-	if !ok {
-		t.Fatal("Expected vecBaseInfos to be an array")
-	}
-
-	if len(vecBaseInfos) != 1 {
-		t.Errorf("Expected 1 vehicle, got %d", len(vecBaseInfos))
+	if len(result.VecBaseInfos) != 1 {
+		t.Errorf("Expected 1 vehicle, got %d", len(result.VecBaseInfos))
 	}
 }
 
@@ -184,26 +179,16 @@ func TestGetVehicleStatus(t *testing.T) {
 		t.Fatalf("GetVehicleStatus failed: %v", err)
 	}
 
-	if result["resultCode"] != "200S00" {
-		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
+	if result.ResultCode != "200S00" {
+		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
 	}
 
-	alertInfos, ok := result["alertInfos"].([]interface{})
-	if !ok {
-		t.Fatal("Expected alertInfos to be an array")
+	if len(result.AlertInfos) != 1 {
+		t.Errorf("Expected 1 alert info, got %d", len(result.AlertInfos))
 	}
 
-	if len(alertInfos) != 1 {
-		t.Errorf("Expected 1 alert info, got %d", len(alertInfos))
-	}
-
-	remoteInfos, ok := result["remoteInfos"].([]interface{})
-	if !ok {
-		t.Fatal("Expected remoteInfos to be an array")
-	}
-
-	if len(remoteInfos) != 1 {
-		t.Errorf("Expected 1 remote info, got %d", len(remoteInfos))
+	if len(result.RemoteInfos) != 1 {
+		t.Errorf("Expected 1 remote info, got %d", len(result.RemoteInfos))
 	}
 }
 
@@ -246,7 +231,7 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 		t.Fatal("Expected error, got nil")
 	}
 
-	expectedError := "Failed to get vehicle status: result code 500E00"
+	expectedError := "failed to get vehicle status: result code 500E00"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
 	}
@@ -326,31 +311,23 @@ func TestGetEVVehicleStatus(t *testing.T) {
 		t.Fatalf("GetEVVehicleStatus failed: %v", err)
 	}
 
-	if result["resultCode"] != "200S00" {
-		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
+	if result.ResultCode != "200S00" {
+		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
 	}
 
-	resultData, ok := result["resultData"].([]interface{})
-	if !ok {
-		t.Fatal("Expected resultData to be an array")
-	}
-
-	if len(resultData) != 1 {
-		t.Errorf("Expected 1 result data, got %d", len(resultData))
+	if len(result.ResultData) != 1 {
+		t.Errorf("Expected 1 result data, got %d", len(result.ResultData))
 	}
 
 	// Verify charge info
-	firstResult := resultData[0].(map[string]interface{})
-	plusBInfo := firstResult["PlusBInformation"].(map[string]interface{})
-	vehicleInfo := plusBInfo["VehicleInfo"].(map[string]interface{})
-	chargeInfo := vehicleInfo["ChargeInfo"].(map[string]interface{})
+	chargeInfo := result.ResultData[0].PlusBInformation.VehicleInfo.ChargeInfo
 
-	if chargeInfo["SmaphSOC"] != float64(85) {
-		t.Errorf("Expected battery level 85, got %v", chargeInfo["SmaphSOC"])
+	if chargeInfo.SmaphSOC != float64(85) {
+		t.Errorf("Expected battery level 85, got %v", chargeInfo.SmaphSOC)
 	}
 
-	if chargeInfo["ChargerConnectorFitting"] != float64(1) {
-		t.Errorf("Expected plugged in (1), got %v", chargeInfo["ChargerConnectorFitting"])
+	if chargeInfo.ChargerConnectorFitting != float64(1) {
+		t.Errorf("Expected plugged in (1), got %v", chargeInfo.ChargerConnectorFitting)
 	}
 }
 
@@ -393,7 +370,7 @@ func TestGetEVVehicleStatus_Error(t *testing.T) {
 		t.Fatal("Expected error, got nil")
 	}
 
-	expectedError := "Failed to get EV vehicle status: result code 500E00"
+	expectedError := "failed to get EV vehicle status: result code 500E00"
 	if err.Error() != expectedError {
 		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
 	}

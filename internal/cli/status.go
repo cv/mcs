@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -93,7 +94,7 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh b
 		return fmt.Errorf("failed to get vehicle info: %w", err)
 	}
 
-	internalVIN, err := getInternalVIN(vecBaseInfos)
+	internalVIN, err := vecBaseInfos.GetInternalVIN()
 	if err != nil {
 		return err
 	}
@@ -106,7 +107,7 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh b
 
 	// If refresh requested, trigger status refresh and poll until timestamp changes
 	if refresh {
-		initialTimestamp := getTimestampRaw(evStatus)
+		initialTimestamp := evStatus.GetOccurrenceDate()
 		fmt.Fprintf(cmd.OutOrStdout(), "Current status from: %s\n", formatTimestamp(initialTimestamp))
 		fmt.Fprintln(cmd.OutOrStdout(), "Requesting fresh status from vehicle...")
 
@@ -130,7 +131,7 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh b
 				continue // Keep trying on error
 			}
 
-			newTimestamp := getTimestampRaw(newEvStatus)
+			newTimestamp := newEvStatus.GetOccurrenceDate()
 			if newTimestamp != initialTimestamp {
 				fmt.Fprintf(cmd.OutOrStdout(), "Got fresh status from: %s\n", formatTimestamp(newTimestamp))
 				evStatus = newEvStatus
@@ -138,7 +139,7 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh b
 			}
 		}
 
-		if getTimestampRaw(evStatus) == initialTimestamp {
+		if evStatus.GetOccurrenceDate() == initialTimestamp {
 			fmt.Fprintln(cmd.OutOrStdout(), "Warning: status did not update within timeout period")
 		}
 	}
@@ -167,40 +168,20 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh b
 		output := displayDoorsStatus(vehicleStatus, jsonOutput)
 		fmt.Fprintln(cmd.OutOrStdout(), output)
 	case "all":
-		output := displayAllStatus(vecBaseInfos, vehicleStatus, evStatus, jsonOutput)
+		output := displayAllStatus(vehicleStatus, evStatus, jsonOutput)
 		fmt.Fprint(cmd.OutOrStdout(), output)
 	}
 
 	return nil
 }
 
-// getInternalVIN extracts the internal VIN from vehicle base info
-func getInternalVIN(vecBaseInfos map[string]interface{}) (string, error) {
-	vecInfos, ok := vecBaseInfos["vecBaseInfos"].([]interface{})
-	if !ok || len(vecInfos) == 0 {
-		return "", fmt.Errorf("no vehicles found")
-	}
-
-	firstVehicle := vecInfos[0].(map[string]interface{})
-	vehicle := firstVehicle["Vehicle"].(map[string]interface{})
-	cvInfo := vehicle["CvInformation"].(map[string]interface{})
-
-	// Handle internalVin which can be string or number
-	var internalVIN string
-	switch v := cvInfo["internalVin"].(type) {
-	case string:
-		internalVIN = v
-	case float64:
-		internalVIN = fmt.Sprintf("%.0f", v)
-	default:
-		return "", fmt.Errorf("unexpected type for internalVin: %T", v)
-	}
-
-	return internalVIN, nil
+// getInternalVIN extracts the internal VIN from vehicle base info (legacy function for raw.go)
+func getInternalVIN(vecBaseInfos *api.VecBaseInfosResponse) (string, error) {
+	return vecBaseInfos.GetInternalVIN()
 }
 
 // displayAllStatus displays all status information
-func displayAllStatus(vecBaseInfos, vehicleStatus, evStatus map[string]interface{}, jsonOutput bool) string {
+func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, jsonOutput bool) string {
 	if jsonOutput {
 		data := map[string]interface{}{
 			"battery":  extractBatteryData(evStatus),
@@ -215,10 +196,10 @@ func displayAllStatus(vecBaseInfos, vehicleStatus, evStatus map[string]interface
 	}
 
 	// Get timestamp from EV status
-	timestamp := getTimestamp(evStatus)
+	timestamp := formatTimestamp(evStatus.GetOccurrenceDate())
 
 	// Extract HVAC info
-	hvacOn, frontDefroster, rearDefroster, interiorTempC := extractHvacInfo(evStatus)
+	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
 
 	output := "\nCX-90 GT PHEV (2025)\n"
 	output += fmt.Sprintf("Last Updated: %s\n\n", timestamp)
@@ -232,138 +213,39 @@ func displayAllStatus(vecBaseInfos, vehicleStatus, evStatus map[string]interface
 }
 
 // displayBatteryStatus displays battery status
-func displayBatteryStatus(evStatus map[string]interface{}, jsonOutput bool) string {
-	batteryLevel, range_, pluggedIn, charging := extractBatteryInfo(evStatus)
+func displayBatteryStatus(evStatus *api.EVVehicleStatusResponse, jsonOutput bool) string {
+	batteryLevel, range_, pluggedIn, charging, _ := evStatus.GetBatteryInfo()
 	return formatBatteryStatus(batteryLevel, range_, pluggedIn, charging, jsonOutput)
 }
 
 // displayFuelStatus displays fuel status
-func displayFuelStatus(vehicleStatus map[string]interface{}, jsonOutput bool) string {
-	fuelLevel, range_ := extractFuelInfo(vehicleStatus)
+func displayFuelStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput bool) string {
+	fuelLevel, range_, _ := vehicleStatus.GetFuelInfo()
 	return formatFuelStatus(fuelLevel, range_, jsonOutput)
 }
 
 // displayLocationStatus displays location status
-func displayLocationStatus(vehicleStatus map[string]interface{}, jsonOutput bool) string {
-	lat, lon, timestamp := extractLocationInfo(vehicleStatus)
+func displayLocationStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput bool) string {
+	lat, lon, timestamp, _ := vehicleStatus.GetLocationInfo()
 	return formatLocationStatus(lat, lon, timestamp, jsonOutput)
 }
 
 // displayTiresStatus displays tire pressure status
-func displayTiresStatus(vehicleStatus map[string]interface{}, jsonOutput bool) string {
-	fl, fr, rl, rr := extractTiresInfo(vehicleStatus)
+func displayTiresStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput bool) string {
+	fl, fr, rl, rr, _ := vehicleStatus.GetTiresInfo()
 	return formatTiresStatus(fl, fr, rl, rr, jsonOutput)
 }
 
 // displayDoorsStatus displays door lock status
-func displayDoorsStatus(vehicleStatus map[string]interface{}, jsonOutput bool) string {
-	allLocked := extractDoorsInfo(vehicleStatus)
+func displayDoorsStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput bool) string {
+	allLocked, _ := vehicleStatus.GetDoorsInfo()
 	return formatDoorsStatus(allLocked, jsonOutput)
 }
 
-// extractBatteryInfo extracts battery information from EV status
-func extractBatteryInfo(evStatus map[string]interface{}) (batteryLevel, range_ float64, pluggedIn, charging bool) {
-	resultData := evStatus["resultData"].([]interface{})
-	firstResult := resultData[0].(map[string]interface{})
-	plusBInfo := firstResult["PlusBInformation"].(map[string]interface{})
-	vehicleInfo := plusBInfo["VehicleInfo"].(map[string]interface{})
-	chargeInfo := vehicleInfo["ChargeInfo"].(map[string]interface{})
-
-	batteryLevel = chargeInfo["SmaphSOC"].(float64)
-	range_ = chargeInfo["SmaphRemDrvDistKm"].(float64)
-	pluggedIn = int(chargeInfo["ChargerConnectorFitting"].(float64)) == 1
-	charging = int(chargeInfo["ChargeStatusSub"].(float64)) == 6
-
-	return
-}
-
-// extractFuelInfo extracts fuel information from vehicle status
-func extractFuelInfo(vehicleStatus map[string]interface{}) (fuelLevel, range_ float64) {
-	remoteInfos := vehicleStatus["remoteInfos"].([]interface{})
-	firstInfo := remoteInfos[0].(map[string]interface{})
-	residualFuel := firstInfo["ResidualFuel"].(map[string]interface{})
-
-	fuelLevel = residualFuel["FuelSegementDActl"].(float64)
-	range_ = residualFuel["RemDrvDistDActlKm"].(float64)
-
-	return
-}
-
-// extractLocationInfo extracts location information from vehicle status
-func extractLocationInfo(vehicleStatus map[string]interface{}) (lat, lon float64, timestamp string) {
-	// Use alertInfos for location - remoteInfos has incorrect longitude sign
-	alertInfos := vehicleStatus["alertInfos"].([]interface{})
-	firstInfo := alertInfos[0].(map[string]interface{})
-	positionInfo := firstInfo["PositionInfo"].(map[string]interface{})
-
-	lat = positionInfo["Latitude"].(float64)
-	lon = positionInfo["Longitude"].(float64)
-	timestamp = positionInfo["AcquisitionDatetime"].(string)
-
-	return
-}
-
-// extractTiresInfo extracts tire pressure information from vehicle status
-func extractTiresInfo(vehicleStatus map[string]interface{}) (fl, fr, rl, rr float64) {
-	remoteInfos := vehicleStatus["remoteInfos"].([]interface{})
-	firstInfo := remoteInfos[0].(map[string]interface{})
-	tpmsInfo := firstInfo["TPMSInformation"].(map[string]interface{})
-
-	fl = tpmsInfo["FLTPrsDispPsi"].(float64)
-	fr = tpmsInfo["FRTPrsDispPsi"].(float64)
-	rl = tpmsInfo["RLTPrsDispPsi"].(float64)
-	rr = tpmsInfo["RRTPrsDispPsi"].(float64)
-
-	return
-}
-
-// extractDoorsInfo extracts door lock information from vehicle status
-func extractDoorsInfo(vehicleStatus map[string]interface{}) bool {
-	alertInfos := vehicleStatus["alertInfos"].([]interface{})
-	firstAlert := alertInfos[0].(map[string]interface{})
-	door := firstAlert["Door"].(map[string]interface{})
-
-	// Check if all doors are locked (0 = locked)
-	allLocked := door["DrStatDrv"].(float64) == 0 &&
-		door["DrStatPsngr"].(float64) == 0 &&
-		door["DrStatRl"].(float64) == 0 &&
-		door["DrStatRr"].(float64) == 0 &&
-		door["DrStatTrnkLg"].(float64) == 0
-
-	return allLocked
-}
-
-// extractHvacInfo extracts HVAC information from EV status
-func extractHvacInfo(evStatus map[string]interface{}) (hvacOn, frontDefroster, rearDefroster bool, interiorTempC float64) {
-	resultData := evStatus["resultData"].([]interface{})
-	firstResult := resultData[0].(map[string]interface{})
-	plusBInfo := firstResult["PlusBInformation"].(map[string]interface{})
-	vehicleInfo := plusBInfo["VehicleInfo"].(map[string]interface{})
-
-	hvacInfo, ok := vehicleInfo["RemoteHvacInfo"].(map[string]interface{})
-	if !ok {
-		return false, false, false, 0
-	}
-
-	if v, ok := hvacInfo["HVAC"].(float64); ok {
-		hvacOn = int(v) == 1
-	}
-	if v, ok := hvacInfo["FrontDefroster"].(float64); ok {
-		frontDefroster = int(v) == 1
-	}
-	if v, ok := hvacInfo["RearDefogger"].(float64); ok {
-		rearDefroster = int(v) == 1
-	}
-	if v, ok := hvacInfo["InCarTeDC"].(float64); ok {
-		interiorTempC = v
-	}
-
-	return
-}
 
 // extractBatteryData extracts battery data for JSON output
-func extractBatteryData(evStatus map[string]interface{}) map[string]interface{} {
-	batteryLevel, range_, pluggedIn, charging := extractBatteryInfo(evStatus)
+func extractBatteryData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
+	batteryLevel, range_, pluggedIn, charging, _ := evStatus.GetBatteryInfo()
 	return map[string]interface{}{
 		"battery_level": batteryLevel,
 		"range_km":      range_,
@@ -373,8 +255,8 @@ func extractBatteryData(evStatus map[string]interface{}) map[string]interface{} 
 }
 
 // extractFuelData extracts fuel data for JSON output
-func extractFuelData(vehicleStatus map[string]interface{}) map[string]interface{} {
-	fuelLevel, range_ := extractFuelInfo(vehicleStatus)
+func extractFuelData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	fuelLevel, range_, _ := vehicleStatus.GetFuelInfo()
 	return map[string]interface{}{
 		"fuel_level": fuelLevel,
 		"range_km":   range_,
@@ -382,8 +264,8 @@ func extractFuelData(vehicleStatus map[string]interface{}) map[string]interface{
 }
 
 // extractLocationData extracts location data for JSON output
-func extractLocationData(vehicleStatus map[string]interface{}) map[string]interface{} {
-	lat, lon, timestamp := extractLocationInfo(vehicleStatus)
+func extractLocationData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	lat, lon, timestamp, _ := vehicleStatus.GetLocationInfo()
 	mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", lat, lon)
 	return map[string]interface{}{
 		"latitude":  lat,
@@ -394,8 +276,8 @@ func extractLocationData(vehicleStatus map[string]interface{}) map[string]interf
 }
 
 // extractTiresData extracts tire data for JSON output
-func extractTiresData(vehicleStatus map[string]interface{}) map[string]interface{} {
-	fl, fr, rl, rr := extractTiresInfo(vehicleStatus)
+func extractTiresData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	fl, fr, rl, rr, _ := vehicleStatus.GetTiresInfo()
 	return map[string]interface{}{
 		"front_left_psi":  fl,
 		"front_right_psi": fr,
@@ -405,21 +287,21 @@ func extractTiresData(vehicleStatus map[string]interface{}) map[string]interface
 }
 
 // extractDoorsData extracts door data for JSON output
-func extractDoorsData(vehicleStatus map[string]interface{}) map[string]interface{} {
-	allLocked := extractDoorsInfo(vehicleStatus)
+func extractDoorsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	allLocked, _ := vehicleStatus.GetDoorsInfo()
 	return map[string]interface{}{
 		"all_locked": allLocked,
 	}
 }
 
 // extractHvacData extracts HVAC data for JSON output
-func extractHvacData(evStatus map[string]interface{}) map[string]interface{} {
-	hvacOn, frontDefroster, rearDefroster, interiorTempC := extractHvacInfo(evStatus)
+func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
+	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
 	return map[string]interface{}{
-		"hvac_on":                    hvacOn,
-		"front_defroster":            frontDefroster,
-		"rear_defroster":             rearDefroster,
-		"interior_temperature_c":     interiorTempC,
+		"hvac_on":                hvacOn,
+		"front_defroster":        frontDefroster,
+		"rear_defroster":         rearDefroster,
+		"interior_temperature_c": interiorTempC,
 	}
 }
 
@@ -548,18 +430,6 @@ func formatHvacStatus(hvacOn, frontDefroster, rearDefroster bool, interiorTempC 
 	}
 
 	return status
-}
-
-// getTimestamp extracts and formats timestamp from EV status
-func getTimestamp(evStatus map[string]interface{}) string {
-	return formatTimestamp(getTimestampRaw(evStatus))
-}
-
-// getTimestampRaw extracts raw timestamp string from EV status (for comparison)
-func getTimestampRaw(evStatus map[string]interface{}) string {
-	resultData := evStatus["resultData"].([]interface{})
-	firstResult := resultData[0].(map[string]interface{})
-	return firstResult["OccurrenceDate"].(string)
 }
 
 // formatTimestamp converts timestamp from API format to readable format

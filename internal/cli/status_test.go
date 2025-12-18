@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -318,12 +319,13 @@ func TestFormatLocationStatus(t *testing.T) {
 
 // TestGetInternalVIN tests getting internal VIN from vehicle base info
 func TestGetInternalVIN(t *testing.T) {
-	vecBaseInfos := map[string]interface{}{
-		"vecBaseInfos": []interface{}{
-			map[string]interface{}{
-				"Vehicle": map[string]interface{}{
-					"CvInformation": map[string]interface{}{
-						"internalVin": "INTERNAL123",
+	vecBaseInfos := &api.VecBaseInfosResponse{
+		ResultCode: "200S00",
+		VecBaseInfos: []api.VecBaseInfo{
+			{
+				Vehicle: api.Vehicle{
+					CvInformation: api.CvInformation{
+						InternalVIN: "INTERNAL123",
 					},
 				},
 			},
@@ -342,8 +344,9 @@ func TestGetInternalVIN(t *testing.T) {
 
 // TestGetInternalVIN_NoVehicles tests error when no vehicles found
 func TestGetInternalVIN_NoVehicles(t *testing.T) {
-	vecBaseInfos := map[string]interface{}{
-		"vecBaseInfos": []interface{}{},
+	vecBaseInfos := &api.VecBaseInfosResponse{
+		ResultCode:   "200S00",
+		VecBaseInfos: []api.VecBaseInfo{},
 	}
 
 	_, err := getInternalVIN(vecBaseInfos)
@@ -455,18 +458,21 @@ func TestFormatHvacStatus_JSON(t *testing.T) {
 	}
 }
 
-// TestExtractHvacInfo tests extracting HVAC info from EV status
-func TestExtractHvacInfo(t *testing.T) {
-	evStatus := map[string]interface{}{
-		"resultData": []interface{}{
-			map[string]interface{}{
-				"PlusBInformation": map[string]interface{}{
-					"VehicleInfo": map[string]interface{}{
-						"RemoteHvacInfo": map[string]interface{}{
-							"HVAC":           float64(1),
-							"FrontDefroster": float64(1),
-							"RearDefogger":   float64(0),
-							"InCarTeDC":      float64(21.5),
+// TestGetHvacInfo tests extracting HVAC info from EV status
+func TestGetHvacInfo(t *testing.T) {
+	evStatus := &api.EVVehicleStatusResponse{
+		ResultCode: "200S00",
+		ResultData: []api.EVResultData{
+			{
+				OccurrenceDate: "20231201120000",
+				PlusBInformation: api.PlusBInformation{
+					VehicleInfo: api.EVVehicleInfo{
+						ChargeInfo: api.ChargeInfo{},
+						RemoteHvacInfo: &api.RemoteHvacInfo{
+							HVAC:           1,
+							FrontDefroster: 1,
+							RearDefogger:   0,
+							InCarTeDC:      21.5,
 						},
 					},
 				},
@@ -474,7 +480,7 @@ func TestExtractHvacInfo(t *testing.T) {
 		},
 	}
 
-	hvacOn, frontDefroster, rearDefroster, interiorTempC := extractHvacInfo(evStatus)
+	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
 
 	if !hvacOn {
 		t.Error("Expected hvacOn to be true")
@@ -490,21 +496,24 @@ func TestExtractHvacInfo(t *testing.T) {
 	}
 }
 
-// TestExtractHvacInfo_MissingData tests extracting HVAC info when data is missing
-func TestExtractHvacInfo_MissingData(t *testing.T) {
-	evStatus := map[string]interface{}{
-		"resultData": []interface{}{
-			map[string]interface{}{
-				"PlusBInformation": map[string]interface{}{
-					"VehicleInfo": map[string]interface{}{
-						// No RemoteHvacInfo
+// TestGetHvacInfo_MissingData tests extracting HVAC info when data is missing
+func TestGetHvacInfo_MissingData(t *testing.T) {
+	evStatus := &api.EVVehicleStatusResponse{
+		ResultCode: "200S00",
+		ResultData: []api.EVResultData{
+			{
+				OccurrenceDate: "20231201120000",
+				PlusBInformation: api.PlusBInformation{
+					VehicleInfo: api.EVVehicleInfo{
+						ChargeInfo:     api.ChargeInfo{},
+						RemoteHvacInfo: nil, // No HVAC info
 					},
 				},
 			},
 		},
 	}
 
-	hvacOn, frontDefroster, rearDefroster, interiorTempC := extractHvacInfo(evStatus)
+	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
 
 	if hvacOn {
 		t.Error("Expected hvacOn to be false when data missing")
@@ -522,16 +531,19 @@ func TestExtractHvacInfo_MissingData(t *testing.T) {
 
 // TestExtractHvacData tests extracting HVAC data for JSON output
 func TestExtractHvacData(t *testing.T) {
-	evStatus := map[string]interface{}{
-		"resultData": []interface{}{
-			map[string]interface{}{
-				"PlusBInformation": map[string]interface{}{
-					"VehicleInfo": map[string]interface{}{
-						"RemoteHvacInfo": map[string]interface{}{
-							"HVAC":           float64(1),
-							"FrontDefroster": float64(0),
-							"RearDefogger":   float64(1),
-							"InCarTeDC":      float64(18),
+	evStatus := &api.EVVehicleStatusResponse{
+		ResultCode: "200S00",
+		ResultData: []api.EVResultData{
+			{
+				OccurrenceDate: "20231201120000",
+				PlusBInformation: api.PlusBInformation{
+					VehicleInfo: api.EVVehicleInfo{
+						ChargeInfo: api.ChargeInfo{},
+						RemoteHvacInfo: &api.RemoteHvacInfo{
+							HVAC:           1,
+							FrontDefroster: 0,
+							RearDefogger:   1,
+							InCarTeDC:      18,
 						},
 					},
 				},
