@@ -181,15 +181,15 @@ func percentEncode(str string) string {
 		return ""
 	}
 
-	result := ""
+	var sb strings.Builder
 	for _, b := range []byte(str) {
 		if b >= 33 && b <= 0x7E && b != 34 && b != 37 && b != 39 && b != 44 && b != 92 {
-			result += string(b)
+			sb.WriteByte(b)
 		} else {
-			result += "%" + strings.ToUpper(fmt.Sprintf("%x", b))
+			sb.WriteString("%" + strings.ToUpper(fmt.Sprintf("%x", b)))
 		}
 	}
-	return result
+	return sb.String()
 }
 
 func sumCharCodes(str string) int {

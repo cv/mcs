@@ -3,6 +3,7 @@ package sensordata
 import (
 	"fmt"
 	mathrand "math/rand"
+	"strings"
 	"time"
 )
 
@@ -60,9 +61,9 @@ func (b *BackgroundEventList) Randomize(sensorCollectionStartTimestamp time.Time
 
 // ToString converts BackgroundEventList to string format
 func (b *BackgroundEventList) ToString() string {
-	result := ""
+	var sb strings.Builder
 	for _, event := range b.backgroundEvents {
-		result += event.ToString()
+		sb.WriteString(event.ToString())
 	}
-	return result
+	return sb.String()
 }

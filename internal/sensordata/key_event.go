@@ -3,6 +3,7 @@ package sensordata
 import (
 	"fmt"
 	mathrand "math/rand"
+	"strings"
 	"time"
 )
 
@@ -69,11 +70,11 @@ func (k *KeyEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 
 // ToString converts KeyEventList to string format
 func (k *KeyEventList) ToString() string {
-	result := ""
+	var sb strings.Builder
 	for _, event := range k.keyEvents {
-		result += event.ToString()
+		sb.WriteString(event.ToString())
 	}
-	return result
+	return sb.String()
 }
 
 // GetSum calculates the sum of event values

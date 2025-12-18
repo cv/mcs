@@ -10,6 +10,7 @@ import (
 	"fmt"
 	mathrand "math/rand"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cv/mcs/internal/crypto"
@@ -62,54 +63,50 @@ func (b *SensorDataBuilder) GenerateSensorData() (string, error) {
 	motionEvent := b.generateMotionDataAA()
 	motionEventCount := countSeparators(motionEvent)
 
-	sensorData := ""
-	sensorData += sdkVersion
-	sensorData += "-1,2,-94,-100,"
-	sensorData += b.systemInfo.ToString()
-	sensorData += ","
-	sensorData += strconv.Itoa(b.systemInfo.GetCharCodeSum())
-	sensorData += ","
-	sensorData += strconv.Itoa(int(randomNumber))
-	sensorData += ","
-	sensorData += strconv.FormatInt(timestampToMillis(b.sensorCollectionStartTimestamp)/2, 10)
-	sensorData += "-1,2,-94,-101,"
-	sensorData += "do_en"
-	sensorData += ","
-	sensorData += "dm_en"
-	sensorData += ","
-	sensorData += "t_en"
-	sensorData += "-1,2,-94,-102,"
-	sensorData += b.generateEditedText()
-	sensorData += "-1,2,-94,-108,"
-	sensorData += b.keyEventList.ToString()
-	sensorData += "-1,2,-94,-117,"
-	sensorData += b.touchEventList.ToString()
-	sensorData += "-1,2,-94,-111,"
-	sensorData += orientationEvent
-	sensorData += "-1,2,-94,-109,"
-	sensorData += motionEvent
-	sensorData += "-1,2,-94,-144,"
-	sensorData += b.generateOrientationDataAC()
-	sensorData += "-1,2,-94,-142,"
-	sensorData += b.generateOrientationDataAB()
-	sensorData += "-1,2,-94,-145,"
-	sensorData += b.generateMotionDataAC()
-	sensorData += "-1,2,-94,-143,"
-	sensorData += b.generateMotionEvent()
-	sensorData += "-1,2,-94,-115,"
-	sensorData += b.generateMiscStat(orientationEventCount, motionEventCount)
-	sensorData += "-1,2,-94,-106,"
-	sensorData += b.generateStoredValuesF()
-	sensorData += ","
-	sensorData += b.generateStoredValuesG()
-	sensorData += "-1,2,-94,-120,"
-	sensorData += b.generateStoredStackTraces()
-	sensorData += "-1,2,-94,-112,"
-	sensorData += b.performanceTestResults.ToString()
-	sensorData += "-1,2,-94,-103,"
-	sensorData += b.backgroundEventList.ToString()
+	var sb strings.Builder
+	sb.WriteString(sdkVersion)
+	sb.WriteString("-1,2,-94,-100,")
+	sb.WriteString(b.systemInfo.ToString())
+	sb.WriteString(",")
+	sb.WriteString(strconv.Itoa(b.systemInfo.GetCharCodeSum()))
+	sb.WriteString(",")
+	sb.WriteString(strconv.Itoa(int(randomNumber)))
+	sb.WriteString(",")
+	sb.WriteString(strconv.FormatInt(timestampToMillis(b.sensorCollectionStartTimestamp)/2, 10))
+	sb.WriteString("-1,2,-94,-101,")
+	sb.WriteString("do_en,dm_en,t_en")
+	sb.WriteString("-1,2,-94,-102,")
+	sb.WriteString(b.generateEditedText())
+	sb.WriteString("-1,2,-94,-108,")
+	sb.WriteString(b.keyEventList.ToString())
+	sb.WriteString("-1,2,-94,-117,")
+	sb.WriteString(b.touchEventList.ToString())
+	sb.WriteString("-1,2,-94,-111,")
+	sb.WriteString(orientationEvent)
+	sb.WriteString("-1,2,-94,-109,")
+	sb.WriteString(motionEvent)
+	sb.WriteString("-1,2,-94,-144,")
+	sb.WriteString(b.generateOrientationDataAC())
+	sb.WriteString("-1,2,-94,-142,")
+	sb.WriteString(b.generateOrientationDataAB())
+	sb.WriteString("-1,2,-94,-145,")
+	sb.WriteString(b.generateMotionDataAC())
+	sb.WriteString("-1,2,-94,-143,")
+	sb.WriteString(b.generateMotionEvent())
+	sb.WriteString("-1,2,-94,-115,")
+	sb.WriteString(b.generateMiscStat(orientationEventCount, motionEventCount))
+	sb.WriteString("-1,2,-94,-106,")
+	sb.WriteString(b.generateStoredValuesF())
+	sb.WriteString(",")
+	sb.WriteString(b.generateStoredValuesG())
+	sb.WriteString("-1,2,-94,-120,")
+	sb.WriteString(b.generateStoredStackTraces())
+	sb.WriteString("-1,2,-94,-112,")
+	sb.WriteString(b.performanceTestResults.ToString())
+	sb.WriteString("-1,2,-94,-103,")
+	sb.WriteString(b.backgroundEventList.ToString())
 
-	return encryptSensorData(sensorData)
+	return encryptSensorData(sb.String())
 }
 
 func (b *SensorDataBuilder) generateEditedText() string {

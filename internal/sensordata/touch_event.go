@@ -3,6 +3,7 @@ package sensordata
 import (
 	"fmt"
 	mathrand "math/rand"
+	"strings"
 	"time"
 )
 
@@ -142,11 +143,11 @@ func (t *TouchEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 
 // ToString converts TouchEventList to string format
 func (t *TouchEventList) ToString() string {
-	result := ""
+	var sb strings.Builder
 	for _, event := range t.touchEvents {
-		result += event.ToString()
+		sb.WriteString(event.ToString())
 	}
-	return result
+	return sb.String()
 }
 
 // GetSum calculates the sum of event types and times
