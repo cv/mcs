@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/viper"
 )
 
@@ -13,13 +14,6 @@ type Config struct {
 	Email    string
 	Password string
 	Region   string
-}
-
-// validRegions contains the list of valid API regions
-var validRegions = map[string]bool{
-	"MNAO": true, // North America
-	"MME":  true, // Europe
-	"MJO":  true, // Japan
 }
 
 // Load loads configuration from file and environment variables
@@ -73,7 +67,7 @@ func (c *Config) Validate() error {
 	if c.Password == "" {
 		return fmt.Errorf("password is required")
 	}
-	if !validRegions[c.Region] {
+	if _, ok := api.RegionConfigs[c.Region]; !ok {
 		return fmt.Errorf("invalid region: %s (must be one of: MNAO, MME, MJO)", c.Region)
 	}
 	return nil
