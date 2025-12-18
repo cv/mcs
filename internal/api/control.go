@@ -79,3 +79,47 @@ func (c *Client) HVACOff(ctx context.Context, internalVIN string) error {
 func (c *Client) RefreshVehicleStatus(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, "remoteServices/activeRealTimeVehicleStatus/v4", "refresh vehicle status", internalVIN)
 }
+
+// SetHVACSetting sets HVAC temperature and defroster settings
+// tempUnit should be "c" for Celsius or "f" for Fahrenheit
+func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, temperature float64, tempUnit string, frontDefroster, rearDefroster bool) error {
+	var tempType int
+	switch tempUnit {
+	case "c", "C":
+		tempType = 1
+	case "f", "F":
+		tempType = 2
+	default:
+		return fmt.Errorf("invalid temperature unit: %s (must be 'c' or 'f')", tempUnit)
+	}
+
+	frontDefrost := 0
+	if frontDefroster {
+		frontDefrost = 1
+	}
+	rearDefrost := 0
+	if rearDefroster {
+		rearDefrost = 1
+	}
+
+	bodyParams := map[string]interface{}{
+		"internaluserid":  InternalUserID,
+		"internalvin":     internalVIN,
+		"Temperature":     temperature,
+		"TemperatureType": tempType,
+		"FrontDefroster":  frontDefrost,
+		"RearDefogger":    rearDefrost,
+	}
+
+	response, err := c.APIRequest(ctx, "POST", "remoteServices/updateHVACSetting/v4", nil, bodyParams, true, true)
+	if err != nil {
+		return err
+	}
+
+	resultCode, ok := response["resultCode"].(string)
+	if !ok || resultCode != "200S00" {
+		return fmt.Errorf("failed to set HVAC settings: result code %s", resultCode)
+	}
+
+	return nil
+}

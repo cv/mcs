@@ -227,6 +227,64 @@ func TestRefreshVehicleStatus(t *testing.T) {
 	}
 }
 
+// TestSetHVACSetting tests setting HVAC settings
+func TestSetHVACSetting(t *testing.T) {
+	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4", map[string]interface{}{
+		"internaluserid":  "__INTERNAL_ID__",
+		"internalvin":     "INTERNAL123",
+		"Temperature":     22.0,
+		"TemperatureType": 1,
+		"FrontDefroster":  1,
+		"RearDefogger":    0,
+	})
+	defer server.Close()
+
+	client := createTestClient(t, server.URL)
+
+	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 22.0, "c", true, false)
+	if err != nil {
+		t.Fatalf("SetHVACSetting failed: %v", err)
+	}
+}
+
+// TestSetHVACSetting_Fahrenheit tests setting HVAC with Fahrenheit
+func TestSetHVACSetting_Fahrenheit(t *testing.T) {
+	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4", map[string]interface{}{
+		"internaluserid":  "__INTERNAL_ID__",
+		"internalvin":     "INTERNAL123",
+		"Temperature":     72.0,
+		"TemperatureType": 2,
+		"FrontDefroster":  0,
+		"RearDefogger":    1,
+	})
+	defer server.Close()
+
+	client := createTestClient(t, server.URL)
+
+	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 72.0, "f", false, true)
+	if err != nil {
+		t.Fatalf("SetHVACSetting failed: %v", err)
+	}
+}
+
+// TestSetHVACSetting_InvalidUnit tests invalid temperature unit
+func TestSetHVACSetting_InvalidUnit(t *testing.T) {
+	client, err := NewClient("test@example.com", "password", "MNAO")
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
+	err = client.SetHVACSetting(context.Background(), "INTERNAL123", 22.0, "k", false, false)
+	if err == nil {
+		t.Fatal("Expected error for invalid unit, got nil")
+	}
+
+	expectedError := "invalid temperature unit: k (must be 'c' or 'f')"
+	if err.Error() != expectedError {
+		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
+	}
+}
+
 // TestControlError tests error handling for control endpoints
 func TestControlError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
