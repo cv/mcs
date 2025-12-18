@@ -177,49 +177,41 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 
 	c.logResponse(resp.StatusCode, body)
 
-	var response map[string]interface{}
+	var response APIBaseResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
 	// Check response state
-	state, ok := response["state"].(string)
-	if ok && state == "S" {
+	if response.State == "S" {
 		// Success - decrypt payload
-		encryptedPayload, ok := response["payload"].(string)
-		if !ok {
+		if response.Payload == "" {
 			return nil, fmt.Errorf("payload not found in response")
 		}
 
-		if uri == "service/checkVersion" {
-			return c.decryptPayloadUsingAppCode(encryptedPayload)
-		}
-		return c.decryptPayloadUsingKey(encryptedPayload)
+		return c.decryptPayloadUsingKey(response.Payload)
 	}
 
 	// Handle errors
-	errorCode, _ := response["errorCode"].(float64)
-	extraCode, _ := response["extraCode"].(string)
-
-	switch int(errorCode) {
+	switch int(response.ErrorCode) {
 	case 600001:
 		return nil, NewEncryptionError()
 	case 600002:
 		return nil, NewTokenExpiredError()
 	case 920000:
-		if extraCode == "400S01" {
+		if response.ExtraCode == "400S01" {
 			return nil, NewRequestInProgressError()
-		} else if extraCode == "400S11" {
+		} else if response.ExtraCode == "400S11" {
 			return nil, NewEngineStartLimitError()
 		}
 	}
 
 	// Generic error
-	if msg, ok := response["message"].(string); ok {
-		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", msg))
+	if response.Message != "" {
+		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", response.Message))
 	}
-	if errMsg, ok := response["error"].(string); ok {
-		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", errMsg))
+	if response.Error != "" {
+		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", response.Error))
 	}
 
 	return nil, NewAPIError("Request failed for an unknown reason")

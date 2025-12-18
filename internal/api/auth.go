@@ -173,28 +173,26 @@ func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
 
-	var response map[string]interface{}
+	var response APIBaseResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		return fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	if response["state"] != "S" {
-		return fmt.Errorf("request failed with state: %v", response["state"])
+	if response.State != "S" {
+		return fmt.Errorf("request failed with state: %v", response.State)
 	}
 
-	// Decrypt payload using app code derived key
-	encryptedPayload, ok := response["payload"].(string)
-	if !ok {
+	if response.Payload == "" {
 		return fmt.Errorf("payload not found in response")
 	}
 
-	decrypted, err := c.decryptPayloadUsingAppCode(encryptedPayload)
+	decrypted, err := c.decryptCheckVersionPayload(response.Payload)
 	if err != nil {
 		return fmt.Errorf("failed to decrypt payload: %w", err)
 	}
 
-	c.encKey = decrypted["encKey"].(string)
-	c.signKey = decrypted["signKey"].(string)
+	c.encKey = decrypted.EncKey
+	c.signKey = decrypted.SignKey
 
 	return nil
 }
@@ -226,20 +224,16 @@ func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, err
 		return "", "", fmt.Errorf("failed to read response: %w", err)
 	}
 
-	var response map[string]interface{}
+	var response UsherEncryptionKeyResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		return "", "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	data, ok := response["data"].(map[string]interface{})
-	if !ok {
-		return "", "", fmt.Errorf("data not found in response")
+	if response.Data.PublicKey == "" {
+		return "", "", fmt.Errorf("public key not found in response")
 	}
 
-	publicKey := data["publicKey"].(string)
-	versionPrefix := data["versionPrefix"].(string)
-
-	return publicKey, versionPrefix, nil
+	return response.Data.PublicKey, response.Data.VersionPrefix, nil
 }
 
 // Login authenticates with the API and retrieves an access token
@@ -291,29 +285,27 @@ func (c *Client) Login(ctx context.Context) error {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
 
-	var response map[string]interface{}
+	var response LoginResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		return fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	status, _ := response["status"].(string)
-	if status == "INVALID_CREDENTIAL" {
+	if response.Status == "INVALID_CREDENTIAL" {
 		return fmt.Errorf("invalid email or password")
 	}
-	if status == "USER_LOCKED" {
+	if response.Status == "USER_LOCKED" {
 		return fmt.Errorf("account is locked")
 	}
-	if status != "OK" {
-		return fmt.Errorf("login failed with status: %s", status)
+	if response.Status != "OK" {
+		return fmt.Errorf("login failed with status: %s", response.Status)
 	}
 
-	data, ok := response["data"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("data not found in response")
+	if response.Data.AccessToken == "" {
+		return fmt.Errorf("access token not found in response")
 	}
 
-	c.accessToken = data["accessToken"].(string)
-	c.accessTokenExpirationTs = int64(data["accessTokenExpirationTs"].(float64))
+	c.accessToken = response.Data.AccessToken
+	c.accessTokenExpirationTs = response.Data.AccessTokenExpirationTs
 
 	return nil
 }
@@ -354,19 +346,20 @@ func (c *Client) getDecryptionKeyFromAppCode() string {
 	return val2[4:20]
 }
 
-func (c *Client) decryptPayloadUsingAppCode(payload string) (map[string]interface{}, error) {
+// decryptCheckVersionPayload decrypts and parses the checkVersion response payload
+func (c *Client) decryptCheckVersionPayload(payload string) (*CheckVersionResponse, error) {
 	key := c.getDecryptionKeyFromAppCode()
 	decrypted, err := DecryptAES128CBC(payload, key, IV)
 	if err != nil {
 		return nil, err
 	}
 
-	var result map[string]interface{}
+	var result CheckVersionResponse
 	if err := json.Unmarshal(decrypted, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse decrypted payload: %w", err)
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 func (c *Client) encryptPasswordWithPublicKey(password, publicKey string) (string, error) {

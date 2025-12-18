@@ -275,3 +275,123 @@ func TestInternalVIN_UnmarshalLargeNumber(t *testing.T) {
 		t.Error("Expected non-empty VIN")
 	}
 }
+
+// Auth response struct tests
+
+func TestCheckVersionResponse_Unmarshal(t *testing.T) {
+	jsonData := `{
+		"encKey": "test-encryption-key-1234",
+		"signKey": "test-signing-key-5678"
+	}`
+
+	var resp CheckVersionResponse
+	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	if resp.EncKey != "test-encryption-key-1234" {
+		t.Errorf("Expected encKey 'test-encryption-key-1234', got '%s'", resp.EncKey)
+	}
+	if resp.SignKey != "test-signing-key-5678" {
+		t.Errorf("Expected signKey 'test-signing-key-5678', got '%s'", resp.SignKey)
+	}
+}
+
+func TestUsherEncryptionKeyResponse_Unmarshal(t *testing.T) {
+	jsonData := `{
+		"data": {
+			"publicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ...",
+			"versionPrefix": "v1:"
+		}
+	}`
+
+	var resp UsherEncryptionKeyResponse
+	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	if resp.Data.PublicKey != "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ..." {
+		t.Errorf("Expected publicKey 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ...', got '%s'", resp.Data.PublicKey)
+	}
+	if resp.Data.VersionPrefix != "v1:" {
+		t.Errorf("Expected versionPrefix 'v1:', got '%s'", resp.Data.VersionPrefix)
+	}
+}
+
+func TestLoginResponse_Unmarshal(t *testing.T) {
+	jsonData := `{
+		"status": "OK",
+		"data": {
+			"accessToken": "test-access-token-abc123",
+			"accessTokenExpirationTs": 1701446400
+		}
+	}`
+
+	var resp LoginResponse
+	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	if resp.Status != "OK" {
+		t.Errorf("Expected status 'OK', got '%s'", resp.Status)
+	}
+	if resp.Data.AccessToken != "test-access-token-abc123" {
+		t.Errorf("Expected accessToken 'test-access-token-abc123', got '%s'", resp.Data.AccessToken)
+	}
+	if resp.Data.AccessTokenExpirationTs != 1701446400 {
+		t.Errorf("Expected accessTokenExpirationTs 1701446400, got %d", resp.Data.AccessTokenExpirationTs)
+	}
+}
+
+func TestLoginResponse_InvalidCredential(t *testing.T) {
+	jsonData := `{
+		"status": "INVALID_CREDENTIAL"
+	}`
+
+	var resp LoginResponse
+	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	if resp.Status != "INVALID_CREDENTIAL" {
+		t.Errorf("Expected status 'INVALID_CREDENTIAL', got '%s'", resp.Status)
+	}
+}
+
+func TestAPIBaseResponse_Unmarshal(t *testing.T) {
+	tests := []struct {
+		name      string
+		jsonData  string
+		wantState string
+		wantErr   float64
+	}{
+		{
+			name:      "success response",
+			jsonData:  `{"state": "S", "payload": "encrypted-data"}`,
+			wantState: "S",
+			wantErr:   0,
+		},
+		{
+			name:      "error response with code",
+			jsonData:  `{"state": "E", "errorCode": 600001, "message": "encryption error"}`,
+			wantState: "E",
+			wantErr:   600001,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var resp APIBaseResponse
+			if err := json.Unmarshal([]byte(tt.jsonData), &resp); err != nil {
+				t.Fatalf("Failed to unmarshal: %v", err)
+			}
+
+			if resp.State != tt.wantState {
+				t.Errorf("Expected state '%s', got '%s'", tt.wantState, resp.State)
+			}
+			if resp.ErrorCode != tt.wantErr {
+				t.Errorf("Expected errorCode %f, got %f", tt.wantErr, resp.ErrorCode)
+			}
+		})
+	}
+}

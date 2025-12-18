@@ -242,3 +242,44 @@ func (r *VehicleStatusResponse) GetDoorsInfo() (allLocked bool, err error) {
 		door.DrStatTrnkLg == 0
 	return
 }
+
+// Auth response types
+
+// APIBaseResponse represents the common base structure for API responses
+type APIBaseResponse struct {
+	State     string  `json:"state"`
+	Payload   string  `json:"payload"`
+	ErrorCode float64 `json:"errorCode"`
+	ExtraCode string  `json:"extraCode"`
+	Message   string  `json:"message"`
+	Error     string  `json:"error"`
+}
+
+// CheckVersionResponse represents the decrypted response from checkVersion endpoint
+type CheckVersionResponse struct {
+	EncKey  string `json:"encKey"`
+	SignKey string `json:"signKey"`
+}
+
+// UsherEncryptionKeyData contains the encryption key data from Usher API
+type UsherEncryptionKeyData struct {
+	PublicKey     string `json:"publicKey"`
+	VersionPrefix string `json:"versionPrefix"`
+}
+
+// UsherEncryptionKeyResponse represents the response from system/encryptionKey endpoint
+type UsherEncryptionKeyResponse struct {
+	Data UsherEncryptionKeyData `json:"data"`
+}
+
+// LoginData contains the login response data
+type LoginData struct {
+	AccessToken             string `json:"accessToken"`
+	AccessTokenExpirationTs int64  `json:"accessTokenExpirationTs"`
+}
+
+// LoginResponse represents the response from user/login endpoint
+type LoginResponse struct {
+	Status string    `json:"status"`
+	Data   LoginData `json:"data"`
+}
