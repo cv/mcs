@@ -243,8 +243,9 @@ func extractFuelInfo(vehicleStatus map[string]interface{}) (fuelLevel, range_ fl
 
 // extractLocationInfo extracts location information from vehicle status
 func extractLocationInfo(vehicleStatus map[string]interface{}) (lat, lon float64, timestamp string) {
-	remoteInfos := vehicleStatus["remoteInfos"].([]interface{})
-	firstInfo := remoteInfos[0].(map[string]interface{})
+	// Use alertInfos for location - remoteInfos has incorrect longitude sign
+	alertInfos := vehicleStatus["alertInfos"].([]interface{})
+	firstInfo := alertInfos[0].(map[string]interface{})
 	positionInfo := firstInfo["PositionInfo"].(map[string]interface{})
 
 	lat = positionInfo["Latitude"].(float64)
