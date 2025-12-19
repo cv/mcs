@@ -524,11 +524,14 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 		// Return success response for checkVersion (encryption key retrieval)
 		if strings.Contains(r.URL.Path, "checkVersion") {
 			testResponse := map[string]interface{}{
-				"encKey":  "testenckey123456",
-				"signKey": "testsignkey12345",
+				"encKey":  "newtestenckey123",
+				"signKey": "newtestsignkey12",
 			}
 			responseJSON, _ := json.Marshal(testResponse)
-			encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+			// Use the app code derived key for encryption (same as decryption uses)
+			tempClient := &Client{appCode: "202007270941270111799"}
+			key := tempClient.getDecryptionKeyFromAppCode()
+			encrypted, _ := EncryptAES128CBC(responseJSON, key, IV)
 			response := map[string]interface{}{
 				"state":   "S",
 				"payload": encrypted,
@@ -540,11 +543,13 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 			return
 		}
 
-		// Always return token expired error for other requests to trigger retry with backoff
+		// Always return encryption error for other requests to trigger retry with backoff
+		// Using 600001 (EncryptionError) instead of 600002 (TokenExpiredError) because
+		// TokenExpiredError triggers Login() which uses usherURL (not mocked here)
 		response := map[string]interface{}{
 			"state":     "E",
-			"errorCode": 600002,
-			"message":   "Token expired",
+			"errorCode": 600001,
+			"message":   "Encryption error",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(response); err != nil {
