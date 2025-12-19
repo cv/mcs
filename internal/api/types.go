@@ -46,10 +46,33 @@ type VecBaseInfo struct {
 	Vehicle      Vehicle `json:"Vehicle"`
 }
 
+// UnmarshalJSON implements custom unmarshaling to parse the nested vehicleInformation JSON string
+func (v *VecBaseInfo) UnmarshalJSON(data []byte) error {
+	// Use an alias to avoid infinite recursion
+	type VecBaseInfoAlias VecBaseInfo
+	var alias VecBaseInfoAlias
+	if err := json.Unmarshal(data, &alias); err != nil {
+		return err
+	}
+	*v = VecBaseInfo(alias)
+
+	// Parse the vehicleInformation JSON string if present
+	if v.Vehicle.VehicleInformationJSON != "" {
+		var parsed VehicleInformationParsed
+		if err := json.Unmarshal([]byte(v.Vehicle.VehicleInformationJSON), &parsed); err == nil {
+			v.Vehicle.VehicleInformation = parsed
+		}
+	}
+
+	return nil
+}
+
 // Vehicle represents vehicle information
 type Vehicle struct {
-	CvInformation    CvInformation    `json:"CvInformation"`
-	OtherInformation OtherInformation `json:"OtherInformation"`
+	CvInformation          CvInformation    `json:"CvInformation"`
+	OtherInformation       OtherInformation `json:"OtherInformation"`
+	VehicleInformationJSON string           `json:"vehicleInformation"` // JSON-encoded string
+	VehicleInformation     VehicleInformationParsed
 }
 
 // CvInformation represents connected vehicle information
@@ -57,13 +80,32 @@ type CvInformation struct {
 	InternalVIN InternalVIN `json:"internalVin"`
 }
 
-// OtherInformation contains additional vehicle details
+// OtherInformation contains additional vehicle details (from direct JSON field, often empty)
 type OtherInformation struct {
 	CarlineName       string  `json:"carlineName"`
 	ModelYear         string  `json:"modelYear"`
 	ModelName         string  `json:"modelName"`
 	ExteriorColorName string  `json:"exteriorColorName"`
 	IsElectric        float64 `json:"isElectric"`
+}
+
+// VehicleInformationParsed contains parsed vehicle details from the vehicleInformation JSON string
+type VehicleInformationParsed struct {
+	OtherInformation OtherInformationParsed `json:"OtherInformation"`
+}
+
+// OtherInformationParsed contains model info from the vehicleInformation JSON string
+type OtherInformationParsed struct {
+	CarlineName       string `json:"carlineName"`
+	CarlineCode       string `json:"carlineCode"`
+	ModelYear         string `json:"modelYear"`
+	ModelCode         string `json:"modelCode"`
+	ModelName         string `json:"modelName"`
+	TransmissionType  string `json:"transmissionType"`
+	ExteriorColorCode string `json:"exteriorColorCode"`
+	ExteriorColorName string `json:"exteriorColorName"`
+	InteriorColorCode string `json:"interiorColorCode"`
+	InteriorColorName string `json:"interiorColorName"`
 }
 
 // VehicleStatusResponse represents the response from GetVehicleStatus API
@@ -205,8 +247,9 @@ func (r *VecBaseInfosResponse) GetVehicleInfo() (vin, nickname, modelName, model
 	info := r.VecBaseInfos[0]
 	vin = info.VIN
 	nickname = info.Nickname
-	modelName = info.Vehicle.OtherInformation.ModelName
-	modelYear = info.Vehicle.OtherInformation.ModelYear
+	// Use the parsed vehicleInformation (JSON string) which has the actual model data
+	modelName = info.Vehicle.VehicleInformation.OtherInformation.ModelName
+	modelYear = info.Vehicle.VehicleInformation.OtherInformation.ModelYear
 	return
 }
 

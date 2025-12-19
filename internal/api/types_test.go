@@ -101,19 +101,24 @@ func TestVecBaseInfosResponse_VehicleInfo(t *testing.T) {
 }
 
 func TestVecBaseInfosResponse_GetVehicleInfo(t *testing.T) {
-	resp := &VecBaseInfosResponse{
-		VecBaseInfos: []VecBaseInfo{
+	// Test with JSON parsing to verify vehicleInformation string is properly parsed
+	jsonData := `{
+		"resultCode": "200S00",
+		"vecBaseInfos": [
 			{
-				VIN:      "JM3KKEHC1R0123456",
-				Nickname: "My Car",
-				Vehicle: Vehicle{
-					OtherInformation: OtherInformation{
-						ModelName: "CX-90 PHEV",
-						ModelYear: "2024",
-					},
-				},
-			},
-		},
+				"vin": "JM3KKEHC1R0123456",
+				"nickname": "My Car",
+				"Vehicle": {
+					"CvInformation": {"internalVin": "12345"},
+					"vehicleInformation": "{\"OtherInformation\":{\"modelName\":\"CX-90 PHEV\",\"modelYear\":\"2024\"}}"
+				}
+			}
+		]
+	}`
+
+	var resp VecBaseInfosResponse
+	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
 	}
 
 	vin, nickname, modelName, modelYear, err := resp.GetVehicleInfo()
