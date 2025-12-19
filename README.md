@@ -60,14 +60,18 @@ mcs completion bash     # Also: zsh, fish, powershell
 
 ```
 $ mcs status
+CX-90 PHEV 2.5L (2025)
+VIN: JM3KKDHA*********
 
-Vehicle Status (2025 Model)
-Last Updated: 2025-12-18 05:32:39
+Status as of 2025-12-19 09:17:02
 
-BATTERY: 66% (630.0 km range) [plugged in, charging]
-FUEL: 92% (630.0 km range)
+BATTERY: 55%
+FUEL: 92% (610.0 km EV / 620.0 km total range)
+CLIMATE: Off
 DOORS: All locked
+WINDOWS: All closed
 TIRES: FL:32.0 FR:32.0 RL:32.0 RR:32.0 PSI
+ODOMETER: 5,279.4 km
 ```
 
 ## Notes
