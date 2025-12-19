@@ -68,7 +68,7 @@ func TestAPIRequest_Success(t *testing.T) {
 		t.Fatalf("APIRequest failed: %v", err)
 	}
 
-	if result["resultCode"] != "200S00" {
+	if result["resultCode"] != ResultCodeSuccess {
 		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
 	}
 	if result["message"] != "Success" {
@@ -362,7 +362,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 		t.Error("Request was not received by server")
 	}
 
-	if result["resultCode"] != "200S00" {
+	if result["resultCode"] != ResultCodeSuccess {
 		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
 	}
 }
@@ -419,7 +419,7 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 		t.Error("Request was not received by server")
 	}
 
-	if result["resultCode"] != "200S00" {
+	if result["resultCode"] != ResultCodeSuccess {
 		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
 	}
 }

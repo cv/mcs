@@ -35,7 +35,7 @@ func TestGetVecBaseInfos(t *testing.T) {
 		t.Fatalf("GetVecBaseInfos failed: %v", err)
 	}
 
-	if result.ResultCode != "200S00" {
+	if result.ResultCode != ResultCodeSuccess {
 		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
 	}
 
@@ -84,7 +84,7 @@ func TestGetVehicleStatus(t *testing.T) {
 		t.Fatalf("GetVehicleStatus failed: %v", err)
 	}
 
-	if result.ResultCode != "200S00" {
+	if result.ResultCode != ResultCodeSuccess {
 		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
 	}
 
@@ -150,7 +150,7 @@ func TestGetEVVehicleStatus(t *testing.T) {
 		t.Fatalf("GetEVVehicleStatus failed: %v", err)
 	}
 
-	if result.ResultCode != "200S00" {
+	if result.ResultCode != ResultCodeSuccess {
 		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
 	}
 

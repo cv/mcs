@@ -24,8 +24,8 @@ func TestVecBaseInfosResponse_Unmarshal(t *testing.T) {
 		t.Fatalf("Failed to unmarshal: %v", err)
 	}
 
-	if resp.ResultCode != "200S00" {
-		t.Errorf("Expected resultCode '200S00', got '%s'", resp.ResultCode)
+	if resp.ResultCode != ResultCodeSuccess {
+		t.Errorf("Expected resultCode 'ResultCodeSuccess', got '%s'", resp.ResultCode)
 	}
 
 	if len(resp.VecBaseInfos) != 1 {
@@ -198,8 +198,8 @@ func TestVehicleStatusResponse_Unmarshal(t *testing.T) {
 		t.Fatalf("Failed to unmarshal: %v", err)
 	}
 
-	if resp.ResultCode != "200S00" {
-		t.Errorf("Expected resultCode '200S00', got '%s'", resp.ResultCode)
+	if resp.ResultCode != ResultCodeSuccess {
+		t.Errorf("Expected resultCode 'ResultCodeSuccess', got '%s'", resp.ResultCode)
 	}
 
 	if len(resp.RemoteInfos) != 1 {
@@ -274,8 +274,8 @@ func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
 		t.Fatalf("Failed to unmarshal: %v", err)
 	}
 
-	if resp.ResultCode != "200S00" {
-		t.Errorf("Expected resultCode '200S00', got '%s'", resp.ResultCode)
+	if resp.ResultCode != ResultCodeSuccess {
+		t.Errorf("Expected resultCode 'ResultCodeSuccess', got '%s'", resp.ResultCode)
 	}
 
 	if len(resp.ResultData) != 1 {

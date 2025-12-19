@@ -516,6 +516,12 @@ const (
 	Fahrenheit TemperatureUnit = 2
 )
 
+// API result code constants
+const (
+	// ResultCodeSuccess indicates a successful API response
+	ResultCodeSuccess = "200S00"
+)
+
 // Charger status constants
 const (
 	// ChargerConnected indicates the charger is connected/plugged in

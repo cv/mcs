@@ -83,19 +83,7 @@ func buildBatteryStatusFlags(batteryInfo api.BatteryInfo) []string {
 // formatBatteryStatus formats battery status for display
 func formatBatteryStatus(batteryInfo api.BatteryInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
-		data := map[string]interface{}{
-			"battery_level": batteryInfo.BatteryLevel,
-			"range_km":      batteryInfo.RangeKm,
-			"plugged_in":    batteryInfo.PluggedIn,
-			"charging":      batteryInfo.Charging,
-			"heater_on":     batteryInfo.HeaterOn,
-			"heater_auto":   batteryInfo.HeaterAuto,
-		}
-		if batteryInfo.Charging {
-			data["charge_time_ac_minutes"] = batteryInfo.ChargeTimeACMin
-			data["charge_time_qbc_minutes"] = batteryInfo.ChargeTimeQBCMin
-		}
-		return toJSON(data)
+		return toJSON(batteryInfoToMap(batteryInfo))
 	}
 
 	status := fmt.Sprintf("BATTERY: %.0f%% (%.1f km range)", batteryInfo.BatteryLevel, batteryInfo.RangeKm)
@@ -113,10 +101,7 @@ func formatBatteryStatus(batteryInfo api.BatteryInfo, jsonOutput bool) (string, 
 // formatFuelStatus formats fuel status for display
 func formatFuelStatus(fuelInfo api.FuelInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
-		return toJSON(map[string]interface{}{
-			"fuel_level": fuelInfo.FuelLevel,
-			"range_km":   fuelInfo.RangeKm,
-		})
+		return toJSON(fuelInfoToMap(fuelInfo))
 	}
 
 	return fmt.Sprintf("FUEL: %.0f%% (%.1f km range)", fuelInfo.FuelLevel, fuelInfo.RangeKm), nil
@@ -153,12 +138,7 @@ func formatFuelStatusWithRange(fuelInfo api.FuelInfo, fuelOnlyRange float64) str
 func formatLocationStatus(locationInfo api.LocationInfo, jsonOutput bool) (string, error) {
 	mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", locationInfo.Latitude, locationInfo.Longitude)
 	if jsonOutput {
-		return toJSON(map[string]interface{}{
-			"latitude":  locationInfo.Latitude,
-			"longitude": locationInfo.Longitude,
-			"timestamp": locationInfo.Timestamp,
-			"maps_url":  mapsURL,
-		})
+		return toJSON(locationInfoToMap(locationInfo))
 	}
 
 	return fmt.Sprintf("LOCATION: %.6f, %.6f\n  %s", locationInfo.Latitude, locationInfo.Longitude, mapsURL), nil
@@ -167,12 +147,7 @@ func formatLocationStatus(locationInfo api.LocationInfo, jsonOutput bool) (strin
 // formatTiresStatus formats tire status for display
 func formatTiresStatus(tireInfo api.TireInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
-		return toJSON(map[string]interface{}{
-			"front_left_psi":  tireInfo.FrontLeftPsi,
-			"front_right_psi": tireInfo.FrontRightPsi,
-			"rear_left_psi":   tireInfo.RearLeftPsi,
-			"rear_right_psi":  tireInfo.RearRightPsi,
-		})
+		return toJSON(tireInfoToMap(tireInfo))
 	}
 
 	return fmt.Sprintf("TIRES: FL:%.1f FR:%.1f RL:%.1f RR:%.1f PSI",
@@ -190,20 +165,7 @@ type doorPosition struct {
 // formatDoorsStatus formats door status for display
 func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, error) {
 	if jsonOutput {
-		return toJSON(map[string]interface{}{
-			"all_locked":        doorStatus.AllLocked,
-			"driver_open":       doorStatus.DriverOpen,
-			"passenger_open":    doorStatus.PassengerOpen,
-			"rear_left_open":    doorStatus.RearLeftOpen,
-			"rear_right_open":   doorStatus.RearRightOpen,
-			"trunk_open":        doorStatus.TrunkOpen,
-			"hood_open":         doorStatus.HoodOpen,
-			"fuel_lid_open":     doorStatus.FuelLidOpen,
-			"driver_locked":     doorStatus.DriverLocked,
-			"passenger_locked":  doorStatus.PassengerLocked,
-			"rear_left_locked":  doorStatus.RearLeftLocked,
-			"rear_right_locked": doorStatus.RearRightLocked,
-		})
+		return toJSON(doorStatusToMap(doorStatus))
 	}
 
 	// If all locked and closed, show simple message
@@ -247,9 +209,7 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, erro
 // formatOdometerStatus formats odometer status for display
 func formatOdometerStatus(odometerInfo api.OdometerInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
-		return toJSON(map[string]interface{}{
-			"odometer_km": odometerInfo.OdometerKm,
-		})
+		return toJSON(odometerInfoToMap(odometerInfo))
 	}
 
 	return fmt.Sprintf("ODOMETER: %s km", formatThousands(odometerInfo.OdometerKm)), nil
@@ -258,13 +218,7 @@ func formatOdometerStatus(odometerInfo api.OdometerInfo, jsonOutput bool) (strin
 // formatHvacStatus formats HVAC status for display
 func formatHvacStatus(hvacInfo api.HVACInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
-		return toJSON(map[string]interface{}{
-			"hvac_on":                hvacInfo.HVACOn,
-			"front_defroster":        hvacInfo.FrontDefroster,
-			"rear_defroster":         hvacInfo.RearDefroster,
-			"interior_temperature_c": hvacInfo.InteriorTempC,
-			"target_temperature_c":   hvacInfo.TargetTempC,
-		})
+		return toJSON(hvacInfoToMap(hvacInfo))
 	}
 
 	var status string
@@ -396,12 +350,7 @@ func formatChargeTime(acMinutes, qbcMinutes float64) string {
 // formatWindowsStatus formats window status for display
 func formatWindowsStatus(windowsInfo api.WindowStatus, jsonOutput bool) (string, error) {
 	if jsonOutput {
-		return toJSON(map[string]interface{}{
-			"driver_position":     windowsInfo.DriverPosition,
-			"passenger_position":  windowsInfo.PassengerPosition,
-			"rear_left_position":  windowsInfo.RearLeftPosition,
-			"rear_right_position": windowsInfo.RearRightPosition,
-		})
+		return toJSON(windowStatusToMap(windowsInfo))
 	}
 
 	// If all windows are closed, show simple message

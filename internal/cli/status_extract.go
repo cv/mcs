@@ -16,9 +16,8 @@ func extractVehicleInfoData(vehicleInfo VehicleInfo) map[string]interface{} {
 	}
 }
 
-// extractBatteryData extracts battery data for JSON output
-func extractBatteryData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
-	batteryInfo, _ := evStatus.GetBatteryInfo()
+// batteryInfoToMap converts BatteryInfo to a map for JSON output
+func batteryInfoToMap(batteryInfo api.BatteryInfo) map[string]interface{} {
 	data := map[string]interface{}{
 		"battery_level": batteryInfo.BatteryLevel,
 		"range_km":      batteryInfo.RangeKm,
@@ -34,18 +33,28 @@ func extractBatteryData(evStatus *api.EVVehicleStatusResponse) map[string]interf
 	return data
 }
 
-// extractFuelData extracts fuel data for JSON output
-func extractFuelData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	fuelInfo, _ := vehicleStatus.GetFuelInfo()
+// extractBatteryData extracts battery data for JSON output
+func extractBatteryData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
+	batteryInfo, _ := evStatus.GetBatteryInfo()
+	return batteryInfoToMap(batteryInfo)
+}
+
+// fuelInfoToMap converts FuelInfo to a map for JSON output
+func fuelInfoToMap(fuelInfo api.FuelInfo) map[string]interface{} {
 	return map[string]interface{}{
 		"fuel_level": fuelInfo.FuelLevel,
 		"range_km":   fuelInfo.RangeKm,
 	}
 }
 
-// extractLocationData extracts location data for JSON output
-func extractLocationData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	locationInfo, _ := vehicleStatus.GetLocationInfo()
+// extractFuelData extracts fuel data for JSON output
+func extractFuelData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	fuelInfo, _ := vehicleStatus.GetFuelInfo()
+	return fuelInfoToMap(fuelInfo)
+}
+
+// locationInfoToMap converts LocationInfo to a map for JSON output
+func locationInfoToMap(locationInfo api.LocationInfo) map[string]interface{} {
 	mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", locationInfo.Latitude, locationInfo.Longitude)
 	return map[string]interface{}{
 		"latitude":  locationInfo.Latitude,
@@ -55,9 +64,14 @@ func extractLocationData(vehicleStatus *api.VehicleStatusResponse) map[string]in
 	}
 }
 
-// extractTiresData extracts tire data for JSON output
-func extractTiresData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	tireInfo, _ := vehicleStatus.GetTiresInfo()
+// extractLocationData extracts location data for JSON output
+func extractLocationData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	locationInfo, _ := vehicleStatus.GetLocationInfo()
+	return locationInfoToMap(locationInfo)
+}
+
+// tireInfoToMap converts TireInfo to a map for JSON output
+func tireInfoToMap(tireInfo api.TireInfo) map[string]interface{} {
 	return map[string]interface{}{
 		"front_left_psi":  tireInfo.FrontLeftPsi,
 		"front_right_psi": tireInfo.FrontRightPsi,
@@ -66,9 +80,14 @@ func extractTiresData(vehicleStatus *api.VehicleStatusResponse) map[string]inter
 	}
 }
 
-// extractDoorsData extracts door data for JSON output
-func extractDoorsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	doorStatus, _ := vehicleStatus.GetDoorsInfo()
+// extractTiresData extracts tire data for JSON output
+func extractTiresData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	tireInfo, _ := vehicleStatus.GetTiresInfo()
+	return tireInfoToMap(tireInfo)
+}
+
+// doorStatusToMap converts DoorStatus to a map for JSON output
+func doorStatusToMap(doorStatus api.DoorStatus) map[string]interface{} {
 	return map[string]interface{}{
 		"all_locked":        doorStatus.AllLocked,
 		"driver_open":       doorStatus.DriverOpen,
@@ -85,17 +104,27 @@ func extractDoorsData(vehicleStatus *api.VehicleStatusResponse) map[string]inter
 	}
 }
 
-// extractOdometerData extracts odometer data for JSON output
-func extractOdometerData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	odometerInfo, _ := vehicleStatus.GetOdometerInfo()
+// extractDoorsData extracts door data for JSON output
+func extractDoorsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	doorStatus, _ := vehicleStatus.GetDoorsInfo()
+	return doorStatusToMap(doorStatus)
+}
+
+// odometerInfoToMap converts OdometerInfo to a map for JSON output
+func odometerInfoToMap(odometerInfo api.OdometerInfo) map[string]interface{} {
 	return map[string]interface{}{
 		"odometer_km": odometerInfo.OdometerKm,
 	}
 }
 
-// extractHvacData extracts HVAC data for JSON output
-func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
-	hvacInfo, _ := evStatus.GetHvacInfo()
+// extractOdometerData extracts odometer data for JSON output
+func extractOdometerData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	odometerInfo, _ := vehicleStatus.GetOdometerInfo()
+	return odometerInfoToMap(odometerInfo)
+}
+
+// hvacInfoToMap converts HVACInfo to a map for JSON output
+func hvacInfoToMap(hvacInfo api.HVACInfo) map[string]interface{} {
 	return map[string]interface{}{
 		"hvac_on":                hvacInfo.HVACOn,
 		"front_defroster":        hvacInfo.FrontDefroster,
@@ -105,13 +134,24 @@ func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]interface
 	}
 }
 
-// extractWindowsData extracts window data for JSON output
-func extractWindowsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	windowsInfo, _ := vehicleStatus.GetWindowsInfo()
+// extractHvacData extracts HVAC data for JSON output
+func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
+	hvacInfo, _ := evStatus.GetHvacInfo()
+	return hvacInfoToMap(hvacInfo)
+}
+
+// windowStatusToMap converts WindowStatus to a map for JSON output
+func windowStatusToMap(windowsInfo api.WindowStatus) map[string]interface{} {
 	return map[string]interface{}{
 		"driver_position":     windowsInfo.DriverPosition,
 		"passenger_position":  windowsInfo.PassengerPosition,
 		"rear_left_position":  windowsInfo.RearLeftPosition,
 		"rear_right_position": windowsInfo.RearRightPosition,
 	}
+}
+
+// extractWindowsData extracts window data for JSON output
+func extractWindowsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	windowsInfo, _ := vehicleStatus.GetWindowsInfo()
+	return windowStatusToMap(windowsInfo)
 }
