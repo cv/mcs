@@ -68,7 +68,8 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	}
 	output += hvacOutput + "\n"
 
-	doorsOutput, err := displayDoorsStatus(vehicleStatus, false)
+	doorStatus, _ := vehicleStatus.GetDoorsInfo()
+	doorsOutput, err := formatDoorsStatus(doorStatus, false)
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +86,8 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 		output += "HAZARDS: On\n"
 	}
 
-	tiresOutput, err := displayTiresStatus(vehicleStatus, false)
+	tireInfo, _ := vehicleStatus.GetTiresInfo()
+	tiresOutput, err := formatTiresStatus(tireInfo, false)
 	if err != nil {
 		return "", err
 	}
@@ -98,34 +100,4 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	output += odometerOutput + "\n"
 
 	return output, nil
-}
-
-// displayBatteryStatus displays battery status
-func displayBatteryStatus(evStatus *api.EVVehicleStatusResponse, jsonOutput bool) (string, error) {
-	batteryInfo, _ := evStatus.GetBatteryInfo()
-	return formatBatteryStatus(batteryInfo, jsonOutput)
-}
-
-// displayFuelStatus displays fuel status
-func displayFuelStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput bool) (string, error) {
-	fuelInfo, _ := vehicleStatus.GetFuelInfo()
-	return formatFuelStatus(fuelInfo, jsonOutput)
-}
-
-// displayLocationStatus displays location status
-func displayLocationStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput bool) (string, error) {
-	locationInfo, _ := vehicleStatus.GetLocationInfo()
-	return formatLocationStatus(locationInfo, jsonOutput)
-}
-
-// displayTiresStatus displays tire pressure status
-func displayTiresStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput bool) (string, error) {
-	tireInfo, _ := vehicleStatus.GetTiresInfo()
-	return formatTiresStatus(tireInfo, jsonOutput)
-}
-
-// displayDoorsStatus displays door lock status
-func displayDoorsStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput bool) (string, error) {
-	doorStatus, _ := vehicleStatus.GetDoorsInfo()
-	return formatDoorsStatus(doorStatus, jsonOutput)
 }

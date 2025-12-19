@@ -168,15 +168,20 @@ func displayStatusWithVehicle(cmd *cobra.Command, statusType StatusType, vehicle
 
 	switch statusType {
 	case StatusBattery:
-		output, err = displayBatteryStatus(evStatus, jsonOutput)
+		batteryInfo, _ := evStatus.GetBatteryInfo()
+		output, err = formatBatteryStatus(batteryInfo, jsonOutput)
 	case StatusFuel:
-		output, err = displayFuelStatus(vehicleStatus, jsonOutput)
+		fuelInfo, _ := vehicleStatus.GetFuelInfo()
+		output, err = formatFuelStatus(fuelInfo, jsonOutput)
 	case StatusLocation:
-		output, err = displayLocationStatus(vehicleStatus, jsonOutput)
+		locationInfo, _ := vehicleStatus.GetLocationInfo()
+		output, err = formatLocationStatus(locationInfo, jsonOutput)
 	case StatusTires:
-		output, err = displayTiresStatus(vehicleStatus, jsonOutput)
+		tireInfo, _ := vehicleStatus.GetTiresInfo()
+		output, err = formatTiresStatus(tireInfo, jsonOutput)
 	case StatusDoors:
-		output, err = displayDoorsStatus(vehicleStatus, jsonOutput)
+		doorStatus, _ := vehicleStatus.GetDoorsInfo()
+		output, err = formatDoorsStatus(doorStatus, jsonOutput)
 	case StatusAll:
 		output, err = displayAllStatus(vehicleStatus, evStatus, vehicleInfo, jsonOutput)
 	}
