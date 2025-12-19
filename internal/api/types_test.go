@@ -167,7 +167,9 @@ func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
 							"ChargerConnectorFitting": 1,
 							"ChargeStatusSub": 6,
 							"MaxChargeMinuteAC": 180,
-							"MaxChargeMinuteQBC": 45
+							"MaxChargeMinuteQBC": 45,
+							"BatteryHeaterON": 1,
+							"CstmzStatBatHeatAutoSW": 1
 						},
 						"RemoteHvacInfo": {
 							"HVAC": 1,
@@ -217,6 +219,12 @@ func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
 	}
 	if chargeInfo.MaxChargeMinuteQBC != 45 {
 		t.Errorf("Expected MaxChargeMinuteQBC 45, got %f", chargeInfo.MaxChargeMinuteQBC)
+	}
+	if chargeInfo.BatteryHeaterON != 1 {
+		t.Errorf("Expected BatteryHeaterON 1, got %f", chargeInfo.BatteryHeaterON)
+	}
+	if chargeInfo.CstmzStatBatHeatAutoSW != 1 {
+		t.Errorf("Expected CstmzStatBatHeatAutoSW 1, got %f", chargeInfo.CstmzStatBatHeatAutoSW)
 	}
 
 	hvacInfo := result.PlusBInformation.VehicleInfo.RemoteHvacInfo
@@ -832,6 +840,162 @@ func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
 			}
 			if rr != tt.wantRR {
 				t.Errorf("GetWindowsInfo() rear right = %v, want %v", rr, tt.wantRR)
+			}
+		})
+	}
+}
+
+func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
+	tests := []struct {
+		name              string
+		resp              *EVVehicleStatusResponse
+		wantBattery       float64
+		wantRange         float64
+		wantChargeTimeAC  float64
+		wantChargeTimeQBC float64
+		wantPluggedIn     bool
+		wantCharging      bool
+		wantHeaterOn      bool
+		wantHeaterAuto    bool
+		wantErr           bool
+	}{
+		{
+			name: "charging with heater on",
+			resp: &EVVehicleStatusResponse{
+				ResultData: []EVResultData{
+					{
+						PlusBInformation: PlusBInformation{
+							VehicleInfo: EVVehicleInfo{
+								ChargeInfo: ChargeInfo{
+									SmaphSOC:               66.0,
+									SmaphRemDrvDistKm:      245.5,
+									ChargerConnectorFitting: 1,
+									ChargeStatusSub:        6,
+									MaxChargeMinuteAC:      180,
+									MaxChargeMinuteQBC:     45,
+									BatteryHeaterON:        1,
+									CstmzStatBatHeatAutoSW: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantBattery:       66.0,
+			wantRange:         245.5,
+			wantChargeTimeAC:  180,
+			wantChargeTimeQBC: 45,
+			wantPluggedIn:     true,
+			wantCharging:      true,
+			wantHeaterOn:      true,
+			wantHeaterAuto:    true,
+			wantErr:           false,
+		},
+		{
+			name: "not charging, heater off",
+			resp: &EVVehicleStatusResponse{
+				ResultData: []EVResultData{
+					{
+						PlusBInformation: PlusBInformation{
+							VehicleInfo: EVVehicleInfo{
+								ChargeInfo: ChargeInfo{
+									SmaphSOC:               80.0,
+									SmaphRemDrvDistKm:      300.0,
+									ChargerConnectorFitting: 0,
+									ChargeStatusSub:        0,
+									BatteryHeaterON:        0,
+									CstmzStatBatHeatAutoSW: 0,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantBattery:       80.0,
+			wantRange:         300.0,
+			wantChargeTimeAC:  0,
+			wantChargeTimeQBC: 0,
+			wantPluggedIn:     false,
+			wantCharging:      false,
+			wantHeaterOn:      false,
+			wantHeaterAuto:    false,
+			wantErr:           false,
+		},
+		{
+			name: "heater on auto but not running",
+			resp: &EVVehicleStatusResponse{
+				ResultData: []EVResultData{
+					{
+						PlusBInformation: PlusBInformation{
+							VehicleInfo: EVVehicleInfo{
+								ChargeInfo: ChargeInfo{
+									SmaphSOC:               75.0,
+									SmaphRemDrvDistKm:      280.0,
+									ChargerConnectorFitting: 0,
+									ChargeStatusSub:        0,
+									BatteryHeaterON:        0,
+									CstmzStatBatHeatAutoSW: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantBattery:       75.0,
+			wantRange:         280.0,
+			wantChargeTimeAC:  0,
+			wantChargeTimeQBC: 0,
+			wantPluggedIn:     false,
+			wantCharging:      false,
+			wantHeaterOn:      false,
+			wantHeaterAuto:    true,
+			wantErr:           false,
+		},
+		{
+			name:              "no result data",
+			resp:              &EVVehicleStatusResponse{},
+			wantBattery:       0,
+			wantRange:         0,
+			wantChargeTimeAC:  0,
+			wantChargeTimeQBC: 0,
+			wantPluggedIn:     false,
+			wantCharging:      false,
+			wantHeaterOn:      false,
+			wantHeaterAuto:    false,
+			wantErr:           true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			battery, rangeKm, chargeTimeAC, chargeTimeQBC, pluggedIn, charging, heaterOn, heaterAuto, err := tt.resp.GetBatteryInfo()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetBatteryInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if battery != tt.wantBattery {
+				t.Errorf("GetBatteryInfo() battery = %v, want %v", battery, tt.wantBattery)
+			}
+			if rangeKm != tt.wantRange {
+				t.Errorf("GetBatteryInfo() range = %v, want %v", rangeKm, tt.wantRange)
+			}
+			if chargeTimeAC != tt.wantChargeTimeAC {
+				t.Errorf("GetBatteryInfo() chargeTimeAC = %v, want %v", chargeTimeAC, tt.wantChargeTimeAC)
+			}
+			if chargeTimeQBC != tt.wantChargeTimeQBC {
+				t.Errorf("GetBatteryInfo() chargeTimeQBC = %v, want %v", chargeTimeQBC, tt.wantChargeTimeQBC)
+			}
+			if pluggedIn != tt.wantPluggedIn {
+				t.Errorf("GetBatteryInfo() pluggedIn = %v, want %v", pluggedIn, tt.wantPluggedIn)
+			}
+			if charging != tt.wantCharging {
+				t.Errorf("GetBatteryInfo() charging = %v, want %v", charging, tt.wantCharging)
+			}
+			if heaterOn != tt.wantHeaterOn {
+				t.Errorf("GetBatteryInfo() heaterOn = %v, want %v", heaterOn, tt.wantHeaterOn)
+			}
+			if heaterAuto != tt.wantHeaterAuto {
+				t.Errorf("GetBatteryInfo() heaterAuto = %v, want %v", heaterAuto, tt.wantHeaterAuto)
 			}
 		})
 	}

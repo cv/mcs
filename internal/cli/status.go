@@ -216,8 +216,8 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 
 // displayBatteryStatus displays battery status
 func displayBatteryStatus(evStatus *api.EVVehicleStatusResponse, jsonOutput bool) string {
-	batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, _ := evStatus.GetBatteryInfo()
-	return formatBatteryStatus(batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, jsonOutput)
+	batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, heaterOn, heaterAuto, _ := evStatus.GetBatteryInfo()
+	return formatBatteryStatus(batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, heaterOn, heaterAuto, jsonOutput)
 }
 
 // displayFuelStatus displays fuel status
@@ -247,12 +247,14 @@ func displayDoorsStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput boo
 
 // extractBatteryData extracts battery data for JSON output
 func extractBatteryData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
-	batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, _ := evStatus.GetBatteryInfo()
+	batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, heaterOn, heaterAuto, _ := evStatus.GetBatteryInfo()
 	data := map[string]interface{}{
-		"battery_level": batteryLevel,
-		"range_km":      range_,
-		"plugged_in":    pluggedIn,
-		"charging":      charging,
+		"battery_level":   batteryLevel,
+		"range_km":        range_,
+		"plugged_in":      pluggedIn,
+		"charging":        charging,
+		"heater_on":       heaterOn,
+		"heater_auto":     heaterAuto,
 	}
 	if charging {
 		data["charge_time_ac_minutes"] = chargeTimeACMin
@@ -348,13 +350,15 @@ func toJSON(data map[string]interface{}) string {
 }
 
 // formatBatteryStatus formats battery status for display
-func formatBatteryStatus(batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin float64, pluggedIn, charging bool, jsonOutput bool) string {
+func formatBatteryStatus(batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin float64, pluggedIn, charging, heaterOn, heaterAuto bool, jsonOutput bool) string {
 	if jsonOutput {
 		data := map[string]interface{}{
 			"battery_level": batteryLevel,
 			"range_km":      range_,
 			"plugged_in":    pluggedIn,
 			"charging":      charging,
+			"heater_on":     heaterOn,
+			"heater_auto":   heaterAuto,
 		}
 		if charging {
 			data["charge_time_ac_minutes"] = chargeTimeACMin
@@ -364,18 +368,37 @@ func formatBatteryStatus(batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin
 	}
 
 	status := fmt.Sprintf("BATTERY: %.0f%% (%.1f km range)", batteryLevel, range_)
+
+	// Build status flags
+	var flags []string
+
 	if pluggedIn {
 		if charging {
 			// Show charging time estimates
 			timeStr := formatChargeTime(chargeTimeACMin, chargeTimeQBCMin)
 			if timeStr != "" {
-				status += fmt.Sprintf(" [charging, %s]", timeStr)
+				flags = append(flags, fmt.Sprintf("charging, %s", timeStr))
 			} else {
-				status += " [charging]"
+				flags = append(flags, "charging")
 			}
 		} else {
-			status += " [plugged in, not charging]"
+			flags = append(flags, "plugged in, not charging")
 		}
+	}
+
+	// Add heater status
+	if heaterOn {
+		if heaterAuto {
+			flags = append(flags, "battery heater on, auto enabled")
+		} else {
+			flags = append(flags, "battery heater on")
+		}
+	} else if heaterAuto {
+		flags = append(flags, "battery heater auto enabled")
+	}
+
+	if len(flags) > 0 {
+		status += fmt.Sprintf(" [%s]", strings.Join(flags, ", "))
 	}
 
 	return status

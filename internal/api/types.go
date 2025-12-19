@@ -153,6 +153,8 @@ type ChargeInfo struct {
 	ChargeStatusSub         float64 `json:"ChargeStatusSub"`
 	MaxChargeMinuteAC       float64 `json:"MaxChargeMinuteAC"`
 	MaxChargeMinuteQBC      float64 `json:"MaxChargeMinuteQBC"`
+	BatteryHeaterON         float64 `json:"BatteryHeaterON"`
+	CstmzStatBatHeatAutoSW  float64 `json:"CstmzStatBatHeatAutoSW"`
 }
 
 // RemoteHvacInfo contains HVAC system information
@@ -174,7 +176,7 @@ func (r *VecBaseInfosResponse) GetInternalVIN() (string, error) {
 }
 
 // GetBatteryInfo extracts battery information from the EV status response
-func (r *EVVehicleStatusResponse) GetBatteryInfo() (batteryLevel, rangeKm, chargeTimeACMin, chargeTimeQBCMin float64, pluggedIn, charging bool, err error) {
+func (r *EVVehicleStatusResponse) GetBatteryInfo() (batteryLevel, rangeKm, chargeTimeACMin, chargeTimeQBCMin float64, pluggedIn, charging, heaterOn, heaterAuto bool, err error) {
 	if len(r.ResultData) == 0 {
 		err = fmt.Errorf("no EV status data available")
 		return
@@ -186,6 +188,8 @@ func (r *EVVehicleStatusResponse) GetBatteryInfo() (batteryLevel, rangeKm, charg
 	chargeTimeQBCMin = chargeInfo.MaxChargeMinuteQBC
 	pluggedIn = int(chargeInfo.ChargerConnectorFitting) == 1
 	charging = int(chargeInfo.ChargeStatusSub) == 6
+	heaterOn = int(chargeInfo.BatteryHeaterON) == 1
+	heaterAuto = int(chargeInfo.CstmzStatBatHeatAutoSW) == 1
 	return
 }
 

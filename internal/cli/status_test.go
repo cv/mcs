@@ -136,7 +136,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatBatteryStatus(tt.batteryLevel, tt.range_, tt.chargeTimeACMin, tt.chargeTimeQBCMin, tt.pluggedIn, tt.charging, false)
+			result := formatBatteryStatus(tt.batteryLevel, tt.range_, tt.chargeTimeACMin, tt.chargeTimeQBCMin, tt.pluggedIn, tt.charging, false, false, false)
 			if result != tt.expectedOutput {
 				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
 			}
@@ -146,7 +146,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 
 // TestFormatBatteryStatus_JSON tests battery status JSON formatting
 func TestFormatBatteryStatus_JSON(t *testing.T) {
-	result := formatBatteryStatus(66, 245.5, 180, 45, true, true, true)
+	result := formatBatteryStatus(66, 245.5, 180, 45, true, true, false, false, true)
 
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &data); err != nil {
@@ -175,6 +175,62 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 
 	if data["charge_time_qbc_minutes"] != float64(45) {
 		t.Errorf("Expected charge_time_qbc_minutes 45, got %v", data["charge_time_qbc_minutes"])
+	}
+}
+
+// TestFormatBatteryStatus_WithHeater tests battery heater display
+func TestFormatBatteryStatus_WithHeater(t *testing.T) {
+	tests := []struct {
+		name      string
+		heaterOn  bool
+		heaterAuto bool
+		expected  string
+	}{
+		{
+			name:      "heater on with auto",
+			heaterOn:  true,
+			heaterAuto: true,
+			expected:  "BATTERY: 66% (245.5 km range) [battery heater on, auto enabled]",
+		},
+		{
+			name:      "heater on without auto",
+			heaterOn:  true,
+			heaterAuto: false,
+			expected:  "BATTERY: 66% (245.5 km range) [battery heater on]",
+		},
+		{
+			name:      "heater off with auto enabled",
+			heaterOn:  false,
+			heaterAuto: true,
+			expected:  "BATTERY: 66% (245.5 km range) [battery heater auto enabled]",
+		},
+		{
+			name:      "heater off without auto",
+			heaterOn:  false,
+			heaterAuto: false,
+			expected:  "BATTERY: 66% (245.5 km range)",
+		},
+		{
+			name:      "charging with heater on",
+			heaterOn:  true,
+			heaterAuto: true,
+			expected:  "BATTERY: 66% (245.5 km range) [charging, ~45m quick / ~3h AC, battery heater on, auto enabled]",
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result string
+			if i == 4 {
+				// Last test case includes charging
+				result = formatBatteryStatus(66, 245.5, 180, 45, true, true, tt.heaterOn, tt.heaterAuto, false)
+			} else {
+				result = formatBatteryStatus(66, 245.5, 0, 0, false, false, tt.heaterOn, tt.heaterAuto, false)
+			}
+			if result != tt.expected {
+				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
+			}
+		})
 	}
 }
 
