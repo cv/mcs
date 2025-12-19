@@ -133,10 +133,12 @@ type EVVehicleInfo struct {
 
 // ChargeInfo contains battery and charging information
 type ChargeInfo struct {
-	SmaphSOC               float64 `json:"SmaphSOC"`
-	SmaphRemDrvDistKm      float64 `json:"SmaphRemDrvDistKm"`
+	SmaphSOC                float64 `json:"SmaphSOC"`
+	SmaphRemDrvDistKm       float64 `json:"SmaphRemDrvDistKm"`
 	ChargerConnectorFitting float64 `json:"ChargerConnectorFitting"`
-	ChargeStatusSub        float64 `json:"ChargeStatusSub"`
+	ChargeStatusSub         float64 `json:"ChargeStatusSub"`
+	MaxChargeMinuteAC       float64 `json:"MaxChargeMinuteAC"`
+	MaxChargeMinuteQBC      float64 `json:"MaxChargeMinuteQBC"`
 }
 
 // RemoteHvacInfo contains HVAC system information
@@ -158,7 +160,7 @@ func (r *VecBaseInfosResponse) GetInternalVIN() (string, error) {
 }
 
 // GetBatteryInfo extracts battery information from the EV status response
-func (r *EVVehicleStatusResponse) GetBatteryInfo() (batteryLevel, rangeKm float64, pluggedIn, charging bool, err error) {
+func (r *EVVehicleStatusResponse) GetBatteryInfo() (batteryLevel, rangeKm, chargeTimeACMin, chargeTimeQBCMin float64, pluggedIn, charging bool, err error) {
 	if len(r.ResultData) == 0 {
 		err = fmt.Errorf("no EV status data available")
 		return
@@ -166,6 +168,8 @@ func (r *EVVehicleStatusResponse) GetBatteryInfo() (batteryLevel, rangeKm float6
 	chargeInfo := r.ResultData[0].PlusBInformation.VehicleInfo.ChargeInfo
 	batteryLevel = chargeInfo.SmaphSOC
 	rangeKm = chargeInfo.SmaphRemDrvDistKm
+	chargeTimeACMin = chargeInfo.MaxChargeMinuteAC
+	chargeTimeQBCMin = chargeInfo.MaxChargeMinuteQBC
 	pluggedIn = int(chargeInfo.ChargerConnectorFitting) == 1
 	charging = int(chargeInfo.ChargeStatusSub) == 6
 	return

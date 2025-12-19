@@ -210,8 +210,8 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 
 // displayBatteryStatus displays battery status
 func displayBatteryStatus(evStatus *api.EVVehicleStatusResponse, jsonOutput bool) string {
-	batteryLevel, range_, pluggedIn, charging, _ := evStatus.GetBatteryInfo()
-	return formatBatteryStatus(batteryLevel, range_, pluggedIn, charging, jsonOutput)
+	batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, _ := evStatus.GetBatteryInfo()
+	return formatBatteryStatus(batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, jsonOutput)
 }
 
 // displayFuelStatus displays fuel status
@@ -241,13 +241,18 @@ func displayDoorsStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput boo
 
 // extractBatteryData extracts battery data for JSON output
 func extractBatteryData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
-	batteryLevel, range_, pluggedIn, charging, _ := evStatus.GetBatteryInfo()
-	return map[string]interface{}{
+	batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, _ := evStatus.GetBatteryInfo()
+	data := map[string]interface{}{
 		"battery_level": batteryLevel,
 		"range_km":      range_,
 		"plugged_in":    pluggedIn,
 		"charging":      charging,
 	}
+	if charging {
+		data["charge_time_ac_minutes"] = chargeTimeACMin
+		data["charge_time_qbc_minutes"] = chargeTimeQBCMin
+	}
+	return data
 }
 
 // extractFuelData extracts fuel data for JSON output
@@ -316,20 +321,31 @@ func toJSON(data map[string]interface{}) string {
 }
 
 // formatBatteryStatus formats battery status for display
-func formatBatteryStatus(batteryLevel, range_ float64, pluggedIn, charging bool, jsonOutput bool) string {
+func formatBatteryStatus(batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin float64, pluggedIn, charging bool, jsonOutput bool) string {
 	if jsonOutput {
-		return toJSON(map[string]interface{}{
+		data := map[string]interface{}{
 			"battery_level": batteryLevel,
 			"range_km":      range_,
 			"plugged_in":    pluggedIn,
 			"charging":      charging,
-		})
+		}
+		if charging {
+			data["charge_time_ac_minutes"] = chargeTimeACMin
+			data["charge_time_qbc_minutes"] = chargeTimeQBCMin
+		}
+		return toJSON(data)
 	}
 
 	status := fmt.Sprintf("BATTERY: %.0f%% (%.1f km range)", batteryLevel, range_)
 	if pluggedIn {
 		if charging {
-			status += " [plugged in, charging]"
+			// Show charging time estimates
+			timeStr := formatChargeTime(chargeTimeACMin, chargeTimeQBCMin)
+			if timeStr != "" {
+				status += fmt.Sprintf(" [charging, %s]", timeStr)
+			} else {
+				status += " [charging]"
+			}
 		} else {
 			status += " [plugged in, not charging]"
 		}
@@ -487,4 +503,45 @@ func formatThousands(value float64) string {
 	}
 
 	return result + decPart
+}
+
+// formatChargeTime formats charging time estimates for display
+func formatChargeTime(acMinutes, qbcMinutes float64) string {
+	// If both are zero or negative, no charging time info available
+	if acMinutes <= 0 && qbcMinutes <= 0 {
+		return ""
+	}
+
+	// Helper to format minutes as "Xh Ym" or "Xm"
+	formatMinutes := func(minutes float64) string {
+		if minutes <= 0 {
+			return ""
+		}
+		hours := int(minutes) / 60
+		mins := int(minutes) % 60
+		if hours > 0 {
+			if mins > 0 {
+				return fmt.Sprintf("%dh %dm", hours, mins)
+			}
+			return fmt.Sprintf("%dh", hours)
+		}
+		return fmt.Sprintf("%dm", mins)
+	}
+
+	// If both are available and different, show both
+	if qbcMinutes > 0 && acMinutes > 0 && qbcMinutes != acMinutes {
+		qbcStr := formatMinutes(qbcMinutes)
+		acStr := formatMinutes(acMinutes)
+		return fmt.Sprintf("~%s quick / ~%s AC", qbcStr, acStr)
+	}
+
+	// Otherwise, show whichever is available
+	if qbcMinutes > 0 {
+		return fmt.Sprintf("~%s to full", formatMinutes(qbcMinutes))
+	}
+	if acMinutes > 0 {
+		return fmt.Sprintf("~%s to full", formatMinutes(acMinutes))
+	}
+
+	return ""
 }

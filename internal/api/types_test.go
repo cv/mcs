@@ -160,7 +160,9 @@ func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
 							"SmaphSOC": 66.0,
 							"SmaphRemDrvDistKm": 245.5,
 							"ChargerConnectorFitting": 1,
-							"ChargeStatusSub": 6
+							"ChargeStatusSub": 6,
+							"MaxChargeMinuteAC": 180,
+							"MaxChargeMinuteQBC": 45
 						},
 						"RemoteHvacInfo": {
 							"HVAC": 1,
@@ -204,6 +206,12 @@ func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
 	}
 	if chargeInfo.ChargeStatusSub != 6 {
 		t.Errorf("Expected ChargeStatusSub 6, got %f", chargeInfo.ChargeStatusSub)
+	}
+	if chargeInfo.MaxChargeMinuteAC != 180 {
+		t.Errorf("Expected MaxChargeMinuteAC 180, got %f", chargeInfo.MaxChargeMinuteAC)
+	}
+	if chargeInfo.MaxChargeMinuteQBC != 45 {
+		t.Errorf("Expected MaxChargeMinuteQBC 45, got %f", chargeInfo.MaxChargeMinuteQBC)
 	}
 
 	hvacInfo := result.PlusBInformation.VehicleInfo.RemoteHvacInfo

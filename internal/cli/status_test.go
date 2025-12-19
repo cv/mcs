@@ -73,44 +73,72 @@ func TestStatusCommand_JSONFlag(t *testing.T) {
 // TestFormatBatteryStatus tests battery status formatting
 func TestFormatBatteryStatus(t *testing.T) {
 	tests := []struct {
-		name           string
-		batteryLevel   float64
-		range_         float64
-		pluggedIn      bool
-		charging       bool
-		expectedOutput string
+		name             string
+		batteryLevel     float64
+		range_           float64
+		chargeTimeACMin  float64
+		chargeTimeQBCMin float64
+		pluggedIn        bool
+		charging         bool
+		expectedOutput   string
 	}{
 		{
-			name:           "charging",
-			batteryLevel:   66,
-			range_:         245.5,
-			pluggedIn:      true,
-			charging:       true,
-			expectedOutput: "BATTERY: 66% (245.5 km range) [plugged in, charging]",
+			name:             "charging with time estimates",
+			batteryLevel:     66,
+			range_:           245.5,
+			chargeTimeACMin:  180,
+			chargeTimeQBCMin: 45,
+			pluggedIn:        true,
+			charging:         true,
+			expectedOutput:   "BATTERY: 66% (245.5 km range) [charging, ~45m quick / ~3h AC]",
 		},
 		{
-			name:           "plugged not charging",
-			batteryLevel:   100,
-			range_:         300.0,
-			pluggedIn:      true,
-			charging:       false,
-			expectedOutput: "BATTERY: 100% (300.0 km range) [plugged in, not charging]",
+			name:             "charging with only AC time",
+			batteryLevel:     50,
+			range_:           150.0,
+			chargeTimeACMin:  150,
+			chargeTimeQBCMin: 0,
+			pluggedIn:        true,
+			charging:         true,
+			expectedOutput:   "BATTERY: 50% (150.0 km range) [charging, ~2h 30m to full]",
 		},
 		{
-			name:           "unplugged",
-			batteryLevel:   50,
-			range_:         150.0,
-			pluggedIn:      false,
-			charging:       false,
-			expectedOutput: "BATTERY: 50% (150.0 km range)",
+			name:             "charging with no time estimates",
+			batteryLevel:     45,
+			range_:           120.0,
+			chargeTimeACMin:  0,
+			chargeTimeQBCMin: 0,
+			pluggedIn:        true,
+			charging:         true,
+			expectedOutput:   "BATTERY: 45% (120.0 km range) [charging]",
+		},
+		{
+			name:             "plugged not charging",
+			batteryLevel:     100,
+			range_:           300.0,
+			chargeTimeACMin:  0,
+			chargeTimeQBCMin: 0,
+			pluggedIn:        true,
+			charging:         false,
+			expectedOutput:   "BATTERY: 100% (300.0 km range) [plugged in, not charging]",
+		},
+		{
+			name:             "unplugged",
+			batteryLevel:     50,
+			range_:           150.0,
+			chargeTimeACMin:  0,
+			chargeTimeQBCMin: 0,
+			pluggedIn:        false,
+			charging:         false,
+			expectedOutput:   "BATTERY: 50% (150.0 km range)",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatBatteryStatus(tt.batteryLevel, tt.range_, tt.pluggedIn, tt.charging, false)
-			if !strings.Contains(result, tt.expectedOutput) {
-				t.Errorf("Expected output to contain '%s', got '%s'", tt.expectedOutput, result)
+			result := formatBatteryStatus(tt.batteryLevel, tt.range_, tt.chargeTimeACMin, tt.chargeTimeQBCMin, tt.pluggedIn, tt.charging, false)
+			if result != tt.expectedOutput {
+				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
 			}
 		})
 	}
@@ -118,7 +146,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 
 // TestFormatBatteryStatus_JSON tests battery status JSON formatting
 func TestFormatBatteryStatus_JSON(t *testing.T) {
-	result := formatBatteryStatus(66, 245.5, true, true, true)
+	result := formatBatteryStatus(66, 245.5, 180, 45, true, true, true)
 
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &data); err != nil {
@@ -139,6 +167,14 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 
 	if data["charging"] != true {
 		t.Errorf("Expected charging true, got %v", data["charging"])
+	}
+
+	if data["charge_time_ac_minutes"] != float64(180) {
+		t.Errorf("Expected charge_time_ac_minutes 180, got %v", data["charge_time_ac_minutes"])
+	}
+
+	if data["charge_time_qbc_minutes"] != float64(45) {
+		t.Errorf("Expected charge_time_qbc_minutes 45, got %v", data["charge_time_qbc_minutes"])
 	}
 }
 
@@ -569,5 +605,67 @@ func TestExtractOdometerData(t *testing.T) {
 
 	if data["odometer_km"] != 12345.6 {
 		t.Errorf("Expected odometer_km 12345.6, got %v", data["odometer_km"])
+	}
+}
+
+// TestFormatChargeTime tests charge time formatting
+func TestFormatChargeTime(t *testing.T) {
+	tests := []struct {
+		name       string
+		acMinutes  float64
+		qbcMinutes float64
+		expected   string
+	}{
+		{
+			name:       "both available and different",
+			acMinutes:  180,
+			qbcMinutes: 45,
+			expected:   "~45m quick / ~3h AC",
+		},
+		{
+			name:       "only AC available",
+			acMinutes:  150,
+			qbcMinutes: 0,
+			expected:   "~2h 30m to full",
+		},
+		{
+			name:       "only QBC available",
+			acMinutes:  0,
+			qbcMinutes: 60,
+			expected:   "~1h to full",
+		},
+		{
+			name:       "both zero",
+			acMinutes:  0,
+			qbcMinutes: 0,
+			expected:   "",
+		},
+		{
+			name:       "short time",
+			acMinutes:  30,
+			qbcMinutes: 0,
+			expected:   "~30m to full",
+		},
+		{
+			name:       "exact hour",
+			acMinutes:  120,
+			qbcMinutes: 0,
+			expected:   "~2h to full",
+		},
+		{
+			name:       "same time for both",
+			acMinutes:  60,
+			qbcMinutes: 60,
+			expected:   "~1h to full",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatChargeTime(tt.acMinutes, tt.qbcMinutes)
+			if result != tt.expected {
+				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
+			}
+		})
 	}
 }
