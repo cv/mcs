@@ -563,16 +563,17 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 				AlertInfos: []AlertInfo{
 					{
 						Door: DoorInfo{
-							DrStatDrv:       0,
-							DrStatPsngr:     0,
-							DrStatRl:        0,
-							DrStatRr:        0,
-							DrStatTrnkLg:    0,
-							DrStatHood:      0,
-							LockLinkSwDrv:   0,
-							LockLinkSwPsngr: 0,
-							LockLinkSwRl:    0,
-							LockLinkSwRr:    0,
+							DrStatDrv:         0,
+							DrStatPsngr:       0,
+							DrStatRl:          0,
+							DrStatRr:          0,
+							DrStatTrnkLg:      0,
+							DrStatHood:        0,
+							LockLinkSwDrv:     0,
+							LockLinkSwPsngr:   0,
+							LockLinkSwRl:      0,
+							LockLinkSwRr:      0,
+							FuelLidOpenStatus: 0,
 						},
 					},
 				},
@@ -584,6 +585,7 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 				RearRightOpen:   false,
 				TrunkOpen:       false,
 				HoodOpen:        false,
+				FuelLidOpen:     false,
 				DriverLocked:    true,
 				PassengerLocked: true,
 				RearLeftLocked:  true,
@@ -598,16 +600,17 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 				AlertInfos: []AlertInfo{
 					{
 						Door: DoorInfo{
-							DrStatDrv:       0,
-							DrStatPsngr:     0,
-							DrStatRl:        0,
-							DrStatRr:        0,
-							DrStatTrnkLg:    0,
-							DrStatHood:      0,
-							LockLinkSwDrv:   1, // unlocked
-							LockLinkSwPsngr: 0,
-							LockLinkSwRl:    0,
-							LockLinkSwRr:    0,
+							DrStatDrv:         0,
+							DrStatPsngr:       0,
+							DrStatRl:          0,
+							DrStatRr:          0,
+							DrStatTrnkLg:      0,
+							DrStatHood:        0,
+							LockLinkSwDrv:     1, // unlocked
+							LockLinkSwPsngr:   0,
+							LockLinkSwRl:      0,
+							LockLinkSwRr:      0,
+							FuelLidOpenStatus: 0,
 						},
 					},
 				},
@@ -619,6 +622,7 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 				RearRightOpen:   false,
 				TrunkOpen:       false,
 				HoodOpen:        false,
+				FuelLidOpen:     false,
 				DriverLocked:    false, // unlocked
 				PassengerLocked: true,
 				RearLeftLocked:  true,
@@ -633,16 +637,17 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 				AlertInfos: []AlertInfo{
 					{
 						Door: DoorInfo{
-							DrStatDrv:       0,
-							DrStatPsngr:     0,
-							DrStatRl:        0,
-							DrStatRr:        0,
-							DrStatTrnkLg:    1, // open
-							DrStatHood:      1, // open
-							LockLinkSwDrv:   0,
-							LockLinkSwPsngr: 0,
-							LockLinkSwRl:    0,
-							LockLinkSwRr:    0,
+							DrStatDrv:         0,
+							DrStatPsngr:       0,
+							DrStatRl:          0,
+							DrStatRr:          0,
+							DrStatTrnkLg:      1, // open
+							DrStatHood:        1, // open
+							LockLinkSwDrv:     0,
+							LockLinkSwPsngr:   0,
+							LockLinkSwRl:      0,
+							LockLinkSwRr:      0,
+							FuelLidOpenStatus: 0,
 						},
 					},
 				},
@@ -654,11 +659,49 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 				RearRightOpen:   false,
 				TrunkOpen:       true, // open
 				HoodOpen:        true, // open
+				FuelLidOpen:     false,
 				DriverLocked:    true,
 				PassengerLocked: true,
 				RearLeftLocked:  true,
 				RearRightLocked: true,
 				AllLocked:       false, // not all locked because doors are open
+			},
+			wantErr: false,
+		},
+		{
+			name: "fuel lid open",
+			resp: &VehicleStatusResponse{
+				AlertInfos: []AlertInfo{
+					{
+						Door: DoorInfo{
+							DrStatDrv:         0,
+							DrStatPsngr:       0,
+							DrStatRl:          0,
+							DrStatRr:          0,
+							DrStatTrnkLg:      0,
+							DrStatHood:        0,
+							LockLinkSwDrv:     0,
+							LockLinkSwPsngr:   0,
+							LockLinkSwRl:      0,
+							LockLinkSwRr:      0,
+							FuelLidOpenStatus: 1, // open
+						},
+					},
+				},
+			},
+			wantStatus: DoorStatus{
+				DriverOpen:      false,
+				PassengerOpen:   false,
+				RearLeftOpen:    false,
+				RearRightOpen:   false,
+				TrunkOpen:       false,
+				HoodOpen:        false,
+				FuelLidOpen:     true, // open
+				DriverLocked:    true,
+				PassengerLocked: true,
+				RearLeftLocked:  true,
+				RearRightLocked: true,
+				AllLocked:       true, // fuel lid doesn't affect lock status
 			},
 			wantErr: false,
 		},

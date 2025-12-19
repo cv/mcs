@@ -103,16 +103,17 @@ type PositionInfo struct {
 
 // DoorInfo contains door lock status
 type DoorInfo struct {
-	DrStatDrv      float64 `json:"DrStatDrv"`
-	DrStatPsngr    float64 `json:"DrStatPsngr"`
-	DrStatRl       float64 `json:"DrStatRl"`
-	DrStatRr       float64 `json:"DrStatRr"`
-	DrStatTrnkLg   float64 `json:"DrStatTrnkLg"`
-	DrStatHood     float64 `json:"DrStatHood"`
-	LockLinkSwDrv  float64 `json:"LockLinkSwDrv"`
-	LockLinkSwPsngr float64 `json:"LockLinkSwPsngr"`
-	LockLinkSwRl   float64 `json:"LockLinkSwRl"`
-	LockLinkSwRr   float64 `json:"LockLinkSwRr"`
+	DrStatDrv         float64 `json:"DrStatDrv"`
+	DrStatPsngr       float64 `json:"DrStatPsngr"`
+	DrStatRl          float64 `json:"DrStatRl"`
+	DrStatRr          float64 `json:"DrStatRr"`
+	DrStatTrnkLg      float64 `json:"DrStatTrnkLg"`
+	DrStatHood        float64 `json:"DrStatHood"`
+	LockLinkSwDrv     float64 `json:"LockLinkSwDrv"`
+	LockLinkSwPsngr   float64 `json:"LockLinkSwPsngr"`
+	LockLinkSwRl      float64 `json:"LockLinkSwRl"`
+	LockLinkSwRr      float64 `json:"LockLinkSwRr"`
+	FuelLidOpenStatus float64 `json:"FuelLidOpenStatus"`
 }
 
 // WindowInfo contains window position information
@@ -270,6 +271,7 @@ type DoorStatus struct {
 	RearRightOpen  bool
 	TrunkOpen      bool
 	HoodOpen       bool
+	FuelLidOpen    bool
 	DriverLocked   bool
 	PassengerLocked bool
 	RearLeftLocked  bool
@@ -292,6 +294,7 @@ func (r *VehicleStatusResponse) GetDoorsInfo() (status DoorStatus, err error) {
 	status.RearRightOpen = int(door.DrStatRr) == 1
 	status.TrunkOpen = int(door.DrStatTrnkLg) == 1
 	status.HoodOpen = int(door.DrStatHood) == 1
+	status.FuelLidOpen = int(door.FuelLidOpenStatus) == 1
 
 	// Lock status (0=locked, 1=unlocked)
 	status.DriverLocked = int(door.LockLinkSwDrv) == 0

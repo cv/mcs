@@ -310,16 +310,17 @@ func extractTiresData(vehicleStatus *api.VehicleStatusResponse) map[string]inter
 func extractDoorsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
 	doorStatus, _ := vehicleStatus.GetDoorsInfo()
 	return map[string]interface{}{
-		"all_locked":       doorStatus.AllLocked,
-		"driver_open":      doorStatus.DriverOpen,
-		"passenger_open":   doorStatus.PassengerOpen,
-		"rear_left_open":   doorStatus.RearLeftOpen,
-		"rear_right_open":  doorStatus.RearRightOpen,
-		"trunk_open":       doorStatus.TrunkOpen,
-		"hood_open":        doorStatus.HoodOpen,
-		"driver_locked":    doorStatus.DriverLocked,
-		"passenger_locked": doorStatus.PassengerLocked,
-		"rear_left_locked": doorStatus.RearLeftLocked,
+		"all_locked":        doorStatus.AllLocked,
+		"driver_open":       doorStatus.DriverOpen,
+		"passenger_open":    doorStatus.PassengerOpen,
+		"rear_left_open":    doorStatus.RearLeftOpen,
+		"rear_right_open":   doorStatus.RearRightOpen,
+		"trunk_open":        doorStatus.TrunkOpen,
+		"hood_open":         doorStatus.HoodOpen,
+		"fuel_lid_open":     doorStatus.FuelLidOpen,
+		"driver_locked":     doorStatus.DriverLocked,
+		"passenger_locked":  doorStatus.PassengerLocked,
+		"rear_left_locked":  doorStatus.RearLeftLocked,
 		"rear_right_locked": doorStatus.RearRightLocked,
 	}
 }
@@ -467,6 +468,7 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) string {
 			"rear_right_open":   doorStatus.RearRightOpen,
 			"trunk_open":        doorStatus.TrunkOpen,
 			"hood_open":         doorStatus.HoodOpen,
+			"fuel_lid_open":     doorStatus.FuelLidOpen,
 			"driver_locked":     doorStatus.DriverLocked,
 			"passenger_locked":  doorStatus.PassengerLocked,
 			"rear_left_locked":  doorStatus.RearLeftLocked,
@@ -514,6 +516,9 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) string {
 	}
 	if doorStatus.HoodOpen {
 		issues = append(issues, "Hood open")
+	}
+	if doorStatus.FuelLidOpen {
+		issues = append(issues, "Fuel lid open")
 	}
 
 	if len(issues) == 0 {
