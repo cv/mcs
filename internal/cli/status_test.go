@@ -432,12 +432,13 @@ func TestRunStatus_Integration(t *testing.T) {
 // TestFormatHvacStatus tests HVAC status formatting
 func TestFormatHvacStatus(t *testing.T) {
 	tests := []struct {
-		name            string
-		hvacOn          bool
-		frontDefroster  bool
-		rearDefroster   bool
-		interiorTempC   float64
-		expectedOutput  string
+		name           string
+		hvacOn         bool
+		frontDefroster bool
+		rearDefroster  bool
+		interiorTempC  float64
+		targetTempC    float64
+		expectedOutput string
 	}{
 		{
 			name:           "hvac on with both defrosters",
@@ -445,6 +446,7 @@ func TestFormatHvacStatus(t *testing.T) {
 			frontDefroster: true,
 			rearDefroster:  true,
 			interiorTempC:  21,
+			targetTempC:    21,
 			expectedOutput: "CLIMATE: On, 21°C (front and rear defrosters on)",
 		},
 		{
@@ -453,6 +455,7 @@ func TestFormatHvacStatus(t *testing.T) {
 			frontDefroster: true,
 			rearDefroster:  false,
 			interiorTempC:  19,
+			targetTempC:    19,
 			expectedOutput: "CLIMATE: On, 19°C (front defroster on)",
 		},
 		{
@@ -461,6 +464,7 @@ func TestFormatHvacStatus(t *testing.T) {
 			frontDefroster: false,
 			rearDefroster:  true,
 			interiorTempC:  22,
+			targetTempC:    22,
 			expectedOutput: "CLIMATE: On, 22°C (rear defroster on)",
 		},
 		{
@@ -469,7 +473,17 @@ func TestFormatHvacStatus(t *testing.T) {
 			frontDefroster: false,
 			rearDefroster:  false,
 			interiorTempC:  20,
+			targetTempC:    20,
 			expectedOutput: "CLIMATE: On, 20°C",
+		},
+		{
+			name:           "hvac on with target temp different from interior",
+			hvacOn:         true,
+			frontDefroster: false,
+			rearDefroster:  false,
+			interiorTempC:  18,
+			targetTempC:    22,
+			expectedOutput: "CLIMATE: On, 18°C → 22°C",
 		},
 		{
 			name:           "hvac off",
@@ -477,13 +491,14 @@ func TestFormatHvacStatus(t *testing.T) {
 			frontDefroster: false,
 			rearDefroster:  false,
 			interiorTempC:  15,
+			targetTempC:    20,
 			expectedOutput: "CLIMATE: Off, 15°C",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatHvacStatus(tt.hvacOn, tt.frontDefroster, tt.rearDefroster, tt.interiorTempC, false)
+			result := formatHvacStatus(tt.hvacOn, tt.frontDefroster, tt.rearDefroster, tt.interiorTempC, tt.targetTempC, false)
 			if result != tt.expectedOutput {
 				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
 			}
@@ -493,7 +508,7 @@ func TestFormatHvacStatus(t *testing.T) {
 
 // TestFormatHvacStatus_JSON tests HVAC status JSON formatting
 func TestFormatHvacStatus_JSON(t *testing.T) {
-	result := formatHvacStatus(true, true, false, 21, true)
+	result := formatHvacStatus(true, true, false, 21, 22, true)
 
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &data); err != nil {
@@ -515,6 +530,10 @@ func TestFormatHvacStatus_JSON(t *testing.T) {
 	if data["interior_temperature_c"] != float64(21) {
 		t.Errorf("Expected interior_temperature_c 21, got %v", data["interior_temperature_c"])
 	}
+
+	if data["target_temperature_c"] != float64(22) {
+		t.Errorf("Expected target_temperature_c 22, got %v", data["target_temperature_c"])
+	}
 }
 
 // TestGetHvacInfo tests extracting HVAC info from EV status
@@ -532,6 +551,7 @@ func TestGetHvacInfo(t *testing.T) {
 							FrontDefroster: 1,
 							RearDefogger:   0,
 							InCarTeDC:      21.5,
+							TargetTemp:     22.0,
 						},
 					},
 				},
@@ -539,7 +559,7 @@ func TestGetHvacInfo(t *testing.T) {
 		},
 	}
 
-	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
+	hvacOn, frontDefroster, rearDefroster, interiorTempC, targetTempC := evStatus.GetHvacInfo()
 
 	if !hvacOn {
 		t.Error("Expected hvacOn to be true")
@@ -552,6 +572,9 @@ func TestGetHvacInfo(t *testing.T) {
 	}
 	if interiorTempC != 21.5 {
 		t.Errorf("Expected interiorTempC 21.5, got %v", interiorTempC)
+	}
+	if targetTempC != 22.0 {
+		t.Errorf("Expected targetTempC 22.0, got %v", targetTempC)
 	}
 }
 
@@ -572,7 +595,7 @@ func TestGetHvacInfo_MissingData(t *testing.T) {
 		},
 	}
 
-	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
+	hvacOn, frontDefroster, rearDefroster, interiorTempC, targetTempC := evStatus.GetHvacInfo()
 
 	if hvacOn {
 		t.Error("Expected hvacOn to be false when data missing")
@@ -585,6 +608,9 @@ func TestGetHvacInfo_MissingData(t *testing.T) {
 	}
 	if interiorTempC != 0 {
 		t.Errorf("Expected interiorTempC 0 when data missing, got %v", interiorTempC)
+	}
+	if targetTempC != 0 {
+		t.Errorf("Expected targetTempC 0 when data missing, got %v", targetTempC)
 	}
 }
 
@@ -603,6 +629,7 @@ func TestExtractHvacData(t *testing.T) {
 							FrontDefroster: 0,
 							RearDefogger:   1,
 							InCarTeDC:      18,
+							TargetTemp:     22,
 						},
 					},
 				},
@@ -623,6 +650,9 @@ func TestExtractHvacData(t *testing.T) {
 	}
 	if data["interior_temperature_c"] != float64(18) {
 		t.Errorf("Expected interior_temperature_c 18, got %v", data["interior_temperature_c"])
+	}
+	if data["target_temperature_c"] != float64(22) {
+		t.Errorf("Expected target_temperature_c 22, got %v", data["target_temperature_c"])
 	}
 }
 

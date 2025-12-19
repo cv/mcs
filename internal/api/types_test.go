@@ -175,7 +175,8 @@ func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
 							"HVAC": 1,
 							"FrontDefroster": 1,
 							"RearDefogger": 0,
-							"InCarTeDC": 21.5
+							"InCarTeDC": 21.5,
+							"TargetTemp": 22.0
 						}
 					}
 				}
@@ -239,6 +240,9 @@ func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
 	}
 	if hvacInfo.InCarTeDC != 21.5 {
 		t.Errorf("Expected InCarTeDC 21.5, got %f", hvacInfo.InCarTeDC)
+	}
+	if hvacInfo.TargetTemp != 22.0 {
+		t.Errorf("Expected TargetTemp 22.0, got %f", hvacInfo.TargetTemp)
 	}
 }
 
@@ -985,6 +989,116 @@ func TestVehicleStatusResponse_GetHazardInfo(t *testing.T) {
 			}
 			if hazards != tt.wantHazards {
 				t.Errorf("GetHazardInfo() = %v, want %v", hazards, tt.wantHazards)
+			}
+		})
+	}
+}
+
+func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
+	tests := []struct {
+		name           string
+		resp           *EVVehicleStatusResponse
+		wantHvacOn     bool
+		wantFrontDef   bool
+		wantRearDef    bool
+		wantInteriorC  float64
+		wantTargetC    float64
+	}{
+		{
+			name: "HVAC on with target temp",
+			resp: &EVVehicleStatusResponse{
+				ResultData: []EVResultData{
+					{
+						PlusBInformation: PlusBInformation{
+							VehicleInfo: EVVehicleInfo{
+								RemoteHvacInfo: &RemoteHvacInfo{
+									HVAC:           1,
+									FrontDefroster: 1,
+									RearDefogger:   0,
+									InCarTeDC:      18.0,
+									TargetTemp:     22.0,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantHvacOn:    true,
+			wantFrontDef:  true,
+			wantRearDef:   false,
+			wantInteriorC: 18.0,
+			wantTargetC:   22.0,
+		},
+		{
+			name: "HVAC off",
+			resp: &EVVehicleStatusResponse{
+				ResultData: []EVResultData{
+					{
+						PlusBInformation: PlusBInformation{
+							VehicleInfo: EVVehicleInfo{
+								RemoteHvacInfo: &RemoteHvacInfo{
+									HVAC:           0,
+									FrontDefroster: 0,
+									RearDefogger:   0,
+									InCarTeDC:      20.0,
+									TargetTemp:     21.0,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantHvacOn:    false,
+			wantFrontDef:  false,
+			wantRearDef:   false,
+			wantInteriorC: 20.0,
+			wantTargetC:   21.0,
+		},
+		{
+			name: "no HVAC info",
+			resp: &EVVehicleStatusResponse{
+				ResultData: []EVResultData{
+					{
+						PlusBInformation: PlusBInformation{
+							VehicleInfo: EVVehicleInfo{},
+						},
+					},
+				},
+			},
+			wantHvacOn:    false,
+			wantFrontDef:  false,
+			wantRearDef:   false,
+			wantInteriorC: 0,
+			wantTargetC:   0,
+		},
+		{
+			name:          "no result data",
+			resp:          &EVVehicleStatusResponse{},
+			wantHvacOn:    false,
+			wantFrontDef:  false,
+			wantRearDef:   false,
+			wantInteriorC: 0,
+			wantTargetC:   0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hvacOn, frontDef, rearDef, interiorC, targetC := tt.resp.GetHvacInfo()
+			if hvacOn != tt.wantHvacOn {
+				t.Errorf("GetHvacInfo() hvacOn = %v, want %v", hvacOn, tt.wantHvacOn)
+			}
+			if frontDef != tt.wantFrontDef {
+				t.Errorf("GetHvacInfo() frontDef = %v, want %v", frontDef, tt.wantFrontDef)
+			}
+			if rearDef != tt.wantRearDef {
+				t.Errorf("GetHvacInfo() rearDef = %v, want %v", rearDef, tt.wantRearDef)
+			}
+			if interiorC != tt.wantInteriorC {
+				t.Errorf("GetHvacInfo() interiorC = %v, want %v", interiorC, tt.wantInteriorC)
+			}
+			if targetC != tt.wantTargetC {
+				t.Errorf("GetHvacInfo() targetC = %v, want %v", targetC, tt.wantTargetC)
 			}
 		})
 	}

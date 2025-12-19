@@ -170,6 +170,7 @@ type RemoteHvacInfo struct {
 	FrontDefroster float64 `json:"FrontDefroster"`
 	RearDefogger   float64 `json:"RearDefogger"`
 	InCarTeDC      float64 `json:"InCarTeDC"`
+	TargetTemp     float64 `json:"TargetTemp"`
 }
 
 // Helper methods for extracting data
@@ -201,18 +202,19 @@ func (r *EVVehicleStatusResponse) GetBatteryInfo() (batteryLevel, rangeKm, charg
 }
 
 // GetHvacInfo extracts HVAC information from the EV status response
-func (r *EVVehicleStatusResponse) GetHvacInfo() (hvacOn, frontDefroster, rearDefroster bool, interiorTempC float64) {
+func (r *EVVehicleStatusResponse) GetHvacInfo() (hvacOn, frontDefroster, rearDefroster bool, interiorTempC, targetTempC float64) {
 	if len(r.ResultData) == 0 {
-		return false, false, false, 0
+		return false, false, false, 0, 0
 	}
 	hvacInfo := r.ResultData[0].PlusBInformation.VehicleInfo.RemoteHvacInfo
 	if hvacInfo == nil {
-		return false, false, false, 0
+		return false, false, false, 0, 0
 	}
 	hvacOn = int(hvacInfo.HVAC) == 1
 	frontDefroster = int(hvacInfo.FrontDefroster) == 1
 	rearDefroster = int(hvacInfo.RearDefogger) == 1
 	interiorTempC = hvacInfo.InCarTeDC
+	targetTempC = hvacInfo.TargetTemp
 	return
 }
 

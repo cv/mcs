@@ -196,7 +196,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	timestamp := formatTimestamp(evStatus.GetOccurrenceDate())
 
 	// Extract HVAC info
-	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
+	hvacOn, frontDefroster, rearDefroster, interiorTempC, targetTempC := evStatus.GetHvacInfo()
 
 	// Extract odometer
 	odometer, _ := vehicleStatus.GetOdometerInfo()
@@ -210,7 +210,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	output := fmt.Sprintf("\nVehicle Status (Last Updated: %s)\n\n", timestamp)
 	output += displayBatteryStatus(evStatus, false) + "\n"
 	output += displayFuelStatus(vehicleStatus, false) + "\n"
-	output += formatHvacStatus(hvacOn, frontDefroster, rearDefroster, interiorTempC, false) + "\n"
+	output += formatHvacStatus(hvacOn, frontDefroster, rearDefroster, interiorTempC, targetTempC, false) + "\n"
 	output += displayDoorsStatus(vehicleStatus, false) + "\n"
 	output += formatWindowsStatus(driver, passenger, rearLeft, rearRight, false) + "\n"
 
@@ -335,12 +335,13 @@ func extractOdometerData(vehicleStatus *api.VehicleStatusResponse) map[string]in
 
 // extractHvacData extracts HVAC data for JSON output
 func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
-	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
+	hvacOn, frontDefroster, rearDefroster, interiorTempC, targetTempC := evStatus.GetHvacInfo()
 	return map[string]interface{}{
 		"hvac_on":                hvacOn,
 		"front_defroster":        frontDefroster,
 		"rear_defroster":         rearDefroster,
 		"interior_temperature_c": interiorTempC,
+		"target_temperature_c":   targetTempC,
 	}
 }
 
@@ -540,19 +541,25 @@ func formatOdometerStatus(odometerKm float64, jsonOutput bool) string {
 }
 
 // formatHvacStatus formats HVAC status for display
-func formatHvacStatus(hvacOn, frontDefroster, rearDefroster bool, interiorTempC float64, jsonOutput bool) string {
+func formatHvacStatus(hvacOn, frontDefroster, rearDefroster bool, interiorTempC, targetTempC float64, jsonOutput bool) string {
 	if jsonOutput {
 		return toJSON(map[string]interface{}{
 			"hvac_on":                hvacOn,
 			"front_defroster":        frontDefroster,
 			"rear_defroster":         rearDefroster,
 			"interior_temperature_c": interiorTempC,
+			"target_temperature_c":   targetTempC,
 		})
 	}
 
 	var status string
 	if hvacOn {
-		status = fmt.Sprintf("CLIMATE: On, %.0f°C", interiorTempC)
+		// Show current temp → target temp when HVAC is on and temps differ
+		if targetTempC > 0 && targetTempC != interiorTempC {
+			status = fmt.Sprintf("CLIMATE: On, %.0f°C → %.0f°C", interiorTempC, targetTempC)
+		} else {
+			status = fmt.Sprintf("CLIMATE: On, %.0f°C", interiorTempC)
+		}
 	} else {
 		status = fmt.Sprintf("CLIMATE: Off, %.0f°C", interiorTempC)
 	}
