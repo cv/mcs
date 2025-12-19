@@ -42,6 +42,63 @@ func assertNoArgsCommand(t *testing.T, cmd *cobra.Command) {
 	}
 }
 
+// assertSubcommandExists verifies that a subcommand exists, has a description,
+// and optionally validates that it accepts no arguments.
+func assertSubcommandExists(t *testing.T, parent *cobra.Command, subcommandName string, shouldAcceptNoArgs bool) *cobra.Command {
+	t.Helper()
+
+	subCmd := findSubcommand(parent, subcommandName)
+	if subCmd == nil {
+		t.Fatalf("Expected %s subcommand to exist", subcommandName)
+		return nil
+	}
+
+	if subCmd.Short == "" {
+		t.Errorf("Expected %s subcommand to have a description", subcommandName)
+	}
+
+	if shouldAcceptNoArgs {
+		if err := subCmd.ValidateArgs([]string{}); err != nil {
+			t.Errorf("%s subcommand should accept no arguments: %v", subcommandName, err)
+		}
+	}
+
+	return subCmd
+}
+
+// assertSubcommandsExist verifies that multiple subcommands exist with descriptions
+// and optionally validates that they accept no arguments.
+func assertSubcommandsExist(t *testing.T, parent *cobra.Command, subcommandNames []string, shouldAcceptNoArgs bool) {
+	t.Helper()
+
+	for _, name := range subcommandNames {
+		t.Run(name, func(t *testing.T) {
+			assertSubcommandExists(t, parent, name, shouldAcceptNoArgs)
+		})
+	}
+}
+
+// FlagAssertion represents expectations for a command flag.
+type FlagAssertion struct {
+	Name         string
+	DefaultValue string
+}
+
+// assertFlagExists verifies that a flag exists and optionally checks its default value.
+func assertFlagExists(t *testing.T, cmd *cobra.Command, assertion FlagAssertion) {
+	t.Helper()
+
+	flag := cmd.Flags().Lookup(assertion.Name)
+	if flag == nil {
+		t.Errorf("Expected --%s flag to exist", assertion.Name)
+		return
+	}
+
+	if assertion.DefaultValue != "" && flag.DefValue != assertion.DefaultValue {
+		t.Errorf("Expected --%s default to be '%s', got '%s'", assertion.Name, assertion.DefaultValue, flag.DefValue)
+	}
+}
+
 // MockVehicleStatusBuilder provides a fluent API for building mock VehicleStatusResponse objects.
 type MockVehicleStatusBuilder struct {
 	response *api.VehicleStatusResponse

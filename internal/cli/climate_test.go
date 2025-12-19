@@ -10,22 +10,15 @@ func TestClimateCommand(t *testing.T) {
 
 // TestClimateCommand_Subcommands tests climate subcommands
 func TestClimateCommand_Subcommands(t *testing.T) {
-	subcommands := []string{"on", "off", "set"}
+	cmd := NewClimateCmd()
 
-	for _, name := range subcommands {
-		t.Run(name, func(t *testing.T) {
-			cmd := NewClimateCmd()
-			subCmd := findSubcommand(cmd, name)
+	// Test on/off subcommands (accept no args)
+	assertSubcommandsExist(t, cmd, []string{"on", "off"}, true)
 
-			if subCmd == nil {
-				t.Fatalf("Expected %s subcommand to exist", name)
-			}
-
-			if subCmd.Short == "" {
-				t.Errorf("Expected %s subcommand to have a description", name)
-			}
-		})
-	}
+	// Test set subcommand (accepts flags, so no args validation)
+	t.Run("set", func(t *testing.T) {
+		assertSubcommandExists(t, cmd, "set", false)
+	})
 }
 
 // TestClimateCommand_SetSubcommand_Flags tests climate set subcommand flags
@@ -37,27 +30,9 @@ func TestClimateCommand_SetSubcommand_Flags(t *testing.T) {
 		t.Fatal("Expected set subcommand to exist")
 	}
 
-	// Test that flags exist
-	tempFlag := setCmd.Flags().Lookup("temp")
-	if tempFlag == nil {
-		t.Error("Expected --temp flag to exist")
-	}
-
-	unitFlag := setCmd.Flags().Lookup("unit")
-	if unitFlag == nil {
-		t.Error("Expected --unit flag to exist")
-	}
-	if unitFlag != nil && unitFlag.DefValue != "c" {
-		t.Errorf("Expected --unit default to be 'c', got '%s'", unitFlag.DefValue)
-	}
-
-	frontDefrostFlag := setCmd.Flags().Lookup("front-defrost")
-	if frontDefrostFlag == nil {
-		t.Error("Expected --front-defrost flag to exist")
-	}
-
-	rearDefrostFlag := setCmd.Flags().Lookup("rear-defrost")
-	if rearDefrostFlag == nil {
-		t.Error("Expected --rear-defrost flag to exist")
-	}
+	// Test that flags exist with proper defaults
+	assertFlagExists(t, setCmd, FlagAssertion{Name: "temp"})
+	assertFlagExists(t, setCmd, FlagAssertion{Name: "unit", DefaultValue: "c"})
+	assertFlagExists(t, setCmd, FlagAssertion{Name: "front-defrost"})
+	assertFlagExists(t, setCmd, FlagAssertion{Name: "rear-defrost"})
 }
