@@ -6,6 +6,17 @@ import (
 	"github.com/cv/mcs/internal/api"
 )
 
+// extractWithGetter is a generic helper that extracts data using a getter function
+// and converts it to a map using a converter function. If the getter returns an error,
+// it returns an empty map.
+func extractWithGetter[T any](getter func() (T, error), converter func(T) map[string]interface{}) map[string]interface{} {
+	info, err := getter()
+	if err != nil {
+		return map[string]interface{}{}
+	}
+	return converter(info)
+}
+
 // extractVehicleInfoData extracts vehicle info for JSON output
 func extractVehicleInfoData(vehicleInfo VehicleInfo) map[string]interface{} {
 	return map[string]interface{}{
@@ -35,8 +46,7 @@ func batteryInfoToMap(batteryInfo api.BatteryInfo) map[string]interface{} {
 
 // extractBatteryData extracts battery data for JSON output
 func extractBatteryData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
-	batteryInfo, _ := evStatus.GetBatteryInfo()
-	return batteryInfoToMap(batteryInfo)
+	return extractWithGetter(evStatus.GetBatteryInfo, batteryInfoToMap)
 }
 
 // fuelInfoToMap converts FuelInfo to a map for JSON output
@@ -49,8 +59,7 @@ func fuelInfoToMap(fuelInfo api.FuelInfo) map[string]interface{} {
 
 // extractFuelData extracts fuel data for JSON output
 func extractFuelData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	fuelInfo, _ := vehicleStatus.GetFuelInfo()
-	return fuelInfoToMap(fuelInfo)
+	return extractWithGetter(vehicleStatus.GetFuelInfo, fuelInfoToMap)
 }
 
 // locationInfoToMap converts LocationInfo to a map for JSON output
@@ -66,8 +75,7 @@ func locationInfoToMap(locationInfo api.LocationInfo) map[string]interface{} {
 
 // extractLocationData extracts location data for JSON output
 func extractLocationData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	locationInfo, _ := vehicleStatus.GetLocationInfo()
-	return locationInfoToMap(locationInfo)
+	return extractWithGetter(vehicleStatus.GetLocationInfo, locationInfoToMap)
 }
 
 // tireInfoToMap converts TireInfo to a map for JSON output
@@ -82,8 +90,7 @@ func tireInfoToMap(tireInfo api.TireInfo) map[string]interface{} {
 
 // extractTiresData extracts tire data for JSON output
 func extractTiresData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	tireInfo, _ := vehicleStatus.GetTiresInfo()
-	return tireInfoToMap(tireInfo)
+	return extractWithGetter(vehicleStatus.GetTiresInfo, tireInfoToMap)
 }
 
 // doorStatusToMap converts DoorStatus to a map for JSON output
@@ -106,8 +113,7 @@ func doorStatusToMap(doorStatus api.DoorStatus) map[string]interface{} {
 
 // extractDoorsData extracts door data for JSON output
 func extractDoorsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	doorStatus, _ := vehicleStatus.GetDoorsInfo()
-	return doorStatusToMap(doorStatus)
+	return extractWithGetter(vehicleStatus.GetDoorsInfo, doorStatusToMap)
 }
 
 // odometerInfoToMap converts OdometerInfo to a map for JSON output
@@ -119,8 +125,7 @@ func odometerInfoToMap(odometerInfo api.OdometerInfo) map[string]interface{} {
 
 // extractOdometerData extracts odometer data for JSON output
 func extractOdometerData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	odometerInfo, _ := vehicleStatus.GetOdometerInfo()
-	return odometerInfoToMap(odometerInfo)
+	return extractWithGetter(vehicleStatus.GetOdometerInfo, odometerInfoToMap)
 }
 
 // hvacInfoToMap converts HVACInfo to a map for JSON output
@@ -136,8 +141,7 @@ func hvacInfoToMap(hvacInfo api.HVACInfo) map[string]interface{} {
 
 // extractHvacData extracts HVAC data for JSON output
 func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
-	hvacInfo, _ := evStatus.GetHvacInfo()
-	return hvacInfoToMap(hvacInfo)
+	return extractWithGetter(evStatus.GetHvacInfo, hvacInfoToMap)
 }
 
 // windowStatusToMap converts WindowStatus to a map for JSON output
@@ -152,6 +156,5 @@ func windowStatusToMap(windowsInfo api.WindowStatus) map[string]interface{} {
 
 // extractWindowsData extracts window data for JSON output
 func extractWindowsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	windowsInfo, _ := vehicleStatus.GetWindowsInfo()
-	return windowStatusToMap(windowsInfo)
+	return extractWithGetter(vehicleStatus.GetWindowsInfo, windowStatusToMap)
 }
