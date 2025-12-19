@@ -10,34 +10,33 @@ import (
 
 // NewClimateCmd creates the climate command
 func NewClimateCmd() *cobra.Command {
-	climateCmd := &cobra.Command{
-		Use:   "climate",
-		Short: "Control vehicle climate (HVAC)",
-		Long:  `Control vehicle climate system (on/off/set).`,
-	}
-
-	// Add simple on/off subcommands using factory
-	climateCmd.AddCommand(NewSimpleCommand(SimpleCommandConfig{
-		Use:   "on",
-		Short: "Turn climate on",
-		Long:  `Turn the vehicle HVAC system on.`,
-		APICall: func(ctx context.Context, client *api.Client, vin string) error {
-			return client.HVACOn(ctx, vin)
+	climateCmd := NewParentWithSubcommands(
+		"climate",
+		"Control vehicle climate (HVAC)",
+		`Control vehicle climate system (on/off/set).`,
+		[]SimpleCommandConfig{
+			{
+				Use:   "on",
+				Short: "Turn climate on",
+				Long:  `Turn the vehicle HVAC system on.`,
+				APICall: func(ctx context.Context, client *api.Client, vin string) error {
+					return client.HVACOn(ctx, vin)
+				},
+				SuccessMsg:   "Climate turned on successfully",
+				ErrorMsgTmpl: "failed to turn HVAC on: %w",
+			},
+			{
+				Use:   "off",
+				Short: "Turn climate off",
+				Long:  `Turn the vehicle HVAC system off.`,
+				APICall: func(ctx context.Context, client *api.Client, vin string) error {
+					return client.HVACOff(ctx, vin)
+				},
+				SuccessMsg:   "Climate turned off successfully",
+				ErrorMsgTmpl: "failed to turn HVAC off: %w",
+			},
 		},
-		SuccessMsg:   "Climate turned on successfully",
-		ErrorMsgTmpl: "failed to turn HVAC on: %w",
-	}))
-
-	climateCmd.AddCommand(NewSimpleCommand(SimpleCommandConfig{
-		Use:   "off",
-		Short: "Turn climate off",
-		Long:  `Turn the vehicle HVAC system off.`,
-		APICall: func(ctx context.Context, client *api.Client, vin string) error {
-			return client.HVACOff(ctx, vin)
-		},
-		SuccessMsg:   "Climate turned off successfully",
-		ErrorMsgTmpl: "failed to turn HVAC off: %w",
-	}))
+	)
 
 	// Add set subcommand with flags (more complex, keep separate)
 	climateCmd.AddCommand(newClimateSetCmd())
