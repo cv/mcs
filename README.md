@@ -65,8 +65,8 @@ VIN: JM3KKDHA*********
 
 Status as of 2025-12-19 09:17:02
 
-BATTERY: 55%
-FUEL: 92% (620.0 km range)
+BATTERY: 43%
+FUEL: 92% (10 km EV + 610 km fuel = 620 km total)
 CLIMATE: Off
 DOORS: All locked
 WINDOWS: All closed
