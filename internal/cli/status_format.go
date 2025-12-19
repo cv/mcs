@@ -179,6 +179,14 @@ func formatTiresStatus(tireInfo api.TireInfo, jsonOutput bool) (string, error) {
 		tireInfo.FrontLeftPsi, tireInfo.FrontRightPsi, tireInfo.RearLeftPsi, tireInfo.RearRightPsi), nil
 }
 
+// doorPosition describes a single door position for status checking
+type doorPosition struct {
+	name     string
+	isOpen   bool
+	isLocked bool
+	hasLock  bool // trunk/hood/fuel lid don't have locks
+}
+
 // formatDoorsStatus formats door status for display
 func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, error) {
 	if jsonOutput {
@@ -203,44 +211,30 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, erro
 		return "DOORS: All locked", nil
 	}
 
-	// Otherwise, build a list of issues
+	// Define all door positions to check
+	doors := []doorPosition{
+		{"Driver", doorStatus.DriverOpen, doorStatus.DriverLocked, true},
+		{"Passenger", doorStatus.PassengerOpen, doorStatus.PassengerLocked, true},
+		{"Rear left", doorStatus.RearLeftOpen, doorStatus.RearLeftLocked, true},
+		{"Rear right", doorStatus.RearRightOpen, doorStatus.RearRightLocked, true},
+		{"Trunk", doorStatus.TrunkOpen, false, false},
+		{"Hood", doorStatus.HoodOpen, false, false},
+		{"Fuel lid", doorStatus.FuelLidOpen, false, false},
+	}
+
+	// Build a list of issues
 	var issues []string
 
-	// Check unlocked doors (closed but not locked)
-	if !doorStatus.DriverLocked && !doorStatus.DriverOpen {
-		issues = append(issues, "Driver unlocked")
-	}
-	if !doorStatus.PassengerLocked && !doorStatus.PassengerOpen {
-		issues = append(issues, "Passenger unlocked")
-	}
-	if !doorStatus.RearLeftLocked && !doorStatus.RearLeftOpen {
-		issues = append(issues, "Rear left unlocked")
-	}
-	if !doorStatus.RearRightLocked && !doorStatus.RearRightOpen {
-		issues = append(issues, "Rear right unlocked")
-	}
+	for _, door := range doors {
+		// Check unlocked doors (closed but not locked)
+		if door.hasLock && !door.isLocked && !door.isOpen {
+			issues = append(issues, fmt.Sprintf("%s unlocked", door.name))
+		}
 
-	// Check open doors/trunk/hood
-	if doorStatus.DriverOpen {
-		issues = append(issues, "Driver open")
-	}
-	if doorStatus.PassengerOpen {
-		issues = append(issues, "Passenger open")
-	}
-	if doorStatus.RearLeftOpen {
-		issues = append(issues, "Rear left open")
-	}
-	if doorStatus.RearRightOpen {
-		issues = append(issues, "Rear right open")
-	}
-	if doorStatus.TrunkOpen {
-		issues = append(issues, "Trunk open")
-	}
-	if doorStatus.HoodOpen {
-		issues = append(issues, "Hood open")
-	}
-	if doorStatus.FuelLidOpen {
-		issues = append(issues, "Fuel lid open")
+		// Check open doors/trunk/hood/fuel lid
+		if door.isOpen {
+			issues = append(issues, fmt.Sprintf("%s open", door.name))
+		}
 	}
 
 	if len(issues) == 0 {
