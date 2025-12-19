@@ -175,3 +175,76 @@ func TestSetColorEnabled(t *testing.T) {
 		t.Error("Expected colors to be disabled")
 	}
 }
+
+func TestColorPressure(t *testing.T) {
+	// Disable colors for consistent test results
+	oldColorEnabled := colorEnabled
+	SetColorEnabled(false)
+	defer SetColorEnabled(oldColorEnabled)
+
+	target := 36.0 // Mazda CX-90 recommended
+
+	tests := []struct {
+		name     string
+		pressure float64
+		expected string
+	}{
+		// Green: within ±3 PSI
+		{"exact target", 36.0, "36.0"},
+		{"slightly high", 38.0, "38.0"},
+		{"slightly low", 34.0, "34.0"},
+		{"at +3 boundary", 39.0, "39.0"},
+		{"at -3 boundary", 33.0, "33.0"},
+		// Yellow: 4-6 PSI off
+		{"4 PSI high", 40.0, "40.0"},
+		{"6 PSI low", 30.0, "30.0"},
+		// Red: >6 PSI off
+		{"very high", 45.0, "45.0"},
+		{"very low", 25.0, "25.0"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ColorPressure(tt.pressure, target)
+			if result != tt.expected {
+				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestColorPressure_WithColors(t *testing.T) {
+	// Enable colors for color testing
+	oldColorEnabled := colorEnabled
+	SetColorEnabled(true)
+	defer SetColorEnabled(oldColorEnabled)
+
+	target := 36.0
+
+	tests := []struct {
+		name          string
+		pressure      float64
+		expectedColor string // The ANSI color code
+	}{
+		{"green - exact", 36.0, colorGreen},
+		{"green - +3", 39.0, colorGreen},
+		{"yellow - +4", 40.0, colorYellow},
+		{"yellow - -6", 30.0, colorYellow},
+		{"red - +7", 43.0, colorRed},
+		{"red - very low", 25.0, colorRed},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ColorPressure(tt.pressure, target)
+			// Check it starts with expected color code
+			if len(result) < len(tt.expectedColor) {
+				t.Errorf("Result too short")
+				return
+			}
+			if result[:len(tt.expectedColor)] != tt.expectedColor {
+				t.Errorf("Expected color %q, got prefix %q", tt.expectedColor, result[:len(tt.expectedColor)])
+			}
+		})
+	}
+}

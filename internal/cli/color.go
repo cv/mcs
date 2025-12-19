@@ -79,6 +79,28 @@ func Bold(text string) string {
 	return colorize(colorBold, text)
 }
 
+// Default recommended tire pressure (PSI) - Mazda CX-90 MHEV
+const defaultTargetPressurePSI = 36.0
+
+// ColorPressure returns a colored pressure string based on deviation from target
+// Green: within ±3 PSI, Yellow: 4-6 PSI off, Red: >6 PSI off
+func ColorPressure(pressure float64, targetPSI float64) string {
+	text := fmt.Sprintf("%.1f", pressure)
+	deviation := pressure - targetPSI
+	if deviation < 0 {
+		deviation = -deviation
+	}
+
+	switch {
+	case deviation <= 3:
+		return Green(text)
+	case deviation <= 6:
+		return Yellow(text)
+	default:
+		return Red(text)
+	}
+}
+
 // ProgressBar creates a simple ASCII progress bar
 // Example: [████████░░] 80%
 func ProgressBar(percent float64, width int) string {

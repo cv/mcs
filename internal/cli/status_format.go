@@ -155,8 +155,14 @@ func formatTiresStatus(tireInfo api.TireInfo, jsonOutput bool) (string, error) {
 		return toJSON(tireInfoToMap(tireInfo))
 	}
 
-	return fmt.Sprintf("TIRES: FL:%.1f FR:%.1f RL:%.1f RR:%.1f PSI",
-		tireInfo.FrontLeftPsi, tireInfo.FrontRightPsi, tireInfo.RearLeftPsi, tireInfo.RearRightPsi), nil
+	// Color code each tire pressure based on deviation from recommended (36 PSI for Mazda CX-90)
+	target := defaultTargetPressurePSI
+	fl := ColorPressure(tireInfo.FrontLeftPsi, target)
+	fr := ColorPressure(tireInfo.FrontRightPsi, target)
+	rl := ColorPressure(tireInfo.RearLeftPsi, target)
+	rr := ColorPressure(tireInfo.RearRightPsi, target)
+
+	return fmt.Sprintf("TIRES: FL:%s FR:%s RL:%s RR:%s PSI", fl, fr, rl, rr), nil
 }
 
 // doorPosition describes a single door position for status checking
