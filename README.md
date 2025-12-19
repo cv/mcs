@@ -1,6 +1,6 @@
 # mcs
 
-CLI for connected vehicle services.
+A simple, unofficial CLI for [Mazda Connected Services](https://approval.mymazda.com/MyMazda/mazdaConnectedServices.action), ported from [pymazda](https://github.com/ungineer/pymazda).
 
 ## Install
 
