@@ -74,7 +74,7 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 		t.Fatalf("APIRequest failed: %v", err)
 	}
 
-	if result["resultCode"] != "200S00" {
+	if result["resultCode"] != ResultCodeSuccess {
 		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
 	}
 
@@ -215,7 +215,7 @@ func TestAPIRequest_WithQueryParams(t *testing.T) {
 		t.Fatalf("APIRequest failed: %v", err)
 	}
 
-	if result["resultCode"] != "200S00" {
+	if result["resultCode"] != ResultCodeSuccess {
 		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
 	}
 }
@@ -326,7 +326,7 @@ func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Return response with various data types
 		testResponse := map[string]interface{}{
-			"resultCode":   "200S00",
+			"resultCode":   "ResultCodeSuccess",
 			"stringValue":  "test string",
 			"intValue":     42,
 			"floatValue":   3.14,
@@ -382,14 +382,14 @@ func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 		t.Errorf("Expected nullValue nil, got %v", result["nullValue"])
 	}
 
-	arrayValue, ok := result["arrayValue"].([]interface{})
+	arrayValue, ok := getSlice(result, "arrayValue")
 	if !ok {
 		t.Errorf("Expected arrayValue to be []interface{}, got %T", result["arrayValue"])
 	} else if len(arrayValue) != 3 {
 		t.Errorf("Expected arrayValue length 3, got %d", len(arrayValue))
 	}
 
-	nestedObj, ok := result["nestedObject"].(map[string]interface{})
+	nestedObj, ok := getMap(result, "nestedObject")
 	if !ok {
 		t.Errorf("Expected nestedObject to be map[string]interface{}, got %T", result["nestedObject"])
 	} else if nestedObj["key"] != "value" {
@@ -476,7 +476,7 @@ func TestAPIRequestJSON_FullFlow(t *testing.T) {
 		t.Fatalf("Failed to unmarshal raw JSON: %v", err)
 	}
 
-	if result["resultCode"] != "200S00" {
+	if result["resultCode"] != ResultCodeSuccess {
 		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
 	}
 
