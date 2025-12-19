@@ -9,6 +9,29 @@ import (
 	"github.com/cv/mcs/internal/api"
 )
 
+// parseJSONToMap is a test helper that parses a JSON string into a map
+func parseJSONToMap(t *testing.T, jsonStr string) map[string]interface{} {
+	t.Helper()
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
+		t.Fatalf("Expected valid JSON, got error: %v", err)
+	}
+	return data
+}
+
+// assertMapValue is a test helper that asserts a map value equals expected
+func assertMapValue(t *testing.T, data map[string]interface{}, key string, expected interface{}) {
+	t.Helper()
+	actual, ok := data[key]
+	if !ok {
+		t.Errorf("Expected key %q to exist in map", key)
+		return
+	}
+	if actual != expected {
+		t.Errorf("Expected %s to be %v, got %v", key, expected, actual)
+	}
+}
+
 // TestStatusCommand tests the status command
 func TestStatusCommand(t *testing.T) {
 	cmd := NewStatusCmd()
@@ -174,34 +197,13 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	var data map[string]interface{}
-	if err := json.Unmarshal([]byte(result), &data); err != nil {
-		t.Fatalf("Expected valid JSON, got error: %v", err)
-	}
-
-	if data["battery_level"] != float64(66) {
-		t.Errorf("Expected battery_level 66, got %v", data["battery_level"])
-	}
-
-	if data["range_km"] != 245.5 {
-		t.Errorf("Expected range_km 245.5, got %v", data["range_km"])
-	}
-
-	if data["plugged_in"] != true {
-		t.Errorf("Expected plugged_in true, got %v", data["plugged_in"])
-	}
-
-	if data["charging"] != true {
-		t.Errorf("Expected charging true, got %v", data["charging"])
-	}
-
-	if data["charge_time_ac_minutes"] != float64(180) {
-		t.Errorf("Expected charge_time_ac_minutes 180, got %v", data["charge_time_ac_minutes"])
-	}
-
-	if data["charge_time_qbc_minutes"] != float64(45) {
-		t.Errorf("Expected charge_time_qbc_minutes 45, got %v", data["charge_time_qbc_minutes"])
-	}
+	data := parseJSONToMap(t, result)
+	assertMapValue(t, data, "battery_level", float64(66))
+	assertMapValue(t, data, "range_km", 245.5)
+	assertMapValue(t, data, "plugged_in", true)
+	assertMapValue(t, data, "charging", true)
+	assertMapValue(t, data, "charge_time_ac_minutes", float64(180))
+	assertMapValue(t, data, "charge_time_qbc_minutes", float64(45))
 }
 
 // TestFormatBatteryStatus_WithHeater tests battery heater display
@@ -310,18 +312,9 @@ func TestFormatFuelStatus_JSON(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	var data map[string]interface{}
-	if err := json.Unmarshal([]byte(result), &data); err != nil {
-		t.Fatalf("Expected valid JSON, got error: %v", err)
-	}
-
-	if data["fuel_level"] != float64(92) {
-		t.Errorf("Expected fuel_level 92, got %v", data["fuel_level"])
-	}
-
-	if data["range_km"] != 630.0 {
-		t.Errorf("Expected range_km 630.0, got %v", data["range_km"])
-	}
+	data := parseJSONToMap(t, result)
+	assertMapValue(t, data, "fuel_level", float64(92))
+	assertMapValue(t, data, "range_km", 630.0)
 }
 
 // TestFormatDoorsStatus tests doors status formatting
@@ -461,7 +454,7 @@ func TestFormatLocationStatus(t *testing.T) {
 // TestGetInternalVIN tests getting internal VIN from vehicle base info
 func TestGetInternalVIN(t *testing.T) {
 	vecBaseInfos := &api.VecBaseInfosResponse{
-		ResultCode: "200S00",
+		ResultCode: api.ResultCodeSuccess,
 		VecBaseInfos: []api.VecBaseInfo{
 			{
 				Vehicle: api.Vehicle{
@@ -486,7 +479,7 @@ func TestGetInternalVIN(t *testing.T) {
 // TestGetInternalVIN_NoVehicles tests error when no vehicles found
 func TestGetInternalVIN_NoVehicles(t *testing.T) {
 	vecBaseInfos := &api.VecBaseInfosResponse{
-		ResultCode:   "200S00",
+		ResultCode:   "ResultCodeSuccess",
 		VecBaseInfos: []api.VecBaseInfo{},
 	}
 
@@ -612,36 +605,18 @@ func TestFormatHvacStatus_JSON(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	var data map[string]interface{}
-	if err := json.Unmarshal([]byte(result), &data); err != nil {
-		t.Fatalf("Expected valid JSON, got error: %v", err)
-	}
-
-	if data["hvac_on"] != true {
-		t.Errorf("Expected hvac_on true, got %v", data["hvac_on"])
-	}
-
-	if data["front_defroster"] != true {
-		t.Errorf("Expected front_defroster true, got %v", data["front_defroster"])
-	}
-
-	if data["rear_defroster"] != false {
-		t.Errorf("Expected rear_defroster false, got %v", data["rear_defroster"])
-	}
-
-	if data["interior_temperature_c"] != float64(21) {
-		t.Errorf("Expected interior_temperature_c 21, got %v", data["interior_temperature_c"])
-	}
-
-	if data["target_temperature_c"] != float64(22) {
-		t.Errorf("Expected target_temperature_c 22, got %v", data["target_temperature_c"])
-	}
+	data := parseJSONToMap(t, result)
+	assertMapValue(t, data, "hvac_on", true)
+	assertMapValue(t, data, "front_defroster", true)
+	assertMapValue(t, data, "rear_defroster", false)
+	assertMapValue(t, data, "interior_temperature_c", float64(21))
+	assertMapValue(t, data, "target_temperature_c", float64(22))
 }
 
 // TestGetHvacInfo tests extracting HVAC info from EV status
 func TestGetHvacInfo(t *testing.T) {
 	evStatus := &api.EVVehicleStatusResponse{
-		ResultCode: "200S00",
+		ResultCode: api.ResultCodeSuccess,
 		ResultData: []api.EVResultData{
 			{
 				OccurrenceDate: "20231201120000",
@@ -686,7 +661,7 @@ func TestGetHvacInfo(t *testing.T) {
 // TestGetHvacInfo_MissingData tests extracting HVAC info when data is missing
 func TestGetHvacInfo_MissingData(t *testing.T) {
 	evStatus := &api.EVVehicleStatusResponse{
-		ResultCode: "200S00",
+		ResultCode: api.ResultCodeSuccess,
 		ResultData: []api.EVResultData{
 			{
 				OccurrenceDate: "20231201120000",
@@ -709,7 +684,7 @@ func TestGetHvacInfo_MissingData(t *testing.T) {
 // TestExtractHvacData tests extracting HVAC data for JSON output
 func TestExtractHvacData(t *testing.T) {
 	evStatus := &api.EVVehicleStatusResponse{
-		ResultCode: "200S00",
+		ResultCode: api.ResultCodeSuccess,
 		ResultData: []api.EVResultData{
 			{
 				OccurrenceDate: "20231201120000",
@@ -731,21 +706,11 @@ func TestExtractHvacData(t *testing.T) {
 
 	data := extractHvacData(evStatus)
 
-	if data["hvac_on"] != true {
-		t.Errorf("Expected hvac_on true, got %v", data["hvac_on"])
-	}
-	if data["front_defroster"] != false {
-		t.Errorf("Expected front_defroster false, got %v", data["front_defroster"])
-	}
-	if data["rear_defroster"] != true {
-		t.Errorf("Expected rear_defroster true, got %v", data["rear_defroster"])
-	}
-	if data["interior_temperature_c"] != float64(18) {
-		t.Errorf("Expected interior_temperature_c 18, got %v", data["interior_temperature_c"])
-	}
-	if data["target_temperature_c"] != float64(22) {
-		t.Errorf("Expected target_temperature_c 22, got %v", data["target_temperature_c"])
-	}
+	assertMapValue(t, data, "hvac_on", true)
+	assertMapValue(t, data, "front_defroster", false)
+	assertMapValue(t, data, "rear_defroster", true)
+	assertMapValue(t, data, "interior_temperature_c", float64(18))
+	assertMapValue(t, data, "target_temperature_c", float64(22))
 }
 
 // TestFormatOdometerStatus tests odometer status formatting
@@ -799,20 +764,14 @@ func TestFormatOdometerStatus_JSON(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	var data map[string]interface{}
-	if err := json.Unmarshal([]byte(result), &data); err != nil {
-		t.Fatalf("Expected valid JSON, got error: %v", err)
-	}
-
-	if data["odometer_km"] != 12345.6 {
-		t.Errorf("Expected odometer_km 12345.6, got %v", data["odometer_km"])
-	}
+	data := parseJSONToMap(t, result)
+	assertMapValue(t, data, "odometer_km", 12345.6)
 }
 
 // TestGetOdometerInfo tests extracting odometer info from vehicle status
 func TestGetOdometerInfo(t *testing.T) {
 	vehicleStatus := &api.VehicleStatusResponse{
-		ResultCode: "200S00",
+		ResultCode: api.ResultCodeSuccess,
 		RemoteInfos: []api.RemoteInfo{
 			{
 				DriveInformation: api.DriveInformation{
@@ -835,7 +794,7 @@ func TestGetOdometerInfo(t *testing.T) {
 // TestExtractOdometerData tests extracting odometer data for JSON output
 func TestExtractOdometerData(t *testing.T) {
 	vehicleStatus := &api.VehicleStatusResponse{
-		ResultCode: "200S00",
+		ResultCode: api.ResultCodeSuccess,
 		RemoteInfos: []api.RemoteInfo{
 			{
 				DriveInformation: api.DriveInformation{
@@ -847,9 +806,7 @@ func TestExtractOdometerData(t *testing.T) {
 
 	data := extractOdometerData(vehicleStatus)
 
-	if data["odometer_km"] != 12345.6 {
-		t.Errorf("Expected odometer_km 12345.6, got %v", data["odometer_km"])
-	}
+	assertMapValue(t, data, "odometer_km", 12345.6)
 }
 
 // TestFormatChargeTime tests charge time formatting
@@ -991,16 +948,8 @@ func TestExtractVehicleInfoData(t *testing.T) {
 
 	data := extractVehicleInfoData(info)
 
-	if data["vin"] != "JM3KKEHC1R0123456" {
-		t.Errorf("Expected vin 'JM3KKEHC1R0123456', got %v", data["vin"])
-	}
-	if data["nickname"] != "My CX-90" {
-		t.Errorf("Expected nickname 'My CX-90', got %v", data["nickname"])
-	}
-	if data["model_name"] != "CX-90 PHEV" {
-		t.Errorf("Expected model_name 'CX-90 PHEV', got %v", data["model_name"])
-	}
-	if data["model_year"] != "2024" {
-		t.Errorf("Expected model_year '2024', got %v", data["model_year"])
-	}
+	assertMapValue(t, data, "vin", "JM3KKEHC1R0123456")
+	assertMapValue(t, data, "nickname", "My CX-90")
+	assertMapValue(t, data, "model_name", "CX-90 PHEV")
+	assertMapValue(t, data, "model_year", "2024")
 }
