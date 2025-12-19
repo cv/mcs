@@ -74,6 +74,11 @@ TIRES: FL:32.0 FR:32.0 RL:32.0 RR:32.0 PSI
 ODOMETER: 5,279.4 km
 ```
 
+Note: Tire pressures are color-coded based on deviation from target (36 PSI):
+- **Green**: within ±3 PSI (33-39)
+- **Yellow**: 4-6 PSI deviation
+- **Red**: >6 PSI deviation (potential safety issue)
+
 ## Notes
 
 - Uses vehicle manufacturer's API (reverse-engineered from mobile app)

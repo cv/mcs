@@ -47,7 +47,7 @@ func NewStatusCmd() *cobra.Command {
   # CLIMATE: Off, 18°C
   # DOORS: All locked
   # WINDOWS: All closed
-  # TIRES: FL:35.0 FR:35.0 RL:33.0 RR:33.0 PSI
+  # TIRES: FL:35.0 FR:35.0 RL:33.0 RR:33.0 PSI (color-coded)
   # ODOMETER: 12,345.6 km
 
   # Show status in JSON format
@@ -158,11 +158,13 @@ func NewStatusCmd() *cobra.Command {
 	statusCmd.AddCommand(&cobra.Command{
 		Use:   "tires",
 		Short: "Show tire pressure",
-		Example: `  # Show tire pressure
+		Example: `  # Show tire pressure (color-coded based on deviation from 36 PSI target)
   mcs status tires
 
   # Example output:
   # TIRES: FL:35.0 FR:35.0 RL:33.0 RR:33.0 PSI
+  #
+  # Color coding: Green (±3 PSI), Yellow (4-6 PSI off), Red (>6 PSI off)
 
   # Show tire pressure in JSON format
   mcs status tires --json
