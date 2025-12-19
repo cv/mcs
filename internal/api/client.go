@@ -56,116 +56,84 @@ func (c *Client) APIRequestJSON(ctx context.Context, method, uri string, queryPa
 	return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, 0)
 }
 
-func (c *Client) apiRequestWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool, retryCount int) (map[string]interface{}, error) {
+// retryFunc is the type for functions that can be retried
+type retryFunc[T any] func(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (T, error)
+
+// genericRetry implements the retry logic with exponential backoff for API requests.
+// It handles encryption errors and token expiration by refreshing credentials and retrying.
+func genericRetry[T any](
+	ctx context.Context,
+	c *Client,
+	method, uri string,
+	queryParams map[string]string,
+	bodyParams map[string]interface{},
+	needsKeys, needsAuth bool,
+	retryCount int,
+	executeFunc retryFunc[T],
+) (T, error) {
+	var zero T // zero value for type T
+
 	if retryCount > MaxRetries {
-		return nil, NewAPIError("Request exceeded max number of retries")
+		return zero, NewAPIError("Request exceeded max number of retries")
 	}
 
 	// Check for context cancellation
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return zero, err
 	}
 
 	if needsKeys {
 		if err := c.ensureKeysPresent(ctx); err != nil {
-			return nil, err
+			return zero, err
 		}
 	}
 
 	if needsAuth {
 		if err := c.ensureTokenValid(ctx); err != nil {
-			return nil, err
+			return zero, err
 		}
 	}
 
-	response, err := c.sendAPIRequest(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
+	response, err := executeFunc(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
 	if err != nil {
 		// Handle retryable errors
 		switch err.(type) {
 		case *EncryptionError:
 			// Retrieve new encryption keys and retry
 			if err := c.GetEncryptionKeys(ctx); err != nil {
-				return nil, fmt.Errorf("failed to retrieve encryption keys: %w", err)
+				return zero, fmt.Errorf("failed to retrieve encryption keys: %w", err)
 			}
 			// Apply backoff delay before retry
 			backoff := calculateBackoff(retryCount + 1)
 			if err := sleepWithContext(ctx, backoff); err != nil {
-				return nil, err
+				return zero, err
 			}
-			return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
+			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
 		case *TokenExpiredError:
 			// Login again and retry
 			if err := c.Login(ctx); err != nil {
-				return nil, fmt.Errorf("failed to login: %w", err)
+				return zero, fmt.Errorf("failed to login: %w", err)
 			}
 			// Apply backoff delay before retry
 			backoff := calculateBackoff(retryCount + 1)
 			if err := sleepWithContext(ctx, backoff); err != nil {
-				return nil, err
+				return zero, err
 			}
-			return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
+			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
 		default:
-			return nil, err
+			return zero, err
 		}
 	}
 
 	return response, nil
 }
 
+func (c *Client) apiRequestWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool, retryCount int) (map[string]interface{}, error) {
+	return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount, c.sendAPIRequest)
+}
+
 func (c *Client) apiRequestJSONWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool, retryCount int) ([]byte, error) {
-	if retryCount > MaxRetries {
-		return nil, NewAPIError("Request exceeded max number of retries")
-	}
-
-	// Check for context cancellation
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-
-	if needsKeys {
-		if err := c.ensureKeysPresent(ctx); err != nil {
-			return nil, err
-		}
-	}
-
-	if needsAuth {
-		if err := c.ensureTokenValid(ctx); err != nil {
-			return nil, err
-		}
-	}
-
-	response, err := c.sendAPIRequestJSON(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
-	if err != nil {
-		// Handle retryable errors
-		switch err.(type) {
-		case *EncryptionError:
-			// Retrieve new encryption keys and retry
-			if err := c.GetEncryptionKeys(ctx); err != nil {
-				return nil, fmt.Errorf("failed to retrieve encryption keys: %w", err)
-			}
-			// Apply backoff delay before retry
-			backoff := calculateBackoff(retryCount + 1)
-			if err := sleepWithContext(ctx, backoff); err != nil {
-				return nil, err
-			}
-			return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
-		case *TokenExpiredError:
-			// Login again and retry
-			if err := c.Login(ctx); err != nil {
-				return nil, fmt.Errorf("failed to login: %w", err)
-			}
-			// Apply backoff delay before retry
-			backoff := calculateBackoff(retryCount + 1)
-			if err := sleepWithContext(ctx, backoff); err != nil {
-				return nil, err
-			}
-			return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
-		default:
-			return nil, err
-		}
-	}
-
-	return response, nil
+	return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount, c.sendAPIRequestJSON)
 }
 
 // executeAPIRequest handles the common logic for making API requests.
