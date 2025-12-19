@@ -40,17 +40,30 @@ type VecBaseInfosResponse struct {
 
 // VecBaseInfo represents a single vehicle's base information
 type VecBaseInfo struct {
-	Vehicle Vehicle `json:"Vehicle"`
+	VIN          string  `json:"vin"`
+	Nickname     string  `json:"nickname"`
+	EconnectType int     `json:"econnectType"`
+	Vehicle      Vehicle `json:"Vehicle"`
 }
 
 // Vehicle represents vehicle information
 type Vehicle struct {
-	CvInformation CvInformation `json:"CvInformation"`
+	CvInformation    CvInformation    `json:"CvInformation"`
+	OtherInformation OtherInformation `json:"OtherInformation"`
 }
 
 // CvInformation represents connected vehicle information
 type CvInformation struct {
 	InternalVIN InternalVIN `json:"internalVin"`
+}
+
+// OtherInformation contains additional vehicle details
+type OtherInformation struct {
+	CarlineName       string  `json:"carlineName"`
+	ModelYear         string  `json:"modelYear"`
+	ModelName         string  `json:"modelName"`
+	ExteriorColorName string  `json:"exteriorColorName"`
+	IsElectric        float64 `json:"isElectric"`
 }
 
 // VehicleStatusResponse represents the response from GetVehicleStatus API
@@ -181,6 +194,20 @@ func (r *VecBaseInfosResponse) GetInternalVIN() (string, error) {
 		return "", fmt.Errorf("no vehicles found")
 	}
 	return string(r.VecBaseInfos[0].Vehicle.CvInformation.InternalVIN), nil
+}
+
+// GetVehicleInfo extracts vehicle identification info from the response
+func (r *VecBaseInfosResponse) GetVehicleInfo() (vin, nickname, modelName, modelYear string, err error) {
+	if len(r.VecBaseInfos) == 0 {
+		err = fmt.Errorf("no vehicles found")
+		return
+	}
+	info := r.VecBaseInfos[0]
+	vin = info.VIN
+	nickname = info.Nickname
+	modelName = info.Vehicle.OtherInformation.ModelName
+	modelYear = info.Vehicle.OtherInformation.ModelYear
+	return
 }
 
 // GetBatteryInfo extracts battery information from the EV status response

@@ -83,29 +83,29 @@ func NewStatusCmd() *cobra.Command {
 
 // runStatus executes the status command
 func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh bool, refreshWait int) error {
-	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+	return withVehicleClientEx(cmd.Context(), func(ctx context.Context, client *api.Client, vehicleInfo VehicleInfo) error {
 		// Get initial EV status (needed for refresh comparison and final display)
-		evStatus, err := client.GetEVVehicleStatus(ctx, internalVIN)
+		evStatus, err := client.GetEVVehicleStatus(ctx, vehicleInfo.InternalVIN)
 		if err != nil {
 			return fmt.Errorf("failed to get EV status: %w", err)
 		}
 
 		// If refresh requested, trigger status refresh and poll until timestamp changes
 		if refresh {
-			evStatus, err = refreshAndWaitForStatus(ctx, cmd, client, internalVIN, evStatus, refreshWait)
+			evStatus, err = refreshAndWaitForStatus(ctx, cmd, client, vehicleInfo.InternalVIN, evStatus, refreshWait)
 			if err != nil {
 				return err
 			}
 		}
 
 		// Get vehicle status
-		vehicleStatus, err := client.GetVehicleStatus(ctx, internalVIN)
+		vehicleStatus, err := client.GetVehicleStatus(ctx, vehicleInfo.InternalVIN)
 		if err != nil {
 			return fmt.Errorf("failed to get vehicle status: %w", err)
 		}
 
 		// Display status based on type
-		displayStatus(cmd, statusType, vehicleStatus, evStatus, jsonOutput)
+		displayStatusWithVehicle(cmd, statusType, vehicleStatus, evStatus, vehicleInfo, jsonOutput)
 		return nil
 	})
 }
@@ -155,8 +155,8 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 	return evStatus, nil
 }
 
-// displayStatus outputs the status based on type
-func displayStatus(cmd *cobra.Command, statusType string, vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, jsonOutput bool) {
+// displayStatusWithVehicle outputs the status based on type, including vehicle info for "all"
+func displayStatusWithVehicle(cmd *cobra.Command, statusType string, vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) {
 	switch statusType {
 	case "battery":
 		fmt.Fprintln(cmd.OutOrStdout(), displayBatteryStatus(evStatus, jsonOutput))
@@ -169,15 +169,16 @@ func displayStatus(cmd *cobra.Command, statusType string, vehicleStatus *api.Veh
 	case "doors":
 		fmt.Fprintln(cmd.OutOrStdout(), displayDoorsStatus(vehicleStatus, jsonOutput))
 	case "all":
-		fmt.Fprint(cmd.OutOrStdout(), displayAllStatus(vehicleStatus, evStatus, jsonOutput))
+		fmt.Fprint(cmd.OutOrStdout(), displayAllStatus(vehicleStatus, evStatus, vehicleInfo, jsonOutput))
 	}
 }
 
 // displayAllStatus displays all status information
-func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, jsonOutput bool) string {
+func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) string {
 	if jsonOutput {
 		hazardsOn, _ := vehicleStatus.GetHazardInfo()
 		data := map[string]interface{}{
+			"vehicle":  extractVehicleInfoData(vehicleInfo),
 			"battery":  extractBatteryData(evStatus),
 			"fuel":     extractFuelData(vehicleStatus),
 			"location": extractLocationData(vehicleStatus),
@@ -207,7 +208,9 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	// Extract hazard info
 	hazardsOn, _ := vehicleStatus.GetHazardInfo()
 
-	output := fmt.Sprintf("\nVehicle Status (Last Updated: %s)\n\n", timestamp)
+	// Build vehicle header
+	output := "\n" + formatVehicleHeader(vehicleInfo) + "\n"
+	output += fmt.Sprintf("Status as of %s\n\n", timestamp)
 	output += displayBatteryStatus(evStatus, false) + "\n"
 	output += displayFuelStatus(vehicleStatus, false) + "\n"
 	output += formatHvacStatus(hvacOn, frontDefroster, rearDefroster, interiorTempC, targetTempC, false) + "\n"
@@ -223,6 +226,44 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	output += formatOdometerStatus(odometer, false) + "\n"
 
 	return output
+}
+
+// extractVehicleInfoData extracts vehicle info for JSON output
+func extractVehicleInfoData(vehicleInfo VehicleInfo) map[string]interface{} {
+	return map[string]interface{}{
+		"vin":        vehicleInfo.VIN,
+		"nickname":   vehicleInfo.Nickname,
+		"model_name": vehicleInfo.ModelName,
+		"model_year": vehicleInfo.ModelYear,
+	}
+}
+
+// formatVehicleHeader formats vehicle identification for display
+func formatVehicleHeader(vehicleInfo VehicleInfo) string {
+	var header string
+
+	// Build model line: "CX-90 PHEV (2024)" or just model name
+	if vehicleInfo.ModelName != "" {
+		header = vehicleInfo.ModelName
+		if vehicleInfo.ModelYear != "" {
+			header += fmt.Sprintf(" (%s)", vehicleInfo.ModelYear)
+		}
+		// Add nickname in quotes if present
+		if vehicleInfo.Nickname != "" {
+			header += fmt.Sprintf(" \"%s\"", vehicleInfo.Nickname)
+		}
+		header += "\n"
+	} else if vehicleInfo.Nickname != "" {
+		// No model but has nickname
+		header = fmt.Sprintf("\"%s\"\n", vehicleInfo.Nickname)
+	}
+
+	// Add VIN line if available
+	if vehicleInfo.VIN != "" {
+		header += fmt.Sprintf("VIN: %s\n", vehicleInfo.VIN)
+	}
+
+	return header
 }
 
 // displayBatteryStatus displays battery status

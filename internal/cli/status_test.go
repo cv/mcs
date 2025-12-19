@@ -813,3 +813,94 @@ func TestFormatChargeTime(t *testing.T) {
 		})
 	}
 }
+
+// TestFormatVehicleHeader tests vehicle header formatting
+func TestFormatVehicleHeader(t *testing.T) {
+	tests := []struct {
+		name     string
+		info     VehicleInfo
+		expected string
+	}{
+		{
+			name: "full info with nickname",
+			info: VehicleInfo{
+				VIN:       "JM3KKEHC1R0123456",
+				Nickname:  "My CX-90",
+				ModelName: "CX-90 PHEV",
+				ModelYear: "2024",
+			},
+			expected: "CX-90 PHEV (2024) \"My CX-90\"\nVIN: JM3KKEHC1R0123456\n",
+		},
+		{
+			name: "model without nickname",
+			info: VehicleInfo{
+				VIN:       "JM3KKEHC1R0123456",
+				ModelName: "CX-90 PHEV",
+				ModelYear: "2024",
+			},
+			expected: "CX-90 PHEV (2024)\nVIN: JM3KKEHC1R0123456\n",
+		},
+		{
+			name: "model without year",
+			info: VehicleInfo{
+				VIN:       "JM3KKEHC1R0123456",
+				ModelName: "CX-90 PHEV",
+			},
+			expected: "CX-90 PHEV\nVIN: JM3KKEHC1R0123456\n",
+		},
+		{
+			name: "only nickname",
+			info: VehicleInfo{
+				VIN:      "JM3KKEHC1R0123456",
+				Nickname: "My Car",
+			},
+			expected: "\"My Car\"\nVIN: JM3KKEHC1R0123456\n",
+		},
+		{
+			name: "only VIN",
+			info: VehicleInfo{
+				VIN: "JM3KKEHC1R0123456",
+			},
+			expected: "VIN: JM3KKEHC1R0123456\n",
+		},
+		{
+			name:     "empty info",
+			info:     VehicleInfo{},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatVehicleHeader(tt.info)
+			if result != tt.expected {
+				t.Errorf("Expected %q, got %q", tt.expected, result)
+			}
+		})
+	}
+}
+
+// TestExtractVehicleInfoData tests vehicle info extraction for JSON
+func TestExtractVehicleInfoData(t *testing.T) {
+	info := VehicleInfo{
+		VIN:       "JM3KKEHC1R0123456",
+		Nickname:  "My CX-90",
+		ModelName: "CX-90 PHEV",
+		ModelYear: "2024",
+	}
+
+	data := extractVehicleInfoData(info)
+
+	if data["vin"] != "JM3KKEHC1R0123456" {
+		t.Errorf("Expected vin 'JM3KKEHC1R0123456', got %v", data["vin"])
+	}
+	if data["nickname"] != "My CX-90" {
+		t.Errorf("Expected nickname 'My CX-90', got %v", data["nickname"])
+	}
+	if data["model_name"] != "CX-90 PHEV" {
+		t.Errorf("Expected model_name 'CX-90 PHEV', got %v", data["model_name"])
+	}
+	if data["model_year"] != "2024" {
+		t.Errorf("Expected model_year '2024', got %v", data["model_year"])
+	}
+}

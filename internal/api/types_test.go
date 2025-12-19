@@ -38,6 +38,110 @@ func TestVecBaseInfosResponse_Unmarshal(t *testing.T) {
 	}
 }
 
+func TestVecBaseInfosResponse_VehicleInfo(t *testing.T) {
+	jsonData := `{
+		"resultCode": "200S00",
+		"vecBaseInfos": [
+			{
+				"vin": "JM3KKEHC1R0123456",
+				"nickname": "My CX-90",
+				"econnectType": 1,
+				"Vehicle": {
+					"CvInformation": {
+						"internalVin": "12345678901234567"
+					},
+					"OtherInformation": {
+						"carlineName": "CX-90",
+						"modelYear": "2024",
+						"modelName": "CX-90 PHEV",
+						"exteriorColorName": "Soul Red",
+						"isElectric": 1
+					}
+				}
+			}
+		]
+	}`
+
+	var resp VecBaseInfosResponse
+	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	if len(resp.VecBaseInfos) != 1 {
+		t.Fatalf("Expected 1 vehicle, got %d", len(resp.VecBaseInfos))
+	}
+
+	info := resp.VecBaseInfos[0]
+	if info.VIN != "JM3KKEHC1R0123456" {
+		t.Errorf("Expected VIN 'JM3KKEHC1R0123456', got '%s'", info.VIN)
+	}
+	if info.Nickname != "My CX-90" {
+		t.Errorf("Expected Nickname 'My CX-90', got '%s'", info.Nickname)
+	}
+	if info.EconnectType != 1 {
+		t.Errorf("Expected EconnectType 1, got %d", info.EconnectType)
+	}
+
+	other := info.Vehicle.OtherInformation
+	if other.CarlineName != "CX-90" {
+		t.Errorf("Expected CarlineName 'CX-90', got '%s'", other.CarlineName)
+	}
+	if other.ModelYear != "2024" {
+		t.Errorf("Expected ModelYear '2024', got '%s'", other.ModelYear)
+	}
+	if other.ModelName != "CX-90 PHEV" {
+		t.Errorf("Expected ModelName 'CX-90 PHEV', got '%s'", other.ModelName)
+	}
+	if other.ExteriorColorName != "Soul Red" {
+		t.Errorf("Expected ExteriorColorName 'Soul Red', got '%s'", other.ExteriorColorName)
+	}
+	if other.IsElectric != 1 {
+		t.Errorf("Expected IsElectric 1, got %f", other.IsElectric)
+	}
+}
+
+func TestVecBaseInfosResponse_GetVehicleInfo(t *testing.T) {
+	resp := &VecBaseInfosResponse{
+		VecBaseInfos: []VecBaseInfo{
+			{
+				VIN:      "JM3KKEHC1R0123456",
+				Nickname: "My Car",
+				Vehicle: Vehicle{
+					OtherInformation: OtherInformation{
+						ModelName: "CX-90 PHEV",
+						ModelYear: "2024",
+					},
+				},
+			},
+		},
+	}
+
+	vin, nickname, modelName, modelYear, err := resp.GetVehicleInfo()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if vin != "JM3KKEHC1R0123456" {
+		t.Errorf("Expected VIN 'JM3KKEHC1R0123456', got '%s'", vin)
+	}
+	if nickname != "My Car" {
+		t.Errorf("Expected nickname 'My Car', got '%s'", nickname)
+	}
+	if modelName != "CX-90 PHEV" {
+		t.Errorf("Expected modelName 'CX-90 PHEV', got '%s'", modelName)
+	}
+	if modelYear != "2024" {
+		t.Errorf("Expected modelYear '2024', got '%s'", modelYear)
+	}
+}
+
+func TestVecBaseInfosResponse_GetVehicleInfo_Empty(t *testing.T) {
+	resp := &VecBaseInfosResponse{}
+	_, _, _, _, err := resp.GetVehicleInfo()
+	if err == nil {
+		t.Error("Expected error for empty response")
+	}
+}
+
 func TestVecBaseInfosResponse_InternalVINAsNumber(t *testing.T) {
 	// The API sometimes returns internalVin as a number
 	jsonData := `{
