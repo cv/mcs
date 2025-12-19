@@ -16,28 +16,30 @@ func NewClimateCmd() *cobra.Command {
 		Long:  `Control vehicle climate system (on/off/set).`,
 	}
 
-	// Add subcommands
-	climateCmd.AddCommand(&cobra.Command{
+	// Add simple on/off subcommands using factory
+	climateCmd.AddCommand(NewSimpleCommand(SimpleCommandConfig{
 		Use:   "on",
 		Short: "Turn climate on",
 		Long:  `Turn the vehicle HVAC system on.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runClimateOn(cmd)
+		APICall: func(ctx context.Context, client *api.Client, vin string) error {
+			return client.HVACOn(ctx, vin)
 		},
-		SilenceUsage: true,
-	})
+		SuccessMsg:   "Climate turned on successfully",
+		ErrorMsgTmpl: "failed to turn HVAC on: %w",
+	}))
 
-	climateCmd.AddCommand(&cobra.Command{
+	climateCmd.AddCommand(NewSimpleCommand(SimpleCommandConfig{
 		Use:   "off",
 		Short: "Turn climate off",
 		Long:  `Turn the vehicle HVAC system off.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runClimateOff(cmd)
+		APICall: func(ctx context.Context, client *api.Client, vin string) error {
+			return client.HVACOff(ctx, vin)
 		},
-		SilenceUsage: true,
-	})
+		SuccessMsg:   "Climate turned off successfully",
+		ErrorMsgTmpl: "failed to turn HVAC off: %w",
+	}))
 
-	// Add set subcommand with flags
+	// Add set subcommand with flags (more complex, keep separate)
 	climateCmd.AddCommand(newClimateSetCmd())
 
 	return climateCmd
@@ -74,28 +76,6 @@ Examples:
 	_ = setCmd.MarkFlagRequired("temp")
 
 	return setCmd
-}
-
-// runClimateOn executes the climate on command
-func runClimateOn(cmd *cobra.Command) error {
-	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-		if err := client.HVACOn(ctx, internalVIN); err != nil {
-			return fmt.Errorf("failed to turn HVAC on: %w", err)
-		}
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate turned on successfully")
-		return nil
-	})
-}
-
-// runClimateOff executes the climate off command
-func runClimateOff(cmd *cobra.Command) error {
-	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-		if err := client.HVACOff(ctx, internalVIN); err != nil {
-			return fmt.Errorf("failed to turn HVAC off: %w", err)
-		}
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate turned off successfully")
-		return nil
-	})
 }
 
 // runClimateSet executes the climate set command

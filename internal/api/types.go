@@ -69,24 +69,14 @@ func (v *VecBaseInfo) UnmarshalJSON(data []byte) error {
 
 // Vehicle represents vehicle information
 type Vehicle struct {
-	CvInformation          CvInformation    `json:"CvInformation"`
-	OtherInformation       OtherInformation `json:"OtherInformation"`
-	VehicleInformationJSON string           `json:"vehicleInformation"` // JSON-encoded string
+	CvInformation          CvInformation `json:"CvInformation"`
+	VehicleInformationJSON string        `json:"vehicleInformation"` // JSON-encoded string
 	VehicleInformation     VehicleInformationParsed
 }
 
 // CvInformation represents connected vehicle information
 type CvInformation struct {
 	InternalVIN InternalVIN `json:"internalVin"`
-}
-
-// OtherInformation contains additional vehicle details (from direct JSON field, often empty)
-type OtherInformation struct {
-	CarlineName       string  `json:"carlineName"`
-	ModelYear         string  `json:"modelYear"`
-	ModelName         string  `json:"modelName"`
-	ExteriorColorName string  `json:"exteriorColorName"`
-	IsElectric        float64 `json:"isElectric"`
 }
 
 // VehicleInformationParsed contains parsed vehicle details from the vehicleInformation JSON string

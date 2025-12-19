@@ -58,10 +58,9 @@ func (b *SensorDataBuilder) GenerateSensorData() (string, error) {
 
 	randomNumber := mathrand.Int31()
 
-	orientationEvent := b.generateOrientationDataAA()
-	orientationEventCount := countSeparators(orientationEvent)
-	motionEvent := b.generateMotionDataAA()
-	motionEventCount := countSeparators(motionEvent)
+	// Orientation and motion event counts are always 0 since we don't generate these events
+	orientationEventCount := 0
+	motionEventCount := 0
 
 	var sb strings.Builder
 	sb.WriteString(sdkVersion)
@@ -76,23 +75,23 @@ func (b *SensorDataBuilder) GenerateSensorData() (string, error) {
 	sb.WriteString("-1,2,-94,-101,")
 	sb.WriteString("do_en,dm_en,t_en")
 	sb.WriteString("-1,2,-94,-102,")
-	sb.WriteString(b.generateEditedText())
+	// Edited text is empty
 	sb.WriteString("-1,2,-94,-108,")
 	sb.WriteString(b.keyEventList.ToString())
 	sb.WriteString("-1,2,-94,-117,")
 	sb.WriteString(b.touchEventList.ToString())
 	sb.WriteString("-1,2,-94,-111,")
-	sb.WriteString(orientationEvent)
+	// Orientation event AA is empty
 	sb.WriteString("-1,2,-94,-109,")
-	sb.WriteString(motionEvent)
+	// Motion event AA is empty
 	sb.WriteString("-1,2,-94,-144,")
-	sb.WriteString(b.generateOrientationDataAC())
+	// Orientation event AC is empty
 	sb.WriteString("-1,2,-94,-142,")
-	sb.WriteString(b.generateOrientationDataAB())
+	// Orientation event AB is empty
 	sb.WriteString("-1,2,-94,-145,")
-	sb.WriteString(b.generateMotionDataAC())
+	// Motion event AC is empty
 	sb.WriteString("-1,2,-94,-143,")
-	sb.WriteString(b.generateMotionEvent())
+	// Motion event is empty
 	sb.WriteString("-1,2,-94,-115,")
 	sb.WriteString(b.generateMiscStat(orientationEventCount, motionEventCount))
 	sb.WriteString("-1,2,-94,-106,")
@@ -100,41 +99,13 @@ func (b *SensorDataBuilder) GenerateSensorData() (string, error) {
 	sb.WriteString(",")
 	sb.WriteString(b.generateStoredValuesG())
 	sb.WriteString("-1,2,-94,-120,")
-	sb.WriteString(b.generateStoredStackTraces())
+	// Stored stack traces is empty
 	sb.WriteString("-1,2,-94,-112,")
 	sb.WriteString(b.performanceTestResults.ToString())
 	sb.WriteString("-1,2,-94,-103,")
 	sb.WriteString(b.backgroundEventList.ToString())
 
 	return encryptSensorData(sb.String())
-}
-
-func (b *SensorDataBuilder) generateEditedText() string {
-	return ""
-}
-
-func (b *SensorDataBuilder) generateOrientationDataAA() string {
-	return ""
-}
-
-func (b *SensorDataBuilder) generateMotionDataAA() string {
-	return ""
-}
-
-func (b *SensorDataBuilder) generateOrientationDataAC() string {
-	return ""
-}
-
-func (b *SensorDataBuilder) generateOrientationDataAB() string {
-	return ""
-}
-
-func (b *SensorDataBuilder) generateMotionDataAC() string {
-	return ""
-}
-
-func (b *SensorDataBuilder) generateMotionEvent() string {
-	return ""
 }
 
 func (b *SensorDataBuilder) generateMiscStat(orientationDataCount, motionDataCount int) string {
@@ -173,10 +144,6 @@ func (b *SensorDataBuilder) generateStoredValuesF() string {
 
 func (b *SensorDataBuilder) generateStoredValuesG() string {
 	return "0"
-}
-
-func (b *SensorDataBuilder) generateStoredStackTraces() string {
-	return ""
 }
 
 func encryptSensorData(sensorData string) (string, error) {

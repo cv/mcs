@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
@@ -10,52 +9,28 @@ import (
 
 // NewStartCmd creates the start command
 func NewStartCmd() *cobra.Command {
-	startCmd := &cobra.Command{
+	return NewSimpleCommand(SimpleCommandConfig{
 		Use:   "start",
 		Short: "Start vehicle engine",
 		Long:  `Start the vehicle engine remotely.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStart(cmd)
+		APICall: func(ctx context.Context, client *api.Client, vin string) error {
+			return client.EngineStart(ctx, vin)
 		},
-		SilenceUsage: true,
-	}
-
-	return startCmd
+		SuccessMsg:   "Engine started successfully",
+		ErrorMsgTmpl: "failed to start engine: %w",
+	})
 }
 
 // NewStopCmd creates the stop command
 func NewStopCmd() *cobra.Command {
-	stopCmd := &cobra.Command{
+	return NewSimpleCommand(SimpleCommandConfig{
 		Use:   "stop",
 		Short: "Stop vehicle engine",
 		Long:  `Stop the vehicle engine remotely.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStop(cmd)
+		APICall: func(ctx context.Context, client *api.Client, vin string) error {
+			return client.EngineStop(ctx, vin)
 		},
-		SilenceUsage: true,
-	}
-
-	return stopCmd
-}
-
-// runStart executes the start command
-func runStart(cmd *cobra.Command) error {
-	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-		if err := client.EngineStart(ctx, internalVIN); err != nil {
-			return fmt.Errorf("failed to start engine: %w", err)
-		}
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Engine started successfully")
-		return nil
-	})
-}
-
-// runStop executes the stop command
-func runStop(cmd *cobra.Command) error {
-	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-		if err := client.EngineStop(ctx, internalVIN); err != nil {
-			return fmt.Errorf("failed to stop engine: %w", err)
-		}
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Engine stopped successfully")
-		return nil
+		SuccessMsg:   "Engine stopped successfully",
+		ErrorMsgTmpl: "failed to stop engine: %w",
 	})
 }

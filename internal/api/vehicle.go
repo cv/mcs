@@ -6,6 +6,21 @@ import (
 	"fmt"
 )
 
+// unmarshalResponse converts a map[string]interface{} response to a typed struct
+func unmarshalResponse[T any](response map[string]interface{}) (*T, error) {
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response: %w", err)
+	}
+
+	var typed T
+	if err := json.Unmarshal(jsonBytes, &typed); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return &typed, nil
+}
+
 // GetVecBaseInfos retrieves the base information for all vehicles associated with the account
 func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, error) {
 	bodyParams := map[string]interface{}{
@@ -17,18 +32,7 @@ func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, er
 		return nil, err
 	}
 
-	// Convert map to typed response
-	jsonBytes, err := json.Marshal(response)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal response: %w", err)
-	}
-
-	var typed VecBaseInfosResponse
-	if err := json.Unmarshal(jsonBytes, &typed); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return &typed, nil
+	return unmarshalResponse[VecBaseInfosResponse](response)
 }
 
 // GetVehicleStatus retrieves the current status of a vehicle
@@ -46,15 +50,9 @@ func (c *Client) GetVehicleStatus(ctx context.Context, internalVIN string) (*Veh
 		return nil, err
 	}
 
-	// Convert map to typed response
-	jsonBytes, err := json.Marshal(response)
+	typed, err := unmarshalResponse[VehicleStatusResponse](response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal response: %w", err)
-	}
-
-	var typed VehicleStatusResponse
-	if err := json.Unmarshal(jsonBytes, &typed); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
+		return nil, err
 	}
 
 	// Check result code
@@ -62,7 +60,7 @@ func (c *Client) GetVehicleStatus(ctx context.Context, internalVIN string) (*Veh
 		return nil, fmt.Errorf("failed to get vehicle status: result code %s", typed.ResultCode)
 	}
 
-	return &typed, nil
+	return typed, nil
 }
 
 // GetEVVehicleStatus retrieves the current EV status of a vehicle (battery, charging, HVAC)
@@ -80,15 +78,9 @@ func (c *Client) GetEVVehicleStatus(ctx context.Context, internalVIN string) (*E
 		return nil, err
 	}
 
-	// Convert map to typed response
-	jsonBytes, err := json.Marshal(response)
+	typed, err := unmarshalResponse[EVVehicleStatusResponse](response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal response: %w", err)
-	}
-
-	var typed EVVehicleStatusResponse
-	if err := json.Unmarshal(jsonBytes, &typed); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
+		return nil, err
 	}
 
 	// Check result code
@@ -96,5 +88,5 @@ func (c *Client) GetEVVehicleStatus(ctx context.Context, internalVIN string) (*E
 		return nil, fmt.Errorf("failed to get EV vehicle status: result code %s", typed.ResultCode)
 	}
 
-	return &typed, nil
+	return typed, nil
 }

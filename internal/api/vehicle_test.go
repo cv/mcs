@@ -5,6 +5,117 @@ import (
 	"testing"
 )
 
+// TestUnmarshalResponse tests the generic unmarshalResponse helper
+func TestUnmarshalResponse(t *testing.T) {
+	t.Run("successful unmarshal", func(t *testing.T) {
+		response := map[string]interface{}{
+			"resultCode": "200S00",
+			"message":    "Success",
+			"count":      float64(42),
+		}
+
+		type TestResponse struct {
+			ResultCode string  `json:"resultCode"`
+			Message    string  `json:"message"`
+			Count      float64 `json:"count"`
+		}
+
+		result, err := unmarshalResponse[TestResponse](response)
+		if err != nil {
+			t.Fatalf("unmarshalResponse failed: %v", err)
+		}
+
+		if result.ResultCode != "200S00" {
+			t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
+		}
+
+		if result.Message != "Success" {
+			t.Errorf("Expected message 'Success', got %v", result.Message)
+		}
+
+		if result.Count != 42 {
+			t.Errorf("Expected count 42, got %v", result.Count)
+		}
+	})
+
+	t.Run("unmarshal with nested structures", func(t *testing.T) {
+		response := map[string]interface{}{
+			"resultCode": "200S00",
+			"data": map[string]interface{}{
+				"id":   "test123",
+				"name": "Test Name",
+			},
+		}
+
+		type NestedData struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		}
+
+		type TestResponse struct {
+			ResultCode string     `json:"resultCode"`
+			Data       NestedData `json:"data"`
+		}
+
+		result, err := unmarshalResponse[TestResponse](response)
+		if err != nil {
+			t.Fatalf("unmarshalResponse failed: %v", err)
+		}
+
+		if result.ResultCode != "200S00" {
+			t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
+		}
+
+		if result.Data.ID != "test123" {
+			t.Errorf("Expected data.id 'test123', got %v", result.Data.ID)
+		}
+
+		if result.Data.Name != "Test Name" {
+			t.Errorf("Expected data.name 'Test Name', got %v", result.Data.Name)
+		}
+	})
+
+	t.Run("unmarshal with array", func(t *testing.T) {
+		response := map[string]interface{}{
+			"resultCode": "200S00",
+			"items": []interface{}{
+				map[string]interface{}{"value": "item1"},
+				map[string]interface{}{"value": "item2"},
+			},
+		}
+
+		type Item struct {
+			Value string `json:"value"`
+		}
+
+		type TestResponse struct {
+			ResultCode string `json:"resultCode"`
+			Items      []Item `json:"items"`
+		}
+
+		result, err := unmarshalResponse[TestResponse](response)
+		if err != nil {
+			t.Fatalf("unmarshalResponse failed: %v", err)
+		}
+
+		if result.ResultCode != "200S00" {
+			t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
+		}
+
+		if len(result.Items) != 2 {
+			t.Errorf("Expected 2 items, got %d", len(result.Items))
+		}
+
+		if result.Items[0].Value != "item1" {
+			t.Errorf("Expected items[0].value 'item1', got %v", result.Items[0].Value)
+		}
+
+		if result.Items[1].Value != "item2" {
+			t.Errorf("Expected items[1].value 'item2', got %v", result.Items[1].Value)
+		}
+	})
+}
+
 // TestGetVecBaseInfos tests getting vehicle base information
 func TestGetVecBaseInfos(t *testing.T) {
 	responseData := map[string]interface{}{

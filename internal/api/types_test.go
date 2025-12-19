@@ -49,13 +49,6 @@ func TestVecBaseInfosResponse_VehicleInfo(t *testing.T) {
 				"Vehicle": {
 					"CvInformation": {
 						"internalVin": "12345678901234567"
-					},
-					"OtherInformation": {
-						"carlineName": "CX-90",
-						"modelYear": "2024",
-						"modelName": "CX-90 PHEV",
-						"exteriorColorName": "Soul Red",
-						"isElectric": 1
 					}
 				}
 			}
@@ -80,23 +73,6 @@ func TestVecBaseInfosResponse_VehicleInfo(t *testing.T) {
 	}
 	if info.EconnectType != 1 {
 		t.Errorf("Expected EconnectType 1, got %d", info.EconnectType)
-	}
-
-	other := info.Vehicle.OtherInformation
-	if other.CarlineName != "CX-90" {
-		t.Errorf("Expected CarlineName 'CX-90', got '%s'", other.CarlineName)
-	}
-	if other.ModelYear != "2024" {
-		t.Errorf("Expected ModelYear '2024', got '%s'", other.ModelYear)
-	}
-	if other.ModelName != "CX-90 PHEV" {
-		t.Errorf("Expected ModelName 'CX-90 PHEV', got '%s'", other.ModelName)
-	}
-	if other.ExteriorColorName != "Soul Red" {
-		t.Errorf("Expected ExteriorColorName 'Soul Red', got '%s'", other.ExteriorColorName)
-	}
-	if other.IsElectric != 1 {
-		t.Errorf("Expected IsElectric 1, got %f", other.IsElectric)
 	}
 }
 

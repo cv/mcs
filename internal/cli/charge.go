@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
@@ -10,54 +9,31 @@ import (
 
 // NewChargeCmd creates the charge command
 func NewChargeCmd() *cobra.Command {
-	chargeCmd := &cobra.Command{
-		Use:   "charge",
-		Short: "Control vehicle charging",
-		Long:  `Control vehicle charging (start/stop).`,
-	}
-
-	// Add subcommands
-	chargeCmd.AddCommand(&cobra.Command{
-		Use:   "start",
-		Short: "Start charging",
-		Long:  `Start charging the vehicle battery.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runChargeStart(cmd)
+	return NewParentWithSubcommands(
+		"charge",
+		"Control vehicle charging",
+		`Control vehicle charging (start/stop).`,
+		[]SimpleCommandConfig{
+			{
+				Use:   "start",
+				Short: "Start charging",
+				Long:  `Start charging the vehicle battery.`,
+				APICall: func(ctx context.Context, client *api.Client, vin string) error {
+					return client.ChargeStart(ctx, vin)
+				},
+				SuccessMsg:   "Charging started successfully",
+				ErrorMsgTmpl: "failed to start charging: %w",
+			},
+			{
+				Use:   "stop",
+				Short: "Stop charging",
+				Long:  `Stop charging the vehicle battery.`,
+				APICall: func(ctx context.Context, client *api.Client, vin string) error {
+					return client.ChargeStop(ctx, vin)
+				},
+				SuccessMsg:   "Charging stopped successfully",
+				ErrorMsgTmpl: "failed to stop charging: %w",
+			},
 		},
-		SilenceUsage: true,
-	})
-
-	chargeCmd.AddCommand(&cobra.Command{
-		Use:   "stop",
-		Short: "Stop charging",
-		Long:  `Stop charging the vehicle battery.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runChargeStop(cmd)
-		},
-		SilenceUsage: true,
-	})
-
-	return chargeCmd
-}
-
-// runChargeStart executes the charge start command
-func runChargeStart(cmd *cobra.Command) error {
-	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-		if err := client.ChargeStart(ctx, internalVIN); err != nil {
-			return fmt.Errorf("failed to start charging: %w", err)
-		}
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charging started successfully")
-		return nil
-	})
-}
-
-// runChargeStop executes the charge stop command
-func runChargeStop(cmd *cobra.Command) error {
-	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-		if err := client.ChargeStop(ctx, internalVIN); err != nil {
-			return fmt.Errorf("failed to stop charging: %w", err)
-		}
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charging stopped successfully")
-		return nil
-	})
+	)
 }

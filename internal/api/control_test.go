@@ -2,9 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
-	"io"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -13,43 +10,18 @@ import (
 // Uses shared test helpers from test_helpers_test.go
 func createControlTestServer(t *testing.T, expectedPath string, expectedBody map[string]interface{}) *httptest.Server {
 	t.Helper()
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != expectedPath {
-			t.Errorf("Expected path %s, got %s", expectedPath, r.URL.Path)
-		}
+	successResponse := map[string]interface{}{
+		"resultCode": "200S00",
+		"message":    "Success",
+	}
 
-		if r.Method != "POST" {
-			t.Errorf("Expected POST method, got %s", r.Method)
-		}
-
-		if expectedBody != nil {
-			body, _ := io.ReadAll(r.Body)
-			if len(body) == 0 {
-				t.Error("Expected non-empty body")
-			}
-		}
-
-		testResponse := map[string]interface{}{
-			"resultCode": "200S00",
-			"message":    "Success",
-		}
-
-		responseJSON, _ := json.Marshal(testResponse)
-		encrypted, _ := EncryptAES128CBC(responseJSON, testEncKey, IV)
-
-		response := map[string]interface{}{
-			"state":   "S",
-			"payload": encrypted,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
-	}))
+	// All control endpoints expect POST requests with non-empty bodies
+	return createTestServer(t, successResponse,
+		WithPath(expectedPath),
+		WithMethod("POST"),
+		WithBodyValidation(),
+	)
 }
-
-// Note: createTestClient is defined in test_helpers_test.go
 
 // TestDoorLock tests locking doors
 func TestDoorLock(t *testing.T) {
@@ -269,25 +241,7 @@ func TestSetHVACSetting_Fahrenheit(t *testing.T) {
 
 // TestControlError tests error handling for control endpoints
 func TestControlError(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		testResponse := map[string]interface{}{
-			"resultCode": "500E00",
-			"message":    "Internal error",
-		}
-
-		responseJSON, _ := json.Marshal(testResponse)
-		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
-
-		response := map[string]interface{}{
-			"state":   "S",
-			"payload": encrypted,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
-	}))
+	server := createErrorServer(t, "500E00", "Internal error")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
