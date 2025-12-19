@@ -44,6 +44,32 @@ Example config.toml:
   password = "your-password"
   region = "MNAO"
 `,
+		Example: `  # Check vehicle status
+  $ mcs status
+  Battery: 85% (320 km range)
+  Fuel: 45% (380 km range)
+  Doors: Locked
+  Location: 37.7749, -122.4194
+
+  # Get status as JSON
+  $ mcs status --json
+  {"battery": {"level": 85, "range_km": 320}, "fuel": {"level": 45, "range_km": 380}, ...}
+
+  # Lock the vehicle
+  $ mcs lock
+  Vehicle locked successfully
+
+  # Start the engine
+  $ mcs start
+  Engine started successfully
+
+  # Control charging
+  $ mcs charge start
+  Charging started successfully
+
+  # Control climate
+  $ mcs climate on --temp 22
+  Climate control turned on successfully`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
