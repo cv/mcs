@@ -57,7 +57,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	fuelInfo, _ := vehicleStatus.GetFuelInfo()
 
 	// Build vehicle header
-	output := "\n" + formatVehicleHeader(vehicleInfo) + "\n"
+	output := formatVehicleHeader(vehicleInfo) + "\n"
 	output += fmt.Sprintf("Status as of %s\n\n", timestamp)
 	output += formatBatteryStatusCompact(batteryInfo) + "\n"
 	output += formatFuelStatusWithRange(fuelInfo, batteryInfo.RangeKm) + "\n"
@@ -97,7 +97,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	if err != nil {
 		return "", err
 	}
-	output += odometerOutput + "\n"
+	output += odometerOutput
 
 	return output, nil
 }
