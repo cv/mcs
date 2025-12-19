@@ -8,9 +8,9 @@ import (
 
 func TestKeyEvent_ToString(t *testing.T) {
 	tests := []struct {
-		name   string
-		event  *KeyEvent
-		want   string
+		name  string
+		event *KeyEvent
+		want  string
 	}{
 		{
 			name: "not longer than before",

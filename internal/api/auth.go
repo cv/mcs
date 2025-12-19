@@ -141,17 +141,17 @@ func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 	timestamp := getTimestampStrMs()
 
 	headers := map[string]string{
-		"device-id":       c.baseAPIDeviceID,
-		"app-code":        c.appCode,
-		"app-os":          AppOS,
-		"user-agent":      UserAgentBaseAPI,
-		"app-version":     AppVersion,
-		"app-unique-id":   AppPackageID,
-		"access-token":    "",
-		"req-id":          "req_" + timestamp,
-		"timestamp":       timestamp,
-		"sign":            c.getSignFromTimestamp(timestamp),
-		"Content-Type":    "application/json",
+		"device-id":     c.baseAPIDeviceID,
+		"app-code":      c.appCode,
+		"app-os":        AppOS,
+		"user-agent":    UserAgentBaseAPI,
+		"app-version":   AppVersion,
+		"app-unique-id": AppPackageID,
+		"access-token":  "",
+		"req-id":        "req_" + timestamp,
+		"timestamp":     timestamp,
+		"sign":          c.getSignFromTimestamp(timestamp),
+		"Content-Type":  "application/json",
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"service/checkVersion", nil)
@@ -253,13 +253,13 @@ func (c *Client) Login(ctx context.Context) error {
 
 	// Prepare login request
 	loginData := map[string]interface{}{
-		"appId":       "MazdaApp",
-		"deviceId":    c.usherAPIDeviceID,
-		"locale":      "en-US",
-		"password":    versionPrefix + encryptedPassword,
-		"sdkVersion":  UsherSDKVersion,
-		"userId":      c.email,
-		"userIdType":  "email",
+		"appId":      "MazdaApp",
+		"deviceId":   c.usherAPIDeviceID,
+		"locale":     "en-US",
+		"password":   versionPrefix + encryptedPassword,
+		"sdkVersion": UsherSDKVersion,
+		"userId":     c.email,
+		"userIdType": "email",
 	}
 
 	jsonData, err := json.Marshal(loginData)

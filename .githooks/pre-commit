@@ -1,0 +1,61 @@
+#!/bin/sh
+# Pre-commit hook: Enforce code quality before commits
+# Install: git config core.hooksPath .githooks
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# 1. Check Go formatting
+echo "  Checking gofmt..."
+UNFORMATTED=$(gofmt -l . 2>/dev/null | grep -v vendor || true)
+if [ -n "$UNFORMATTED" ]; then
+    echo "ERROR: The following files are not formatted:"
+    echo "$UNFORMATTED"
+    echo "Run 'gofmt -w .' to fix"
+    exit 1
+fi
+
+# 2. Run go vet
+echo "  Running go vet..."
+if ! go vet ./... 2>&1; then
+    echo "ERROR: go vet found issues"
+    exit 1
+fi
+
+# 3. Run golangci-lint (if available)
+if command -v golangci-lint >/dev/null 2>&1; then
+    echo "  Running golangci-lint..."
+    if ! golangci-lint run --timeout 2m ./... 2>&1; then
+        echo "ERROR: golangci-lint found issues"
+        exit 1
+    fi
+else
+    echo "  Skipping golangci-lint (not installed)"
+fi
+
+# 4. Run tests
+echo "  Running tests..."
+if ! go test -short ./... 2>&1; then
+    echo "ERROR: Tests failed"
+    exit 1
+fi
+
+# 5. Sync beads (if available)
+if command -v bd >/dev/null 2>&1 && [ -d .beads ]; then
+    # Check if sync-branch is configured
+    SYNC_BRANCH="${BEADS_SYNC_BRANCH:-}"
+    if [ -z "$SYNC_BRANCH" ] && [ -f .beads/config.yaml ]; then
+        SYNC_BRANCH=$(grep -E '^sync-branch:' .beads/config.yaml 2>/dev/null | head -1 | sed 's/^sync-branch:[[:space:]]*//' | sed 's/^["'"'"']//' | sed 's/["'"'"']$//')
+    fi
+    if [ -z "$SYNC_BRANCH" ]; then
+        echo "  Syncing beads..."
+        bd sync --flush-only >/dev/null 2>&1 || echo "Warning: Failed to flush bd changes"
+        for f in .beads/beads.jsonl .beads/issues.jsonl .beads/deletions.jsonl; do
+            [ -f "$f" ] && git add "$f" 2>/dev/null || true
+        done
+    fi
+fi
+
+echo "All pre-commit checks passed!"
+exit 0

@@ -129,16 +129,16 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 
 	// Set headers
 	headers := map[string]string{
-		"device-id":          c.baseAPIDeviceID,
-		"app-code":           c.appCode,
-		"app-os":             AppOS,
-		"user-agent":         UserAgentBaseAPI,
-		"app-version":        AppVersion,
-		"app-unique-id":      AppPackageID,
-		"req-id":             "req_" + timestamp,
-		"timestamp":          timestamp,
-		"Content-Type":       "application/json",
-		"X-acf-sensor-data":  sensorData,
+		"device-id":         c.baseAPIDeviceID,
+		"app-code":          c.appCode,
+		"app-os":            AppOS,
+		"user-agent":        UserAgentBaseAPI,
+		"app-version":       AppVersion,
+		"app-unique-id":     AppPackageID,
+		"req-id":            "req_" + timestamp,
+		"timestamp":         timestamp,
+		"Content-Type":      "application/json",
+		"X-acf-sensor-data": sensorData,
 	}
 
 	if needsAuth {

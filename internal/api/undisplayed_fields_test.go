@@ -61,8 +61,8 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 					"AcquisitionDatetime": "20231201120000",
 				},
 				"ResidualFuel": map[string]interface{}{
-					"FuelSegementDActl":  75.5,
-					"RemDrvDistDActlKm":  350.2,
+					"FuelSegementDActl": 75.5,
+					"RemDrvDistDActlKm": 350.2,
 				},
 				// UNDISPLAYED: Odometer
 				"DriveInformation": map[string]interface{}{
@@ -364,17 +364,17 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 			{
 				"OccurrenceDate": "20231201120000",
 				"Door": map[string]interface{}{
-					"DrStatDrv":       0,
-					"DrStatPsngr":     0,
-					"DrStatRl":        0,
-					"DrStatRr":        0,
-					"DrStatTrnkLg":    0,
-					"DrStatHood":      float64(1), // Hood open
+					"DrStatDrv":         0,
+					"DrStatPsngr":       0,
+					"DrStatRl":          0,
+					"DrStatRr":          0,
+					"DrStatTrnkLg":      0,
+					"DrStatHood":        float64(1), // Hood open
 					"FuelLidOpenStatus": float64(1), // Fuel lid open
-					"LockLinkSwDrv":   float64(1), // Driver door unlocked
-					"LockLinkSwPsngr": float64(0),
-					"LockLinkSwRl":    float64(0),
-					"LockLinkSwRr":    float64(0),
+					"LockLinkSwDrv":     float64(1), // Driver door unlocked
+					"LockLinkSwPsngr":   float64(0),
+					"LockLinkSwRl":      float64(0),
+					"LockLinkSwRr":      float64(0),
 				},
 				"Pw": map[string]interface{}{
 					"PwPosDrv":   float64(50),  // Driver window half open
@@ -395,8 +395,8 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 		"remoteInfos": []map[string]interface{}{
 			{
 				"ResidualFuel": map[string]interface{}{
-					"FuelSegementDActl":  75.5,
-					"RemDrvDistDActlKm":  350.2,
+					"FuelSegementDActl": 75.5,
+					"RemDrvDistDActlKm": 350.2,
 				},
 				"DriveInformation": map[string]interface{}{
 					"OdoDispValue": float64(99999.9), // High odometer

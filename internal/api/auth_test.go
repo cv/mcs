@@ -12,10 +12,10 @@ import (
 func TestClient_GetEncryptionKeys(t *testing.T) {
 	// Create a test client to get the correct decryption key
 	testClient := &Client{
-		email:      "test@example.com",
-		password:   "password",
-		region:     "MNAO",
-		appCode:    "202007270941270111799",
+		email:    "test@example.com",
+		password: "password",
+		region:   "MNAO",
+		appCode:  "202007270941270111799",
 	}
 	decryptionKey := testClient.getDecryptionKeyFromAppCode()
 

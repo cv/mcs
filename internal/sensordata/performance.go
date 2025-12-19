@@ -8,15 +8,15 @@ import (
 
 // PerformanceTestResults represents performance test results
 type PerformanceTestResults struct {
-	modTestResult    int
-	modTestIters     int
-	floatTestResult  int
-	floatTestIters   int
-	sqrtTestResult   int
-	sqrtTestIters    int
-	trigTestResult   int
-	trigTestIters    int
-	loopTestResult   int
+	modTestResult   int
+	modTestIters    int
+	floatTestResult int
+	floatTestIters  int
+	sqrtTestResult  int
+	sqrtTestIters   int
+	trigTestResult  int
+	trigTestIters   int
+	loopTestResult  int
 }
 
 // NewPerformanceTestResults creates a new PerformanceTestResults

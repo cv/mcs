@@ -162,10 +162,10 @@ func TestLoad_InvalidJSON(t *testing.T) {
 
 func TestIsTokenValid(t *testing.T) {
 	tests := []struct {
-		name            string
-		accessToken     string
-		expirationTs    int64
-		want            bool
+		name         string
+		accessToken  string
+		expirationTs int64
+		want         bool
 	}{
 		{
 			name:         "valid token",

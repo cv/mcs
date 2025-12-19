@@ -7,11 +7,11 @@ import (
 
 func TestEncryptAES128CBC(t *testing.T) {
 	tests := []struct {
-		name     string
-		data     []byte
-		key      string
-		iv       string
-		wantErr  bool
+		name    string
+		data    []byte
+		key     string
+		iv      string
+		wantErr bool
 	}{
 		{
 			name:    "basic encryption",
@@ -124,10 +124,10 @@ func TestEncryptRSA(t *testing.T) {
 	publicKeyBase64 := "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlVKZRa1pkk88B1ydifsFNEv/pOf854egpFu1HHf1wr3YKqmLSG1p39YhNqGLQzIDit1jTLz3MYAOeWiFQSz7h5hvMNccq76zh3Hsg93LurcKA9EmYoj9VsqUetk0evXoqOSGKXPgZosbGT0t8AW2CC7s8FeSPz2tH9T7zjvKQvdyS0BFrVFo1EUBa1UEdMfYW0jLsvLOCYP911X1zTlewV/sTQnAtiTHCrd3jfH2of8PYtTOsmfqCDdL476yGMgeHJ+ZXA/IX2beSrHXU0gCNc/agD+ScCZgpRjfptSbRtBHqtmU4IyF0eqQXCCcrcutjzSHg+3ppmB9x/YvhJvmGQIDAQAB"
 
 	tests := []struct {
-		name     string
-		data     string
-		pubKey   string
-		wantErr  bool
+		name    string
+		data    string
+		pubKey  string
+		wantErr bool
 	}{
 		{
 			name:    "basic encryption",

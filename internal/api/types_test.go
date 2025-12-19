@@ -1105,13 +1105,13 @@ func TestVehicleStatusResponse_GetHazardInfo(t *testing.T) {
 
 func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
 	tests := []struct {
-		name           string
-		resp           *EVVehicleStatusResponse
-		wantHvacOn     bool
-		wantFrontDef   bool
-		wantRearDef    bool
-		wantInteriorC  float64
-		wantTargetC    float64
+		name          string
+		resp          *EVVehicleStatusResponse
+		wantHvacOn    bool
+		wantFrontDef  bool
+		wantRearDef   bool
+		wantInteriorC float64
+		wantTargetC   float64
 	}{
 		{
 			name: "HVAC on with target temp",
@@ -1235,14 +1235,14 @@ func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 						PlusBInformation: PlusBInformation{
 							VehicleInfo: EVVehicleInfo{
 								ChargeInfo: ChargeInfo{
-									SmaphSOC:               66.0,
-									SmaphRemDrvDistKm:      245.5,
+									SmaphSOC:                66.0,
+									SmaphRemDrvDistKm:       245.5,
 									ChargerConnectorFitting: 1,
-									ChargeStatusSub:        6,
-									MaxChargeMinuteAC:      180,
-									MaxChargeMinuteQBC:     45,
-									BatteryHeaterON:        1,
-									CstmzStatBatHeatAutoSW: 1,
+									ChargeStatusSub:         6,
+									MaxChargeMinuteAC:       180,
+									MaxChargeMinuteQBC:      45,
+									BatteryHeaterON:         1,
+									CstmzStatBatHeatAutoSW:  1,
 								},
 							},
 						},
@@ -1267,12 +1267,12 @@ func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 						PlusBInformation: PlusBInformation{
 							VehicleInfo: EVVehicleInfo{
 								ChargeInfo: ChargeInfo{
-									SmaphSOC:               80.0,
-									SmaphRemDrvDistKm:      300.0,
+									SmaphSOC:                80.0,
+									SmaphRemDrvDistKm:       300.0,
 									ChargerConnectorFitting: 0,
-									ChargeStatusSub:        0,
-									BatteryHeaterON:        0,
-									CstmzStatBatHeatAutoSW: 0,
+									ChargeStatusSub:         0,
+									BatteryHeaterON:         0,
+									CstmzStatBatHeatAutoSW:  0,
 								},
 							},
 						},
@@ -1297,12 +1297,12 @@ func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 						PlusBInformation: PlusBInformation{
 							VehicleInfo: EVVehicleInfo{
 								ChargeInfo: ChargeInfo{
-									SmaphSOC:               75.0,
-									SmaphRemDrvDistKm:      280.0,
+									SmaphSOC:                75.0,
+									SmaphRemDrvDistKm:       280.0,
 									ChargerConnectorFitting: 0,
-									ChargeStatusSub:        0,
-									BatteryHeaterON:        0,
-									CstmzStatBatHeatAutoSW: 1,
+									ChargeStatusSub:         0,
+									BatteryHeaterON:         0,
+									CstmzStatBatHeatAutoSW:  1,
 								},
 							},
 						},

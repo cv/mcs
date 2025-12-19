@@ -97,4 +97,3 @@ func SignWithSHA256(data string) string {
 	hash := sha256.Sum256([]byte(data))
 	return strings.ToUpper(hex.EncodeToString(hash[:]))
 }
-

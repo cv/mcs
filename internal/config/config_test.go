@@ -18,11 +18,11 @@ func TestLoad(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name        string
-		envVars     map[string]string
-		wantEmail   string
-		wantRegion  string
-		wantErr     bool
+		name       string
+		envVars    map[string]string
+		wantEmail  string
+		wantRegion string
+		wantErr    bool
 	}{
 		{
 			name: "load from environment variables",

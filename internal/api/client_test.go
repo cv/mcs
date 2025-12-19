@@ -79,9 +79,9 @@ func TestAPIRequest_Success(t *testing.T) {
 func TestAPIRequest_EncryptionError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]interface{}{
-			"state": "E",
+			"state":     "E",
 			"errorCode": 600001,
-			"message": "Encryption error",
+			"message":   "Encryption error",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -115,9 +115,9 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 func TestAPIRequest_TokenExpired(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]interface{}{
-			"state": "E",
+			"state":     "E",
 			"errorCode": 600002,
-			"message": "Token expired",
+			"message":   "Token expired",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -151,10 +151,10 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 func TestAPIRequest_RequestInProgress(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]interface{}{
-			"state": "E",
+			"state":     "E",
 			"errorCode": 920000,
 			"extraCode": "400S01",
-			"message": "Request in progress",
+			"message":   "Request in progress",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -193,7 +193,7 @@ func TestEncryptPayloadUsingKey(t *testing.T) {
 
 	testData := map[string]interface{}{
 		"test": "data",
-		"foo": "bar",
+		"foo":  "bar",
 	}
 
 	dataJSON, err := json.Marshal(testData)
@@ -227,7 +227,7 @@ func TestDecryptPayloadUsingKey(t *testing.T) {
 
 	testData := map[string]interface{}{
 		"test": "data",
-		"foo": "bar",
+		"foo":  "bar",
 	}
 
 	dataJSON, err := json.Marshal(testData)

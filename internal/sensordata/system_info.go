@@ -27,36 +27,36 @@ var androidVersionToSDK = map[string]int{
 
 // SystemInfo represents Android system information
 type SystemInfo struct {
-	screenHeight          int
-	screenWidth           int
-	batteryCharging       bool
-	batteryLevel          int
-	orientation           int
-	language              string
-	androidVersion        string
-	rotationLock          string
-	buildModel            string
-	buildBootloader       string
-	buildHardware         string
-	packageName           string
-	androidID             string
-	keyboard              int
-	adbEnabled            bool
-	buildVersionCodename  string
+	screenHeight            int
+	screenWidth             int
+	batteryCharging         bool
+	batteryLevel            int
+	orientation             int
+	language                string
+	androidVersion          string
+	rotationLock            string
+	buildModel              string
+	buildBootloader         string
+	buildHardware           string
+	packageName             string
+	androidID               string
+	keyboard                int
+	adbEnabled              bool
+	buildVersionCodename    string
 	buildVersionIncremental int
-	buildVersionSDK       int
-	buildManufacturer     string
-	buildProduct          string
-	buildTags             string
-	buildType             string
-	buildUser             string
-	buildDisplay          string
-	buildBoard            string
-	buildBrand            string
-	buildDevice           string
-	buildFingerprint      string
-	buildHost             string
-	buildID               string
+	buildVersionSDK         int
+	buildManufacturer       string
+	buildProduct            string
+	buildTags               string
+	buildType               string
+	buildUser               string
+	buildDisplay            string
+	buildBoard              string
+	buildBrand              string
+	buildDevice             string
+	buildFingerprint        string
+	buildHost               string
+	buildID                 string
 }
 
 // NewSystemInfo creates a new SystemInfo

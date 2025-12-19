@@ -186,7 +186,7 @@ type HazardLamp struct {
 
 // EVVehicleStatusResponse represents the response from GetEVVehicleStatus API
 type EVVehicleStatusResponse struct {
-	ResultCode string       `json:"resultCode"`
+	ResultCode string         `json:"resultCode"`
 	ResultData []EVResultData `json:"resultData"`
 }
 
@@ -337,18 +337,18 @@ func (r *VehicleStatusResponse) GetLocationInfo() (lat, lon float64, timestamp s
 
 // DoorStatus represents the detailed status of all doors
 type DoorStatus struct {
-	DriverOpen     bool
-	PassengerOpen  bool
-	RearLeftOpen   bool
-	RearRightOpen  bool
-	TrunkOpen      bool
-	HoodOpen       bool
-	FuelLidOpen    bool
-	DriverLocked   bool
+	DriverOpen      bool
+	PassengerOpen   bool
+	RearLeftOpen    bool
+	RearRightOpen   bool
+	TrunkOpen       bool
+	HoodOpen        bool
+	FuelLidOpen     bool
+	DriverLocked    bool
 	PassengerLocked bool
 	RearLeftLocked  bool
 	RearRightLocked bool
-	AllLocked      bool
+	AllLocked       bool
 }
 
 // GetDoorsInfo extracts door lock status from the vehicle status response

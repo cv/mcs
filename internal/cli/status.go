@@ -300,17 +300,16 @@ func displayDoorsStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput boo
 	return formatDoorsStatus(doorStatus, jsonOutput)
 }
 
-
 // extractBatteryData extracts battery data for JSON output
 func extractBatteryData(evStatus *api.EVVehicleStatusResponse) map[string]interface{} {
 	batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, heaterOn, heaterAuto, _ := evStatus.GetBatteryInfo()
 	data := map[string]interface{}{
-		"battery_level":   batteryLevel,
-		"range_km":        range_,
-		"plugged_in":      pluggedIn,
-		"charging":        charging,
-		"heater_on":       heaterOn,
-		"heater_auto":     heaterAuto,
+		"battery_level": batteryLevel,
+		"range_km":      range_,
+		"plugged_in":    pluggedIn,
+		"charging":      charging,
+		"heater_on":     heaterOn,
+		"heater_auto":   heaterAuto,
 	}
 	if charging {
 		data["charge_time_ac_minutes"] = chargeTimeACMin
@@ -394,9 +393,9 @@ func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]interface
 func extractWindowsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
 	driver, passenger, rearLeft, rearRight, _ := vehicleStatus.GetWindowsInfo()
 	return map[string]interface{}{
-		"driver_position":    driver,
-		"passenger_position": passenger,
-		"rear_left_position": rearLeft,
+		"driver_position":     driver,
+		"passenger_position":  passenger,
+		"rear_left_position":  rearLeft,
 		"rear_right_position": rearRight,
 	}
 }
@@ -770,9 +769,9 @@ func formatChargeTime(acMinutes, qbcMinutes float64) string {
 func formatWindowsStatus(driver, passenger, rearLeft, rearRight float64, jsonOutput bool) string {
 	if jsonOutput {
 		return toJSON(map[string]interface{}{
-			"driver_position":    driver,
-			"passenger_position": passenger,
-			"rear_left_position": rearLeft,
+			"driver_position":     driver,
+			"passenger_position":  passenger,
+			"rear_left_position":  rearLeft,
 			"rear_right_position": rearRight,
 		})
 	}

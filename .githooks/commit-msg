@@ -1,0 +1,27 @@
+#!/bin/sh
+# Commit-msg hook: Validate commit message format
+# Install: git config core.hooksPath .githooks
+
+COMMIT_MSG_FILE=$1
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# Skip merge commits
+if echo "$COMMIT_MSG" | grep -q "^Merge "; then
+    exit 0
+fi
+
+# Check minimum length (at least 10 chars for meaningful message)
+MSG_LENGTH=$(echo "$COMMIT_MSG" | head -1 | wc -c)
+if [ "$MSG_LENGTH" -lt 10 ]; then
+    echo "ERROR: Commit message too short (min 10 characters)"
+    exit 1
+fi
+
+# Check first line isn't too long (72 chars recommended)
+FIRST_LINE_LENGTH=$(echo "$COMMIT_MSG" | head -1 | wc -c)
+if [ "$FIRST_LINE_LENGTH" -gt 73 ]; then
+    echo "WARNING: First line of commit message is longer than 72 characters"
+    # Warning only, don't block
+fi
+
+exit 0

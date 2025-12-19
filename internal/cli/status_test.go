@@ -181,40 +181,40 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 // TestFormatBatteryStatus_WithHeater tests battery heater display
 func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 	tests := []struct {
-		name      string
-		heaterOn  bool
+		name       string
+		heaterOn   bool
 		heaterAuto bool
-		expected  string
+		expected   string
 	}{
 		{
-			name:      "heater on with auto",
-			heaterOn:  true,
+			name:       "heater on with auto",
+			heaterOn:   true,
 			heaterAuto: true,
-			expected:  "BATTERY: 66% (245.5 km range) [battery heater on, auto enabled]",
+			expected:   "BATTERY: 66% (245.5 km range) [battery heater on, auto enabled]",
 		},
 		{
-			name:      "heater on without auto",
-			heaterOn:  true,
+			name:       "heater on without auto",
+			heaterOn:   true,
 			heaterAuto: false,
-			expected:  "BATTERY: 66% (245.5 km range) [battery heater on]",
+			expected:   "BATTERY: 66% (245.5 km range) [battery heater on]",
 		},
 		{
-			name:      "heater off with auto enabled",
-			heaterOn:  false,
+			name:       "heater off with auto enabled",
+			heaterOn:   false,
 			heaterAuto: true,
-			expected:  "BATTERY: 66% (245.5 km range) [battery heater auto enabled]",
+			expected:   "BATTERY: 66% (245.5 km range) [battery heater auto enabled]",
 		},
 		{
-			name:      "heater off without auto",
-			heaterOn:  false,
+			name:       "heater off without auto",
+			heaterOn:   false,
 			heaterAuto: false,
-			expected:  "BATTERY: 66% (245.5 km range)",
+			expected:   "BATTERY: 66% (245.5 km range)",
 		},
 		{
-			name:      "charging with heater on",
-			heaterOn:  true,
+			name:       "charging with heater on",
+			heaterOn:   true,
 			heaterAuto: true,
-			expected:  "BATTERY: 66% (245.5 km range) [charging, ~45m quick / ~3h AC, battery heater on, auto enabled]",
+			expected:   "BATTERY: 66% (245.5 km range) [charging, ~45m quick / ~3h AC, battery heater on, auto enabled]",
 		},
 	}
 
