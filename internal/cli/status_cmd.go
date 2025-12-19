@@ -126,39 +126,44 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 	// Poll every 30 seconds until timestamp changes or timeout
 	pollInterval := 30 * time.Second
 	maxWait := time.Duration(refreshWait) * time.Second
-	elapsed := time.Duration(0)
 
-	for elapsed < maxWait {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
+	// Create a context with timeout
+	timeoutCtx, cancel := context.WithTimeout(ctx, maxWait)
+	defer cancel()
 
-		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Waiting for vehicle response... (%ds/%ds)\n", int(elapsed.Seconds()), refreshWait)
+	ticker := time.NewTicker(pollInterval)
+	defer ticker.Stop()
+
+	startTime := time.Now()
+	for {
 		select {
-		case <-time.After(pollInterval):
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-		elapsed += pollInterval
+		case <-ticker.C:
+			elapsed := time.Since(startTime)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Waiting for vehicle response... (%ds/%ds)\n", int(elapsed.Seconds()), refreshWait)
 
-		// Fetch new EV status
-		newEvStatus, err := client.GetEVVehicleStatus(ctx, internalVIN)
-		if err != nil {
-			continue // Keep trying on error
-		}
+			// Fetch new EV status
+			newEvStatus, err := client.GetEVVehicleStatus(timeoutCtx, internalVIN)
+			if err != nil {
+				continue // Keep trying on error
+			}
 
-		newTimestamp, err := newEvStatus.GetOccurrenceDate()
-		if err != nil {
-			continue // Keep trying on error
-		}
-		if newTimestamp != initialTimestamp {
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Got fresh status from: %s\n", formatTimestamp(newTimestamp))
-			return newEvStatus, nil
+			newTimestamp, err := newEvStatus.GetOccurrenceDate()
+			if err != nil {
+				continue // Keep trying on error
+			}
+			if newTimestamp != initialTimestamp {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Got fresh status from: %s\n", formatTimestamp(newTimestamp))
+				return newEvStatus, nil
+			}
+
+		case <-timeoutCtx.Done():
+			if timeoutCtx.Err() == context.DeadlineExceeded {
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Warning: status did not update within timeout period")
+				return evStatus, nil
+			}
+			return nil, timeoutCtx.Err()
 		}
 	}
-
-	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Warning: status did not update within timeout period")
-	return evStatus, nil
 }
 
 // displayStatusWithVehicle outputs the status based on type, including vehicle info for "all"
