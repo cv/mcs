@@ -1,5 +1,7 @@
 package api
 
+import "fmt"
+
 // API error codes returned by the server
 const (
 	// ErrorCodeEncryption indicates the server rejected an encrypted request (600001)
@@ -74,4 +76,29 @@ func NewRequestInProgressError() *RequestInProgressError {
 // NewEngineStartLimitError creates a new engine start limit error
 func NewEngineStartLimitError() *EngineStartLimitError {
 	return &EngineStartLimitError{APIError{Message: "The engine can only be remotely started 2 consecutive times. Please drive the vehicle to reset the counter."}}
+}
+
+// ResultCodeError represents an error due to an unsuccessful result code
+type ResultCodeError struct {
+	APIError
+	ResultCode string
+	Operation  string
+}
+
+// NewResultCodeError creates a new result code error
+func NewResultCodeError(resultCode, operation string) *ResultCodeError {
+	return &ResultCodeError{
+		APIError:   APIError{Message: fmt.Sprintf("failed to %s: result code %s", operation, resultCode)},
+		ResultCode: resultCode,
+		Operation:  operation,
+	}
+}
+
+// checkResultCode validates the API result code and returns an error if not successful.
+// It returns nil if the result code matches ResultCodeSuccess ("200S00").
+func checkResultCode(resultCode, operation string) error {
+	if resultCode != ResultCodeSuccess {
+		return NewResultCodeError(resultCode, operation)
+	}
+	return nil
 }

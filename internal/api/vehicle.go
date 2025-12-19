@@ -51,8 +51,8 @@ func (c *Client) GetVehicleStatus(ctx context.Context, internalVIN string) (*Veh
 	}
 
 	// Check result code
-	if typed.ResultCode != "200S00" {
-		return nil, fmt.Errorf("failed to get vehicle status: result code %s", typed.ResultCode)
+	if err := checkResultCode(typed.ResultCode, "get vehicle status"); err != nil {
+		return nil, err
 	}
 
 	return &typed, nil
@@ -73,8 +73,8 @@ func (c *Client) GetEVVehicleStatus(ctx context.Context, internalVIN string) (*E
 	}
 
 	// Check result code
-	if typed.ResultCode != "200S00" {
-		return nil, fmt.Errorf("failed to get EV vehicle status: result code %s", typed.ResultCode)
+	if err := checkResultCode(typed.ResultCode, "get EV vehicle status"); err != nil {
+		return nil, err
 	}
 
 	return &typed, nil

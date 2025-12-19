@@ -42,11 +42,11 @@ func (c *Client) executeControl(ctx context.Context, endpoint, actionDesc, inter
 	}
 
 	resultCode, ok := getString(response, "resultCode")
-	if !ok || resultCode != ResultCodeSuccess {
-		return fmt.Errorf("failed to %s: result code %s", actionDesc, resultCode)
+	if !ok {
+		return fmt.Errorf("failed to %s: missing result code", actionDesc)
 	}
 
-	return nil
+	return checkResultCode(resultCode, actionDesc)
 }
 
 // DoorLock locks the vehicle doors
@@ -121,9 +121,9 @@ func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, tempera
 	}
 
 	resultCode, ok := getString(response, "resultCode")
-	if !ok || resultCode != ResultCodeSuccess {
-		return fmt.Errorf("failed to set HVAC settings: result code %s", resultCode)
+	if !ok {
+		return fmt.Errorf("failed to set HVAC settings: missing result code")
 	}
 
-	return nil
+	return checkResultCode(resultCode, "set HVAC settings")
 }
