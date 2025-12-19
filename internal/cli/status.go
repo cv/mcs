@@ -182,6 +182,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 			"tires":    extractTiresData(vehicleStatus),
 			"doors":    extractDoorsData(vehicleStatus),
 			"climate":  extractHvacData(evStatus),
+			"odometer": extractOdometerData(vehicleStatus),
 		}
 		jsonBytes, _ := json.MarshalIndent(data, "", "  ")
 		return string(jsonBytes)
@@ -193,12 +194,16 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	// Extract HVAC info
 	hvacOn, frontDefroster, rearDefroster, interiorTempC := evStatus.GetHvacInfo()
 
+	// Extract odometer
+	odometer, _ := vehicleStatus.GetOdometerInfo()
+
 	output := fmt.Sprintf("\nVehicle Status (Last Updated: %s)\n\n", timestamp)
 	output += displayBatteryStatus(evStatus, false) + "\n"
 	output += displayFuelStatus(vehicleStatus, false) + "\n"
 	output += formatHvacStatus(hvacOn, frontDefroster, rearDefroster, interiorTempC, false) + "\n"
 	output += displayDoorsStatus(vehicleStatus, false) + "\n"
 	output += displayTiresStatus(vehicleStatus, false) + "\n"
+	output += formatOdometerStatus(odometer, false) + "\n"
 
 	return output
 }
@@ -282,6 +287,14 @@ func extractDoorsData(vehicleStatus *api.VehicleStatusResponse) map[string]inter
 	allLocked, _ := vehicleStatus.GetDoorsInfo()
 	return map[string]interface{}{
 		"all_locked": allLocked,
+	}
+}
+
+// extractOdometerData extracts odometer data for JSON output
+func extractOdometerData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	odometer, _ := vehicleStatus.GetOdometerInfo()
+	return map[string]interface{}{
+		"odometer_km": odometer,
 	}
 }
 
@@ -380,6 +393,17 @@ func formatDoorsStatus(allLocked bool, jsonOutput bool) string {
 	return "DOORS: Not all locked"
 }
 
+// formatOdometerStatus formats odometer status for display
+func formatOdometerStatus(odometerKm float64, jsonOutput bool) string {
+	if jsonOutput {
+		return toJSON(map[string]interface{}{
+			"odometer_km": odometerKm,
+		})
+	}
+
+	return fmt.Sprintf("ODOMETER: %s km", formatThousands(odometerKm))
+}
+
 // formatHvacStatus formats HVAC status for display
 func formatHvacStatus(hvacOn, frontDefroster, rearDefroster bool, interiorTempC float64, jsonOutput bool) string {
 	if jsonOutput {
@@ -430,4 +454,37 @@ func formatTimestamp(timestamp string) string {
 	}
 
 	return t.Format("2006-01-02 15:04:05")
+}
+
+// formatThousands formats a float with comma separators for thousands
+func formatThousands(value float64) string {
+	// Format the full number with one decimal place
+	formatted := fmt.Sprintf("%.1f", value)
+
+	// Find the decimal point position
+	dotPos := -1
+	for i, c := range formatted {
+		if c == '.' {
+			dotPos = i
+			break
+		}
+	}
+
+	if dotPos == -1 {
+		return formatted
+	}
+
+	// Add commas to the integer part
+	intPart := formatted[:dotPos]
+	decPart := formatted[dotPos:]
+
+	var result string
+	for i, c := range intPart {
+		if i > 0 && (len(intPart)-i)%3 == 0 {
+			result += ","
+		}
+		result += string(c)
+	}
+
+	return result + decPart
 }

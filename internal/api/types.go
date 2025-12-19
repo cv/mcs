@@ -62,14 +62,20 @@ type VehicleStatusResponse struct {
 
 // RemoteInfo contains remote vehicle information
 type RemoteInfo struct {
-	ResidualFuel    ResidualFuel    `json:"ResidualFuel"`
-	TPMSInformation TPMSInformation `json:"TPMSInformation"`
+	ResidualFuel     ResidualFuel     `json:"ResidualFuel"`
+	DriveInformation DriveInformation `json:"DriveInformation"`
+	TPMSInformation  TPMSInformation  `json:"TPMSInformation"`
 }
 
 // ResidualFuel contains fuel information
 type ResidualFuel struct {
 	FuelSegmentDActl  float64 `json:"FuelSegementDActl"`
 	RemDrvDistDActlKm float64 `json:"RemDrvDistDActlKm"`
+}
+
+// DriveInformation contains drive-related information
+type DriveInformation struct {
+	OdoDispValue float64 `json:"OdoDispValue"`
 }
 
 // TPMSInformation contains tire pressure information
@@ -240,6 +246,16 @@ func (r *VehicleStatusResponse) GetDoorsInfo() (allLocked bool, err error) {
 		door.DrStatRl == 0 &&
 		door.DrStatRr == 0 &&
 		door.DrStatTrnkLg == 0
+	return
+}
+
+// GetOdometerInfo extracts odometer reading from the vehicle status response
+func (r *VehicleStatusResponse) GetOdometerInfo() (odometerKm float64, err error) {
+	if len(r.RemoteInfos) == 0 {
+		err = fmt.Errorf("no vehicle status data available")
+		return
+	}
+	odometerKm = r.RemoteInfos[0].DriveInformation.OdoDispValue
 	return
 }
 

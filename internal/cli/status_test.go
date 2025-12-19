@@ -475,3 +475,99 @@ func TestExtractHvacData(t *testing.T) {
 		t.Errorf("Expected interior_temperature_c 18, got %v", data["interior_temperature_c"])
 	}
 }
+
+// TestFormatOdometerStatus tests odometer status formatting
+func TestFormatOdometerStatus(t *testing.T) {
+	tests := []struct {
+		name           string
+		odometerKm     float64
+		expectedOutput string
+	}{
+		{
+			name:           "typical odometer",
+			odometerKm:     12345.6,
+			expectedOutput: "ODOMETER: 12,345.6 km",
+		},
+		{
+			name:           "high odometer",
+			odometerKm:     99999.9,
+			expectedOutput: "ODOMETER: 99,999.9 km",
+		},
+		{
+			name:           "low odometer",
+			odometerKm:     123.4,
+			expectedOutput: "ODOMETER: 123.4 km",
+		},
+		{
+			name:           "zero odometer",
+			odometerKm:     0,
+			expectedOutput: "ODOMETER: 0.0 km",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatOdometerStatus(tt.odometerKm, false)
+			if result != tt.expectedOutput {
+				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
+			}
+		})
+	}
+}
+
+// TestFormatOdometerStatus_JSON tests odometer status JSON formatting
+func TestFormatOdometerStatus_JSON(t *testing.T) {
+	result := formatOdometerStatus(12345.6, true)
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(result), &data); err != nil {
+		t.Fatalf("Expected valid JSON, got error: %v", err)
+	}
+
+	if data["odometer_km"] != 12345.6 {
+		t.Errorf("Expected odometer_km 12345.6, got %v", data["odometer_km"])
+	}
+}
+
+// TestGetOdometerInfo tests extracting odometer info from vehicle status
+func TestGetOdometerInfo(t *testing.T) {
+	vehicleStatus := &api.VehicleStatusResponse{
+		ResultCode: "200S00",
+		RemoteInfos: []api.RemoteInfo{
+			{
+				DriveInformation: api.DriveInformation{
+					OdoDispValue: 12345.6,
+				},
+			},
+		},
+	}
+
+	odometer, err := vehicleStatus.GetOdometerInfo()
+	if err != nil {
+		t.Fatalf("Expected no error, got: %v", err)
+	}
+
+	if odometer != 12345.6 {
+		t.Errorf("Expected odometer 12345.6, got %v", odometer)
+	}
+}
+
+// TestExtractOdometerData tests extracting odometer data for JSON output
+func TestExtractOdometerData(t *testing.T) {
+	vehicleStatus := &api.VehicleStatusResponse{
+		ResultCode: "200S00",
+		RemoteInfos: []api.RemoteInfo{
+			{
+				DriveInformation: api.DriveInformation{
+					OdoDispValue: 12345.6,
+				},
+			},
+		},
+	}
+
+	data := extractOdometerData(vehicleStatus)
+
+	if data["odometer_km"] != 12345.6 {
+		t.Errorf("Expected odometer_km 12345.6, got %v", data["odometer_km"])
+	}
+}

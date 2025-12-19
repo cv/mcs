@@ -74,6 +74,9 @@ func TestVehicleStatusResponse_Unmarshal(t *testing.T) {
 					"FuelSegementDActl": 92.0,
 					"RemDrvDistDActlKm": 630.5
 				},
+				"DriveInformation": {
+					"OdoDispValue": 12345.6
+				},
 				"TPMSInformation": {
 					"FLTPrsDispPsi": 32.5,
 					"FRTPrsDispPsi": 32.0,
@@ -119,6 +122,11 @@ func TestVehicleStatusResponse_Unmarshal(t *testing.T) {
 	}
 	if fuel.RemDrvDistDActlKm != 630.5 {
 		t.Errorf("Expected RemDrvDistDActlKm 630.5, got %f", fuel.RemDrvDistDActlKm)
+	}
+
+	driveInfo := resp.RemoteInfos[0].DriveInformation
+	if driveInfo.OdoDispValue != 12345.6 {
+		t.Errorf("Expected OdoDispValue 12345.6, got %f", driveInfo.OdoDispValue)
 	}
 
 	tpms := resp.RemoteInfos[0].TPMSInformation
@@ -445,6 +453,77 @@ func TestParseTemperatureUnit(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("ParseTemperatureUnit(%q) = %v, want %v", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
+	tests := []struct {
+		name         string
+		resp         *VehicleStatusResponse
+		wantOdometer float64
+		wantErr      bool
+	}{
+		{
+			name: "valid odometer",
+			resp: &VehicleStatusResponse{
+				RemoteInfos: []RemoteInfo{
+					{
+						DriveInformation: DriveInformation{
+							OdoDispValue: 12345.6,
+						},
+					},
+				},
+			},
+			wantOdometer: 12345.6,
+			wantErr:      false,
+		},
+		{
+			name: "high odometer value",
+			resp: &VehicleStatusResponse{
+				RemoteInfos: []RemoteInfo{
+					{
+						DriveInformation: DriveInformation{
+							OdoDispValue: 99999.9,
+						},
+					},
+				},
+			},
+			wantOdometer: 99999.9,
+			wantErr:      false,
+		},
+		{
+			name: "zero odometer",
+			resp: &VehicleStatusResponse{
+				RemoteInfos: []RemoteInfo{
+					{
+						DriveInformation: DriveInformation{
+							OdoDispValue: 0,
+						},
+					},
+				},
+			},
+			wantOdometer: 0,
+			wantErr:      false,
+		},
+		{
+			name:         "no remote infos",
+			resp:         &VehicleStatusResponse{},
+			wantOdometer: 0,
+			wantErr:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			odometer, err := tt.resp.GetOdometerInfo()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetOdometerInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if odometer != tt.wantOdometer {
+				t.Errorf("GetOdometerInfo() = %v, want %v", odometer, tt.wantOdometer)
 			}
 		})
 	}
