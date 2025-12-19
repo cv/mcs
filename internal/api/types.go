@@ -101,11 +101,16 @@ type PositionInfo struct {
 
 // DoorInfo contains door lock status
 type DoorInfo struct {
-	DrStatDrv    float64 `json:"DrStatDrv"`
-	DrStatPsngr  float64 `json:"DrStatPsngr"`
-	DrStatRl     float64 `json:"DrStatRl"`
-	DrStatRr     float64 `json:"DrStatRr"`
-	DrStatTrnkLg float64 `json:"DrStatTrnkLg"`
+	DrStatDrv      float64 `json:"DrStatDrv"`
+	DrStatPsngr    float64 `json:"DrStatPsngr"`
+	DrStatRl       float64 `json:"DrStatRl"`
+	DrStatRr       float64 `json:"DrStatRr"`
+	DrStatTrnkLg   float64 `json:"DrStatTrnkLg"`
+	DrStatHood     float64 `json:"DrStatHood"`
+	LockLinkSwDrv  float64 `json:"LockLinkSwDrv"`
+	LockLinkSwPsngr float64 `json:"LockLinkSwPsngr"`
+	LockLinkSwRl   float64 `json:"LockLinkSwRl"`
+	LockLinkSwRr   float64 `json:"LockLinkSwRr"`
 }
 
 // EVVehicleStatusResponse represents the response from GetEVVehicleStatus API
@@ -238,18 +243,50 @@ func (r *VehicleStatusResponse) GetLocationInfo() (lat, lon float64, timestamp s
 	return
 }
 
+// DoorStatus represents the detailed status of all doors
+type DoorStatus struct {
+	DriverOpen     bool
+	PassengerOpen  bool
+	RearLeftOpen   bool
+	RearRightOpen  bool
+	TrunkOpen      bool
+	HoodOpen       bool
+	DriverLocked   bool
+	PassengerLocked bool
+	RearLeftLocked  bool
+	RearRightLocked bool
+	AllLocked      bool
+}
+
 // GetDoorsInfo extracts door lock status from the vehicle status response
-func (r *VehicleStatusResponse) GetDoorsInfo() (allLocked bool, err error) {
+func (r *VehicleStatusResponse) GetDoorsInfo() (status DoorStatus, err error) {
 	if len(r.AlertInfos) == 0 {
 		err = fmt.Errorf("no alert info available")
 		return
 	}
 	door := r.AlertInfos[0].Door
-	allLocked = door.DrStatDrv == 0 &&
-		door.DrStatPsngr == 0 &&
-		door.DrStatRl == 0 &&
-		door.DrStatRr == 0 &&
-		door.DrStatTrnkLg == 0
+
+	// Open status (1=open, 0=closed)
+	status.DriverOpen = int(door.DrStatDrv) == 1
+	status.PassengerOpen = int(door.DrStatPsngr) == 1
+	status.RearLeftOpen = int(door.DrStatRl) == 1
+	status.RearRightOpen = int(door.DrStatRr) == 1
+	status.TrunkOpen = int(door.DrStatTrnkLg) == 1
+	status.HoodOpen = int(door.DrStatHood) == 1
+
+	// Lock status (0=locked, 1=unlocked)
+	status.DriverLocked = int(door.LockLinkSwDrv) == 0
+	status.PassengerLocked = int(door.LockLinkSwPsngr) == 0
+	status.RearLeftLocked = int(door.LockLinkSwRl) == 0
+	status.RearRightLocked = int(door.LockLinkSwRr) == 0
+
+	// All locked if no doors are open and all are locked
+	status.AllLocked = !status.DriverOpen && !status.PassengerOpen &&
+		!status.RearLeftOpen && !status.RearRightOpen &&
+		!status.TrunkOpen && !status.HoodOpen &&
+		status.DriverLocked && status.PassengerLocked &&
+		status.RearLeftLocked && status.RearRightLocked
+
 	return
 }
 

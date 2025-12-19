@@ -97,7 +97,12 @@ func TestVehicleStatusResponse_Unmarshal(t *testing.T) {
 					"DrStatPsngr": 0,
 					"DrStatRl": 0,
 					"DrStatRr": 0,
-					"DrStatTrnkLg": 0
+					"DrStatTrnkLg": 0,
+					"DrStatHood": 0,
+					"LockLinkSwDrv": 0,
+					"LockLinkSwPsngr": 0,
+					"LockLinkSwRl": 0,
+					"LockLinkSwRr": 0
 				}
 			}
 		]
@@ -532,6 +537,140 @@ func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
 			}
 			if odometer != tt.wantOdometer {
 				t.Errorf("GetOdometerInfo() = %v, want %v", odometer, tt.wantOdometer)
+			}
+		})
+	}
+}
+
+func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
+	tests := []struct {
+		name       string
+		resp       *VehicleStatusResponse
+		wantStatus DoorStatus
+		wantErr    bool
+	}{
+		{
+			name: "all locked and closed",
+			resp: &VehicleStatusResponse{
+				AlertInfos: []AlertInfo{
+					{
+						Door: DoorInfo{
+							DrStatDrv:       0,
+							DrStatPsngr:     0,
+							DrStatRl:        0,
+							DrStatRr:        0,
+							DrStatTrnkLg:    0,
+							DrStatHood:      0,
+							LockLinkSwDrv:   0,
+							LockLinkSwPsngr: 0,
+							LockLinkSwRl:    0,
+							LockLinkSwRr:    0,
+						},
+					},
+				},
+			},
+			wantStatus: DoorStatus{
+				DriverOpen:      false,
+				PassengerOpen:   false,
+				RearLeftOpen:    false,
+				RearRightOpen:   false,
+				TrunkOpen:       false,
+				HoodOpen:        false,
+				DriverLocked:    true,
+				PassengerLocked: true,
+				RearLeftLocked:  true,
+				RearRightLocked: true,
+				AllLocked:       true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "driver door unlocked",
+			resp: &VehicleStatusResponse{
+				AlertInfos: []AlertInfo{
+					{
+						Door: DoorInfo{
+							DrStatDrv:       0,
+							DrStatPsngr:     0,
+							DrStatRl:        0,
+							DrStatRr:        0,
+							DrStatTrnkLg:    0,
+							DrStatHood:      0,
+							LockLinkSwDrv:   1, // unlocked
+							LockLinkSwPsngr: 0,
+							LockLinkSwRl:    0,
+							LockLinkSwRr:    0,
+						},
+					},
+				},
+			},
+			wantStatus: DoorStatus{
+				DriverOpen:      false,
+				PassengerOpen:   false,
+				RearLeftOpen:    false,
+				RearRightOpen:   false,
+				TrunkOpen:       false,
+				HoodOpen:        false,
+				DriverLocked:    false, // unlocked
+				PassengerLocked: true,
+				RearLeftLocked:  true,
+				RearRightLocked: true,
+				AllLocked:       false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "trunk and hood open",
+			resp: &VehicleStatusResponse{
+				AlertInfos: []AlertInfo{
+					{
+						Door: DoorInfo{
+							DrStatDrv:       0,
+							DrStatPsngr:     0,
+							DrStatRl:        0,
+							DrStatRr:        0,
+							DrStatTrnkLg:    1, // open
+							DrStatHood:      1, // open
+							LockLinkSwDrv:   0,
+							LockLinkSwPsngr: 0,
+							LockLinkSwRl:    0,
+							LockLinkSwRr:    0,
+						},
+					},
+				},
+			},
+			wantStatus: DoorStatus{
+				DriverOpen:      false,
+				PassengerOpen:   false,
+				RearLeftOpen:    false,
+				RearRightOpen:   false,
+				TrunkOpen:       true, // open
+				HoodOpen:        true, // open
+				DriverLocked:    true,
+				PassengerLocked: true,
+				RearLeftLocked:  true,
+				RearRightLocked: true,
+				AllLocked:       false, // not all locked because doors are open
+			},
+			wantErr: false,
+		},
+		{
+			name:       "no alert infos",
+			resp:       &VehicleStatusResponse{},
+			wantStatus: DoorStatus{},
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			status, err := tt.resp.GetDoorsInfo()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetDoorsInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if status != tt.wantStatus {
+				t.Errorf("GetDoorsInfo() = %+v, want %+v", status, tt.wantStatus)
 			}
 		})
 	}

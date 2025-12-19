@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cv/mcs/internal/api"
@@ -234,8 +235,8 @@ func displayTiresStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput boo
 
 // displayDoorsStatus displays door lock status
 func displayDoorsStatus(vehicleStatus *api.VehicleStatusResponse, jsonOutput bool) string {
-	allLocked, _ := vehicleStatus.GetDoorsInfo()
-	return formatDoorsStatus(allLocked, jsonOutput)
+	doorStatus, _ := vehicleStatus.GetDoorsInfo()
+	return formatDoorsStatus(doorStatus, jsonOutput)
 }
 
 
@@ -289,9 +290,19 @@ func extractTiresData(vehicleStatus *api.VehicleStatusResponse) map[string]inter
 
 // extractDoorsData extracts door data for JSON output
 func extractDoorsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
-	allLocked, _ := vehicleStatus.GetDoorsInfo()
+	doorStatus, _ := vehicleStatus.GetDoorsInfo()
 	return map[string]interface{}{
-		"all_locked": allLocked,
+		"all_locked":       doorStatus.AllLocked,
+		"driver_open":      doorStatus.DriverOpen,
+		"passenger_open":   doorStatus.PassengerOpen,
+		"rear_left_open":   doorStatus.RearLeftOpen,
+		"rear_right_open":  doorStatus.RearRightOpen,
+		"trunk_open":       doorStatus.TrunkOpen,
+		"hood_open":        doorStatus.HoodOpen,
+		"driver_locked":    doorStatus.DriverLocked,
+		"passenger_locked": doorStatus.PassengerLocked,
+		"rear_left_locked": doorStatus.RearLeftLocked,
+		"rear_right_locked": doorStatus.RearRightLocked,
 	}
 }
 
@@ -396,17 +407,70 @@ func formatTiresStatus(fl, fr, rl, rr float64, jsonOutput bool) string {
 }
 
 // formatDoorsStatus formats door status for display
-func formatDoorsStatus(allLocked bool, jsonOutput bool) string {
+func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) string {
 	if jsonOutput {
 		return toJSON(map[string]interface{}{
-			"all_locked": allLocked,
+			"all_locked":        doorStatus.AllLocked,
+			"driver_open":       doorStatus.DriverOpen,
+			"passenger_open":    doorStatus.PassengerOpen,
+			"rear_left_open":    doorStatus.RearLeftOpen,
+			"rear_right_open":   doorStatus.RearRightOpen,
+			"trunk_open":        doorStatus.TrunkOpen,
+			"hood_open":         doorStatus.HoodOpen,
+			"driver_locked":     doorStatus.DriverLocked,
+			"passenger_locked":  doorStatus.PassengerLocked,
+			"rear_left_locked":  doorStatus.RearLeftLocked,
+			"rear_right_locked": doorStatus.RearRightLocked,
 		})
 	}
 
-	if allLocked {
+	// If all locked and closed, show simple message
+	if doorStatus.AllLocked {
 		return "DOORS: All locked"
 	}
-	return "DOORS: Not all locked"
+
+	// Otherwise, build a list of issues
+	var issues []string
+
+	// Check unlocked doors (closed but not locked)
+	if !doorStatus.DriverLocked && !doorStatus.DriverOpen {
+		issues = append(issues, "Driver unlocked")
+	}
+	if !doorStatus.PassengerLocked && !doorStatus.PassengerOpen {
+		issues = append(issues, "Passenger unlocked")
+	}
+	if !doorStatus.RearLeftLocked && !doorStatus.RearLeftOpen {
+		issues = append(issues, "Rear left unlocked")
+	}
+	if !doorStatus.RearRightLocked && !doorStatus.RearRightOpen {
+		issues = append(issues, "Rear right unlocked")
+	}
+
+	// Check open doors/trunk/hood
+	if doorStatus.DriverOpen {
+		issues = append(issues, "Driver open")
+	}
+	if doorStatus.PassengerOpen {
+		issues = append(issues, "Passenger open")
+	}
+	if doorStatus.RearLeftOpen {
+		issues = append(issues, "Rear left open")
+	}
+	if doorStatus.RearRightOpen {
+		issues = append(issues, "Rear right open")
+	}
+	if doorStatus.TrunkOpen {
+		issues = append(issues, "Trunk open")
+	}
+	if doorStatus.HoodOpen {
+		issues = append(issues, "Hood open")
+	}
+
+	if len(issues) == 0 {
+		return "DOORS: Status unknown"
+	}
+
+	return fmt.Sprintf("DOORS: %s", strings.Join(issues, ", "))
 }
 
 // formatOdometerStatus formats odometer status for display

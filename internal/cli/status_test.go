@@ -210,26 +210,84 @@ func TestFormatFuelStatus_JSON(t *testing.T) {
 func TestFormatDoorsStatus(t *testing.T) {
 	tests := []struct {
 		name           string
-		allLocked      bool
+		doorStatus     api.DoorStatus
 		expectedOutput string
 	}{
 		{
-			name:           "all locked",
-			allLocked:      true,
+			name: "all locked and closed",
+			doorStatus: api.DoorStatus{
+				DriverOpen:      false,
+				PassengerOpen:   false,
+				RearLeftOpen:    false,
+				RearRightOpen:   false,
+				TrunkOpen:       false,
+				HoodOpen:        false,
+				DriverLocked:    true,
+				PassengerLocked: true,
+				RearLeftLocked:  true,
+				RearRightLocked: true,
+				AllLocked:       true,
+			},
 			expectedOutput: "DOORS: All locked",
 		},
 		{
-			name:           "not all locked",
-			allLocked:      false,
-			expectedOutput: "DOORS: Not all locked",
+			name: "driver door unlocked",
+			doorStatus: api.DoorStatus{
+				DriverOpen:      false,
+				PassengerOpen:   false,
+				RearLeftOpen:    false,
+				RearRightOpen:   false,
+				TrunkOpen:       false,
+				HoodOpen:        false,
+				DriverLocked:    false,
+				PassengerLocked: true,
+				RearLeftLocked:  true,
+				RearRightLocked: true,
+				AllLocked:       false,
+			},
+			expectedOutput: "DOORS: Driver unlocked",
+		},
+		{
+			name: "trunk and hood open",
+			doorStatus: api.DoorStatus{
+				DriverOpen:      false,
+				PassengerOpen:   false,
+				RearLeftOpen:    false,
+				RearRightOpen:   false,
+				TrunkOpen:       true,
+				HoodOpen:        true,
+				DriverLocked:    true,
+				PassengerLocked: true,
+				RearLeftLocked:  true,
+				RearRightLocked: true,
+				AllLocked:       false,
+			},
+			expectedOutput: "DOORS: Trunk open, Hood open",
+		},
+		{
+			name: "multiple issues",
+			doorStatus: api.DoorStatus{
+				DriverOpen:      false,
+				PassengerOpen:   true,
+				RearLeftOpen:    false,
+				RearRightOpen:   false,
+				TrunkOpen:       true,
+				HoodOpen:        false,
+				DriverLocked:    false,
+				PassengerLocked: true,
+				RearLeftLocked:  true,
+				RearRightLocked: true,
+				AllLocked:       false,
+			},
+			expectedOutput: "DOORS: Driver unlocked, Passenger open, Trunk open",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatDoorsStatus(tt.allLocked, false)
-			if !strings.Contains(result, tt.expectedOutput) {
-				t.Errorf("Expected output to contain '%s', got '%s'", tt.expectedOutput, result)
+			result := formatDoorsStatus(tt.doorStatus, false)
+			if result != tt.expectedOutput {
+				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
 			}
 		})
 	}
