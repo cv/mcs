@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,7 +24,7 @@ func TestCreateAPIClient_WithValidConfig(t *testing.T) {
 
 	// Test: Create API client
 	ConfigFile = "" // Use environment variables
-	client, err := createAPIClient()
+	client, err := createAPIClient(context.Background())
 	if err != nil {
 		t.Fatalf("Failed to create API client: %v", err)
 	}
@@ -46,7 +47,7 @@ func TestCreateAPIClient_WithInvalidRegion(t *testing.T) {
 
 	// Test: Create API client should fail
 	ConfigFile = ""
-	_, err := createAPIClient()
+	_, err := createAPIClient(context.Background())
 	if err == nil {
 		t.Fatal("Expected error with invalid region, got nil")
 	}
@@ -76,7 +77,7 @@ region = "MNAO"
 
 	// Test: Create API client from file
 	ConfigFile = configPath
-	client, err := createAPIClient()
+	client, err := createAPIClient(context.Background())
 	if err != nil {
 		t.Fatalf("Failed to create API client: %v", err)
 	}
@@ -110,7 +111,7 @@ func TestCreateAPIClient_WithCachedCredentials(t *testing.T) {
 
 	// Test: Create API client (should use cached credentials)
 	ConfigFile = ""
-	client, err := createAPIClient()
+	client, err := createAPIClient(context.Background())
 	if err != nil {
 		t.Fatalf("Failed to create API client: %v", err)
 	}
@@ -156,7 +157,7 @@ func TestCreateAPIClient_WithExpiredCache(t *testing.T) {
 
 	// Test: Create API client (should ignore expired cache)
 	ConfigFile = ""
-	client, err := createAPIClient()
+	client, err := createAPIClient(context.Background())
 	if err != nil {
 		t.Fatalf("Failed to create API client: %v", err)
 	}
@@ -291,7 +292,7 @@ region = "MME"
 
 	// Test: Create API client
 	ConfigFile = configPath
-	client, err := createAPIClient()
+	client, err := createAPIClient(context.Background())
 	if err != nil {
 		t.Fatalf("Failed to create API client: %v", err)
 	}
@@ -316,7 +317,7 @@ func TestCreateAPIClient_MissingCredentials(t *testing.T) {
 
 	// Test: Create API client should fail
 	ConfigFile = ""
-	_, err := createAPIClient()
+	_, err := createAPIClient(context.Background())
 	if err == nil {
 		t.Fatal("Expected error with missing credentials, got nil")
 	}
