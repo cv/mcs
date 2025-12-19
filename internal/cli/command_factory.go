@@ -15,6 +15,7 @@ type SimpleCommandConfig struct {
 	Use          string                                                          // Command name (e.g., "lock", "start")
 	Short        string                                                          // Short description
 	Long         string                                                          // Long description
+	Example      string                                                          // Usage examples with sample output
 	APICall      func(ctx context.Context, client *api.Client, vin string) error // API method to invoke
 	SuccessMsg   string                                                          // Message to display on success
 	ErrorMsgTmpl string                                                          // Error message template (uses fmt.Errorf)
@@ -29,9 +30,10 @@ type SimpleCommandConfig struct {
 //  5. Display success message
 func NewSimpleCommand(cfg SimpleCommandConfig) *cobra.Command {
 	return &cobra.Command{
-		Use:   cfg.Use,
-		Short: cfg.Short,
-		Long:  cfg.Long,
+		Use:     cfg.Use,
+		Short:   cfg.Short,
+		Long:    cfg.Long,
+		Example: cfg.Example,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
 				if err := cfg.APICall(ctx, client, internalVIN); err != nil {

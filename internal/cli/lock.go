@@ -13,6 +13,11 @@ func NewLockCmd() *cobra.Command {
 		Use:   "lock",
 		Short: "Lock vehicle doors",
 		Long:  `Lock all vehicle doors remotely.`,
+		Example: `  # Lock all doors on your vehicle
+  mcs lock
+
+  # Expected output on success:
+  # Doors locked successfully`,
 		APICall: func(ctx context.Context, client *api.Client, vin string) error {
 			return client.DoorLock(ctx, vin)
 		},
@@ -27,6 +32,11 @@ func NewUnlockCmd() *cobra.Command {
 		Use:   "unlock",
 		Short: "Unlock vehicle doors",
 		Long:  `Unlock all vehicle doors remotely.`,
+		Example: `  # Unlock all doors on your vehicle
+  mcs unlock
+
+  # Expected output on success:
+  # Doors unlocked successfully`,
 		APICall: func(ctx context.Context, client *api.Client, vin string) error {
 			return client.DoorUnlock(ctx, vin)
 		},
