@@ -5,14 +5,7 @@ import "testing"
 // TestClimateCommand tests the climate command
 func TestClimateCommand(t *testing.T) {
 	cmd := NewClimateCmd()
-
-	if cmd.Use != "climate" {
-		t.Errorf("Expected Use to be 'climate', got '%s'", cmd.Use)
-	}
-
-	if cmd.Short == "" {
-		t.Error("Expected Short description to be set")
-	}
+	assertCommandBasics(t, cmd, "climate")
 }
 
 // TestClimateCommand_Subcommands tests climate subcommands

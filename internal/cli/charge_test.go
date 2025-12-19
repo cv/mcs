@@ -5,14 +5,7 @@ import "testing"
 // TestChargeCommand tests the charge command
 func TestChargeCommand(t *testing.T) {
 	cmd := NewChargeCmd()
-
-	if cmd.Use != "charge" {
-		t.Errorf("Expected Use to be 'charge', got '%s'", cmd.Use)
-	}
-
-	if cmd.Short == "" {
-		t.Error("Expected Short description to be set")
-	}
+	assertCommandBasics(t, cmd, "charge")
 }
 
 // TestChargeCommand_Subcommands tests charge subcommands
