@@ -5,146 +5,84 @@ import (
 	"testing"
 )
 
-// TestDoorLock tests locking doors
-func TestDoorLock(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/doorLock/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.DoorLock(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("DoorLock failed: %v", err)
+// TestControlEndpoints tests all simple control endpoints using table-driven approach
+func TestControlEndpoints(t *testing.T) {
+	tests := []struct {
+		name     string
+		endpoint string
+		method   func(ctx context.Context, client *Client, internalVIN string) error
+	}{
+		{
+			name:     "DoorLock",
+			endpoint: EndpointDoorLock,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.DoorLock(ctx, vin) },
+		},
+		{
+			name:     "DoorUnlock",
+			endpoint: EndpointDoorUnlock,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.DoorUnlock(ctx, vin) },
+		},
+		{
+			name:     "LightsOn",
+			endpoint: EndpointLightOn,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.LightsOn(ctx, vin) },
+		},
+		{
+			name:     "LightsOff",
+			endpoint: EndpointLightOff,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.LightsOff(ctx, vin) },
+		},
+		{
+			name:     "EngineStart",
+			endpoint: EndpointEngineStart,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.EngineStart(ctx, vin) },
+		},
+		{
+			name:     "EngineStop",
+			endpoint: EndpointEngineStop,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.EngineStop(ctx, vin) },
+		},
+		{
+			name:     "ChargeStart",
+			endpoint: EndpointChargeStart,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.ChargeStart(ctx, vin) },
+		},
+		{
+			name:     "ChargeStop",
+			endpoint: EndpointChargeStop,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.ChargeStop(ctx, vin) },
+		},
+		{
+			name:     "HVACOn",
+			endpoint: EndpointHVACOn,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.HVACOn(ctx, vin) },
+		},
+		{
+			name:     "HVACOff",
+			endpoint: EndpointHVACOff,
+			method:   func(ctx context.Context, client *Client, vin string) error { return client.HVACOff(ctx, vin) },
+		},
+		{
+			name:     "RefreshVehicleStatus",
+			endpoint: EndpointRefreshVehicleStatus,
+			method: func(ctx context.Context, client *Client, vin string) error {
+				return client.RefreshVehicleStatus(ctx, vin)
+			},
+		},
 	}
-}
 
-// TestDoorUnlock tests unlocking doors
-func TestDoorUnlock(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/doorUnlock/v4")
-	defer server.Close()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := createControlTestServer(t, "/"+tt.endpoint)
+			defer server.Close()
 
-	client := createTestClient(t, server.URL)
+			client := createTestClient(t, server.URL)
 
-	err := client.DoorUnlock(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("DoorUnlock failed: %v", err)
-	}
-}
-
-// TestLightsOn tests turning lights on
-func TestLightsOn(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/lightOn/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.LightsOn(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("LightsOn failed: %v", err)
-	}
-}
-
-// TestLightsOff tests turning lights off
-func TestLightsOff(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/lightOff/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.LightsOff(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("LightsOff failed: %v", err)
-	}
-}
-
-// TestEngineStart tests starting the engine
-func TestEngineStart(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/engineStart/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.EngineStart(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("EngineStart failed: %v", err)
-	}
-}
-
-// TestEngineStop tests stopping the engine
-func TestEngineStop(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/engineStop/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.EngineStop(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("EngineStop failed: %v", err)
-	}
-}
-
-// TestChargeStart tests starting charging
-func TestChargeStart(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/chargeStart/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.ChargeStart(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("ChargeStart failed: %v", err)
-	}
-}
-
-// TestChargeStop tests stopping charging
-func TestChargeStop(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/chargeStop/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.ChargeStop(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("ChargeStop failed: %v", err)
-	}
-}
-
-// TestHVACOn tests turning HVAC on
-func TestHVACOn(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/hvacOn/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.HVACOn(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("HVACOn failed: %v", err)
-	}
-}
-
-// TestHVACOff tests turning HVAC off
-func TestHVACOff(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/hvacOff/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.HVACOff(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("HVACOff failed: %v", err)
-	}
-}
-
-// TestRefreshVehicleStatus tests refreshing vehicle status
-func TestRefreshVehicleStatus(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/activeRealTimeVehicleStatus/v4")
-	defer server.Close()
-
-	client := createTestClient(t, server.URL)
-
-	err := client.RefreshVehicleStatus(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("RefreshVehicleStatus failed: %v", err)
+			err := tt.method(context.Background(), client, "INTERNAL123")
+			if err != nil {
+				t.Fatalf("%s failed: %v", tt.name, err)
+			}
+		})
 	}
 }
 
