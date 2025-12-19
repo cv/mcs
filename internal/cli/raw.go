@@ -15,6 +15,28 @@ func NewRawCmd() *cobra.Command {
 		Use:   "raw",
 		Short: "Output raw API responses (for debugging)",
 		Long:  `Output raw JSON responses from the API for debugging purposes.`,
+		Example: `  # Get raw vehicle status JSON
+  mcs raw status
+
+  # Get raw EV status JSON
+  mcs raw ev
+
+  # Get raw vehicle info JSON
+  mcs raw vehicle
+
+  # Example output (truncated):
+  # {
+  #   "remoteInfos": [{
+  #     "vin": "JM3XXXXXXXXXX1234",
+  #     "vehicleStatus": {
+  #       "batteryLevel": 85,
+  #       "fuelLevel": 75,
+  #       ...
+  #     }
+  #   }],
+  #   "alertInfos": [...],
+  #   ...
+  # }`,
 	}
 
 	// Add subcommands
@@ -22,6 +44,10 @@ func NewRawCmd() *cobra.Command {
 		Use:   "status",
 		Short: "Get raw vehicle status",
 		Long:  `Get the raw vehicle status JSON from the API.`,
+		Example: `  # Get raw vehicle status
+  mcs raw status
+
+  # Output includes remoteInfos, alertInfos, and vehicle status data`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRawStatus(cmd)
 		},
@@ -32,6 +58,10 @@ func NewRawCmd() *cobra.Command {
 		Use:   "ev",
 		Short: "Get raw EV status",
 		Long:  `Get the raw EV vehicle status JSON from the API.`,
+		Example: `  # Get raw EV status
+  mcs raw ev
+
+  # Output includes battery, charging, and EV-specific data`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRawEV(cmd)
 		},
@@ -42,6 +72,10 @@ func NewRawCmd() *cobra.Command {
 		Use:   "vehicle",
 		Short: "Get raw vehicle info",
 		Long:  `Get the raw vehicle base info JSON from the API.`,
+		Example: `  # Get raw vehicle base info
+  mcs raw vehicle
+
+  # Output includes VIN, model, year, and vehicle metadata`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRawVehicle(cmd)
 		},
