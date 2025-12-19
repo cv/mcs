@@ -202,14 +202,156 @@ func TestWaitForDoorsLocked(t *testing.T) {
 	}
 }
 
+// TestWaitForEngineRunning tests the engine running confirmation logic
+func TestWaitForEngineRunning(t *testing.T) {
+	tests := []struct {
+		name        string
+		hvacStatus  []bool
+		expectError bool
+		expectMet   bool
+	}{
+		{
+			name:        "engine running immediately",
+			hvacStatus:  []bool{true},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "engine starts after one check",
+			hvacStatus:  []bool{false, true},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "engine never starts",
+			hvacStatus:  []bool{false, false, false},
+			expectError: false,
+			expectMet:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			// Create mock client that returns the HVAC status sequence
+			calls := 0
+			mockClient := &mockClientForConfirm{
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+					if calls >= len(tt.hvacStatus) {
+						calls = len(tt.hvacStatus) - 1
+					}
+					hvacOn := tt.hvacStatus[calls]
+					calls++
+					return createMockEVVehicleStatusResponse(hvacOn), nil
+				},
+			}
+
+			result := waitForEngineRunning(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+
+			if tt.expectError && result.err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && result.err != nil {
+				t.Errorf("Expected no error but got: %v", result.err)
+			}
+
+			if tt.expectMet && !result.success {
+				t.Errorf("Expected engine to be running but it wasn't (calls: %d)", calls)
+			}
+
+			if !tt.expectMet && result.success {
+				t.Error("Expected engine to not be running but it was")
+			}
+		})
+	}
+}
+
+// TestWaitForEngineStopped tests the engine stopped confirmation logic
+func TestWaitForEngineStopped(t *testing.T) {
+	tests := []struct {
+		name        string
+		hvacStatus  []bool
+		expectError bool
+		expectMet   bool
+	}{
+		{
+			name:        "engine stopped immediately",
+			hvacStatus:  []bool{false},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "engine stops after one check",
+			hvacStatus:  []bool{true, false},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "engine never stops",
+			hvacStatus:  []bool{true, true, true},
+			expectError: false,
+			expectMet:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			// Create mock client that returns the HVAC status sequence
+			calls := 0
+			mockClient := &mockClientForConfirm{
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+					if calls >= len(tt.hvacStatus) {
+						calls = len(tt.hvacStatus) - 1
+					}
+					hvacOn := tt.hvacStatus[calls]
+					calls++
+					return createMockEVVehicleStatusResponse(hvacOn), nil
+				},
+			}
+
+			result := waitForEngineStopped(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+
+			if tt.expectError && result.err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && result.err != nil {
+				t.Errorf("Expected no error but got: %v", result.err)
+			}
+
+			if tt.expectMet && !result.success {
+				t.Errorf("Expected engine to be stopped but it wasn't (calls: %d)", calls)
+			}
+
+			if !tt.expectMet && result.success {
+				t.Error("Expected engine to not be stopped but it was")
+			}
+		})
+	}
+}
+
 // mockClientForConfirm is a mock API client for testing confirmation logic
 type mockClientForConfirm struct {
-	getVehicleStatusFunc func(ctx context.Context, internalVIN string) (*api.VehicleStatusResponse, error)
+	getVehicleStatusFunc   func(ctx context.Context, internalVIN string) (*api.VehicleStatusResponse, error)
+	getEVVehicleStatusFunc func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error)
 }
 
 func (m *mockClientForConfirm) GetVehicleStatus(ctx context.Context, internalVIN string) (*api.VehicleStatusResponse, error) {
 	if m.getVehicleStatusFunc != nil {
 		return m.getVehicleStatusFunc(ctx, internalVIN)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (m *mockClientForConfirm) GetEVVehicleStatus(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+	if m.getEVVehicleStatusFunc != nil {
+		return m.getEVVehicleStatusFunc(ctx, internalVIN)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -300,5 +442,508 @@ func createMockVehicleStatusResponse(doorStatus api.DoorStatus) *api.VehicleStat
 		},
 		// RemoteInfos required for valid response
 		RemoteInfos: []api.RemoteInfo{{}},
+	}
+}
+
+// TestWaitForCharging tests the charging started confirmation logic
+func TestWaitForCharging(t *testing.T) {
+	tests := []struct {
+		name           string
+		chargingStatus []bool
+		expectError    bool
+		expectMet      bool
+	}{
+		{
+			name:           "charging started immediately",
+			chargingStatus: []bool{true},
+			expectError:    false,
+			expectMet:      true,
+		},
+		{
+			name:           "charging starts after one check",
+			chargingStatus: []bool{false, true},
+			expectError:    false,
+			expectMet:      true,
+		},
+		{
+			name:           "charging never starts",
+			chargingStatus: []bool{false, false, false},
+			expectError:    false,
+			expectMet:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			// Create mock client that returns the charging status sequence
+			calls := 0
+			mockClient := &mockClientForConfirm{
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+					if calls >= len(tt.chargingStatus) {
+						calls = len(tt.chargingStatus) - 1
+					}
+					charging := tt.chargingStatus[calls]
+					calls++
+					return createMockEVVehicleStatusResponseWithCharging(charging), nil
+				},
+			}
+
+			result := waitForCharging(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+
+			if tt.expectError && result.err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && result.err != nil {
+				t.Errorf("Expected no error but got: %v", result.err)
+			}
+
+			if tt.expectMet && !result.success {
+				t.Errorf("Expected charging to be started but it wasn't (calls: %d)", calls)
+			}
+
+			if !tt.expectMet && result.success {
+				t.Error("Expected charging to not be started but it was")
+			}
+		})
+	}
+}
+
+// TestWaitForNotCharging tests the charging stopped confirmation logic
+func TestWaitForNotCharging(t *testing.T) {
+	tests := []struct {
+		name           string
+		chargingStatus []bool
+		expectError    bool
+		expectMet      bool
+	}{
+		{
+			name:           "charging stopped immediately",
+			chargingStatus: []bool{false},
+			expectError:    false,
+			expectMet:      true,
+		},
+		{
+			name:           "charging stops after one check",
+			chargingStatus: []bool{true, false},
+			expectError:    false,
+			expectMet:      true,
+		},
+		{
+			name:           "charging never stops",
+			chargingStatus: []bool{true, true, true},
+			expectError:    false,
+			expectMet:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			// Create mock client that returns the charging status sequence
+			calls := 0
+			mockClient := &mockClientForConfirm{
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+					if calls >= len(tt.chargingStatus) {
+						calls = len(tt.chargingStatus) - 1
+					}
+					charging := tt.chargingStatus[calls]
+					calls++
+					return createMockEVVehicleStatusResponseWithCharging(charging), nil
+				},
+			}
+
+			result := waitForNotCharging(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+
+			if tt.expectError && result.err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && result.err != nil {
+				t.Errorf("Expected no error but got: %v", result.err)
+			}
+
+			if tt.expectMet && !result.success {
+				t.Errorf("Expected charging to be stopped but it wasn't (calls: %d)", calls)
+			}
+
+			if !tt.expectMet && result.success {
+				t.Error("Expected charging to not be stopped but it was")
+			}
+		})
+	}
+}
+
+// createMockEVVehicleStatusResponse creates a mock EV status response with the given HVAC status
+func createMockEVVehicleStatusResponse(hvacOn bool) *api.EVVehicleStatusResponse {
+	var hvacValue float64
+	if hvacOn {
+		hvacValue = float64(api.HVACStatusOn)
+	} else {
+		hvacValue = float64(api.HVACStatusOff)
+	}
+
+	return &api.EVVehicleStatusResponse{
+		ResultCode: api.ResultCodeSuccess,
+		ResultData: []api.EVResultData{
+			{
+				OccurrenceDate: "2025-01-15 12:00:00",
+				PlusBInformation: api.PlusBInformation{
+					VehicleInfo: api.EVVehicleInfo{
+						ChargeInfo: api.ChargeInfo{
+							SmaphSOC:          80.0,
+							SmaphRemDrvDistKm: 200.0,
+						},
+						RemoteHvacInfo: &api.RemoteHvacInfo{
+							HVAC:           hvacValue,
+							FrontDefroster: 0,
+							RearDefogger:   0,
+							InCarTeDC:      20.0,
+							TargetTemp:     22.0,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// createMockEVVehicleStatusResponseWithCharging creates a mock EV status response with the given charging status
+func createMockEVVehicleStatusResponseWithCharging(charging bool) *api.EVVehicleStatusResponse {
+	var chargeStatus float64
+	if charging {
+		chargeStatus = float64(api.ChargeStatusCharging)
+	} else {
+		chargeStatus = 0
+	}
+
+	return &api.EVVehicleStatusResponse{
+		ResultCode: api.ResultCodeSuccess,
+		ResultData: []api.EVResultData{
+			{
+				OccurrenceDate: "2025-01-15 12:00:00",
+				PlusBInformation: api.PlusBInformation{
+					VehicleInfo: api.EVVehicleInfo{
+						ChargeInfo: api.ChargeInfo{
+							SmaphSOC:                80.0,
+							SmaphRemDrvDistKm:       200.0,
+							ChargerConnectorFitting: float64(api.ChargerConnected),
+							ChargeStatusSub:         chargeStatus,
+						},
+						RemoteHvacInfo: &api.RemoteHvacInfo{
+							HVAC:           float64(api.HVACStatusOff),
+							FrontDefroster: 0,
+							RearDefogger:   0,
+							InCarTeDC:      20.0,
+							TargetTemp:     22.0,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// TestWaitForHvacOn tests the HVAC on confirmation logic
+func TestWaitForHvacOn(t *testing.T) {
+	tests := []struct {
+		name        string
+		hvacStatus  []bool
+		expectError bool
+		expectMet   bool
+	}{
+		{
+			name:        "hvac on immediately",
+			hvacStatus:  []bool{true},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "hvac turns on after one check",
+			hvacStatus:  []bool{false, true},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "hvac never turns on",
+			hvacStatus:  []bool{false, false, false},
+			expectError: false,
+			expectMet:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			// Create mock client that returns the HVAC status sequence
+			calls := 0
+			mockClient := &mockClientForConfirm{
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+					if calls >= len(tt.hvacStatus) {
+						calls = len(tt.hvacStatus) - 1
+					}
+					hvacOn := tt.hvacStatus[calls]
+					calls++
+					return createMockEVVehicleStatusResponseWithHvac(hvacOn, 22.0, false, false), nil
+				},
+			}
+
+			result := waitForHvacOn(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+
+			if tt.expectError && result.err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && result.err != nil {
+				t.Errorf("Expected no error but got: %v", result.err)
+			}
+
+			if tt.expectMet && !result.success {
+				t.Errorf("Expected HVAC to be on but it wasn't (calls: %d)", calls)
+			}
+
+			if !tt.expectMet && result.success {
+				t.Error("Expected HVAC to not be on but it was")
+			}
+		})
+	}
+}
+
+// TestWaitForHvacOff tests the HVAC off confirmation logic
+func TestWaitForHvacOff(t *testing.T) {
+	tests := []struct {
+		name        string
+		hvacStatus  []bool
+		expectError bool
+		expectMet   bool
+	}{
+		{
+			name:        "hvac off immediately",
+			hvacStatus:  []bool{false},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "hvac turns off after one check",
+			hvacStatus:  []bool{true, false},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "hvac never turns off",
+			hvacStatus:  []bool{true, true, true},
+			expectError: false,
+			expectMet:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			// Create mock client that returns the HVAC status sequence
+			calls := 0
+			mockClient := &mockClientForConfirm{
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+					if calls >= len(tt.hvacStatus) {
+						calls = len(tt.hvacStatus) - 1
+					}
+					hvacOn := tt.hvacStatus[calls]
+					calls++
+					return createMockEVVehicleStatusResponseWithHvac(hvacOn, 22.0, false, false), nil
+				},
+			}
+
+			result := waitForHvacOff(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+
+			if tt.expectError && result.err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && result.err != nil {
+				t.Errorf("Expected no error but got: %v", result.err)
+			}
+
+			if tt.expectMet && !result.success {
+				t.Errorf("Expected HVAC to be off but it wasn't (calls: %d)", calls)
+			}
+
+			if !tt.expectMet && result.success {
+				t.Error("Expected HVAC to not be off but it was")
+			}
+		})
+	}
+}
+
+// TestWaitForHvacSettings tests the HVAC settings confirmation logic
+func TestWaitForHvacSettings(t *testing.T) {
+	tests := []struct {
+		name           string
+		targetTemp     float64
+		frontDefroster bool
+		rearDefroster  bool
+		hvacResponses  []hvacSettings
+		expectError    bool
+		expectMet      bool
+	}{
+		{
+			name:           "settings match immediately",
+			targetTemp:     22.0,
+			frontDefroster: true,
+			rearDefroster:  false,
+			hvacResponses: []hvacSettings{
+				{hvacOn: true, temp: 22.0, frontDefrost: true, rearDefrost: false},
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:           "settings match after one check",
+			targetTemp:     22.0,
+			frontDefroster: true,
+			rearDefroster:  false,
+			hvacResponses: []hvacSettings{
+				{hvacOn: true, temp: 20.0, frontDefrost: false, rearDefrost: false},
+				{hvacOn: true, temp: 22.0, frontDefrost: true, rearDefrost: false},
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:           "temperature within tolerance",
+			targetTemp:     22.0,
+			frontDefroster: false,
+			rearDefroster:  false,
+			hvacResponses: []hvacSettings{
+				{hvacOn: true, temp: 22.3, frontDefrost: false, rearDefrost: false}, // Within 0.5C tolerance
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:           "settings never match",
+			targetTemp:     22.0,
+			frontDefroster: true,
+			rearDefroster:  false,
+			hvacResponses: []hvacSettings{
+				{hvacOn: true, temp: 20.0, frontDefrost: false, rearDefrost: false},
+				{hvacOn: true, temp: 20.0, frontDefrost: false, rearDefrost: false},
+			},
+			expectError: false,
+			expectMet:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			// Create mock client that returns the HVAC settings sequence
+			calls := 0
+			mockClient := &mockClientForConfirm{
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+					if calls >= len(tt.hvacResponses) {
+						calls = len(tt.hvacResponses) - 1
+					}
+					settings := tt.hvacResponses[calls]
+					calls++
+					return createMockEVVehicleStatusResponseWithHvac(
+						settings.hvacOn,
+						settings.temp,
+						settings.frontDefrost,
+						settings.rearDefrost,
+					), nil
+				},
+			}
+
+			result := waitForHvacSettings(
+				ctx,
+				&buf,
+				mockClient,
+				"test-vin",
+				tt.targetTemp,
+				tt.frontDefroster,
+				tt.rearDefroster,
+				5*time.Second,
+				50*time.Millisecond,
+			)
+
+			if tt.expectError && result.err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && result.err != nil {
+				t.Errorf("Expected no error but got: %v", result.err)
+			}
+
+			if tt.expectMet && !result.success {
+				t.Errorf("Expected HVAC settings to match but they didn't (calls: %d)", calls)
+			}
+
+			if !tt.expectMet && result.success {
+				t.Error("Expected HVAC settings to not match but they did")
+			}
+		})
+	}
+}
+
+// hvacSettings holds HVAC configuration for testing
+type hvacSettings struct {
+	hvacOn       bool
+	temp         float64
+	frontDefrost bool
+	rearDefrost  bool
+}
+
+// createMockEVVehicleStatusResponseWithHvac creates a mock EV status response with the given HVAC settings
+func createMockEVVehicleStatusResponseWithHvac(hvacOn bool, targetTemp float64, frontDefrost, rearDefrost bool) *api.EVVehicleStatusResponse {
+	var hvacValue, frontDefrostValue, rearDefrostValue float64
+	if hvacOn {
+		hvacValue = float64(api.HVACStatusOn)
+	} else {
+		hvacValue = float64(api.HVACStatusOff)
+	}
+	if frontDefrost {
+		frontDefrostValue = float64(api.DefrosterOn)
+	} else {
+		frontDefrostValue = float64(api.DefrosterOff)
+	}
+	if rearDefrost {
+		rearDefrostValue = float64(api.DefrosterOn)
+	} else {
+		rearDefrostValue = float64(api.DefrosterOff)
+	}
+
+	return &api.EVVehicleStatusResponse{
+		ResultCode: api.ResultCodeSuccess,
+		ResultData: []api.EVResultData{
+			{
+				OccurrenceDate: "2025-01-15 12:00:00",
+				PlusBInformation: api.PlusBInformation{
+					VehicleInfo: api.EVVehicleInfo{
+						ChargeInfo: api.ChargeInfo{
+							SmaphSOC:          80.0,
+							SmaphRemDrvDistKm: 200.0,
+						},
+						RemoteHvacInfo: &api.RemoteHvacInfo{
+							HVAC:           hvacValue,
+							FrontDefroster: frontDefrostValue,
+							RearDefogger:   rearDefrostValue,
+							InCarTeDC:      20.0,
+							TargetTemp:     targetTemp,
+						},
+					},
+				},
+			},
+		},
 	}
 }
