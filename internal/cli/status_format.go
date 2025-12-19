@@ -136,14 +136,11 @@ func formatBatteryStatusCompact(batteryInfo api.BatteryInfo) string {
 	return status
 }
 
-// formatFuelStatusWithRange formats fuel status with combined range display for PHEVs
-func formatFuelStatusWithRange(fuelInfo api.FuelInfo, evRange float64) string {
-	// If both ranges are the same (common for PHEVs), show as total range
-	if fuelInfo.RangeKm == evRange {
-		return fmt.Sprintf("FUEL: %.0f%% (%.1f km total range)", fuelInfo.FuelLevel, fuelInfo.RangeKm)
-	}
-	// If different, show both EV and total (fuelRange is usually total for PHEVs)
-	return fmt.Sprintf("FUEL: %.0f%% (%.1f km EV / %.1f km total range)", fuelInfo.FuelLevel, evRange, fuelInfo.RangeKm)
+// formatFuelStatusWithRange formats fuel status with range display
+// Note: For PHEVs, the API's SmaphRemDrvDistKm is total estimated range (EV+gas),
+// not EV-only range. We show total range only to avoid misleading users.
+func formatFuelStatusWithRange(fuelInfo api.FuelInfo, _ float64) string {
+	return fmt.Sprintf("FUEL: %.0f%% (%.1f km range)", fuelInfo.FuelLevel, fuelInfo.RangeKm)
 }
 
 // formatLocationStatus formats location status for display
