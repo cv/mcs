@@ -44,7 +44,7 @@ func runLock(cmd *cobra.Command) error {
 		if err := client.DoorLock(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to lock doors: %w", err)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Doors locked successfully")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Doors locked successfully")
 		return nil
 	})
 }
@@ -55,7 +55,7 @@ func runUnlock(cmd *cobra.Command) error {
 		if err := client.DoorUnlock(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to unlock doors: %w", err)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Doors unlocked successfully")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Doors unlocked successfully")
 		return nil
 	})
 }

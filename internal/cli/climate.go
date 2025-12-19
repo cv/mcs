@@ -82,7 +82,7 @@ func runClimateOn(cmd *cobra.Command) error {
 		if err := client.HVACOn(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to turn HVAC on: %w", err)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Climate turned on successfully")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate turned on successfully")
 		return nil
 	})
 }
@@ -93,7 +93,7 @@ func runClimateOff(cmd *cobra.Command) error {
 		if err := client.HVACOff(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to turn HVAC off: %w", err)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Climate turned off successfully")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate turned off successfully")
 		return nil
 	})
 }
@@ -121,7 +121,7 @@ func runClimateSet(cmd *cobra.Command, temperature float64, tempUnit string, fro
 				msg += " with rear defroster on"
 			}
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), msg)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), msg)
 		return nil
 	})
 }

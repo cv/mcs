@@ -67,9 +67,7 @@ func TestTokenCache_IsValid(t *testing.T) {
 func TestSaveAndLoad(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalHomeDir := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHomeDir)
+	t.Setenv("HOME", tmpDir)
 
 	testCache := &TokenCache{
 		AccessToken:             "test-token-123",
@@ -121,9 +119,7 @@ func TestSaveAndLoad(t *testing.T) {
 func TestLoad_NoCache(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalHomeDir := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHomeDir)
+	t.Setenv("HOME", tmpDir)
 
 	// Load without any cache file
 	cache, err := Load()
@@ -138,9 +134,7 @@ func TestLoad_NoCache(t *testing.T) {
 func TestLoad_InvalidJSON(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
-	originalHomeDir := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", originalHomeDir)
+	t.Setenv("HOME", tmpDir)
 
 	// Create cache directory and invalid JSON file
 	cachePath := filepath.Join(tmpDir, ".cache", "mcs", "token.json")

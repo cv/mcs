@@ -64,7 +64,7 @@ func runRawStatus(cmd *cobra.Command) error {
 			return fmt.Errorf("failed to marshal JSON: %w", err)
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
 		return nil
 	})
 }
@@ -82,7 +82,7 @@ func runRawEV(cmd *cobra.Command) error {
 			return fmt.Errorf("failed to marshal JSON: %w", err)
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
 		return nil
 	})
 }
@@ -105,6 +105,6 @@ func runRawVehicle(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
 	return nil
 }

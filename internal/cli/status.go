@@ -113,8 +113,8 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh b
 // refreshAndWaitForStatus triggers a status refresh and polls until the timestamp changes
 func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *api.Client, internalVIN string, evStatus *api.EVVehicleStatusResponse, refreshWait int) (*api.EVVehicleStatusResponse, error) {
 	initialTimestamp := evStatus.GetOccurrenceDate()
-	fmt.Fprintf(cmd.OutOrStdout(), "Current status from: %s\n", formatTimestamp(initialTimestamp))
-	fmt.Fprintln(cmd.OutOrStdout(), "Requesting fresh status from vehicle...")
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Current status from: %s\n", formatTimestamp(initialTimestamp))
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Requesting fresh status from vehicle...")
 
 	if err := client.RefreshVehicleStatus(ctx, internalVIN); err != nil {
 		return nil, fmt.Errorf("failed to refresh vehicle status: %w", err)
@@ -130,7 +130,7 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 			return nil, ctx.Err()
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Waiting for vehicle response... (%ds/%ds)\n", int(elapsed.Seconds()), refreshWait)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Waiting for vehicle response... (%ds/%ds)\n", int(elapsed.Seconds()), refreshWait)
 		select {
 		case <-time.After(pollInterval):
 		case <-ctx.Done():
@@ -146,12 +146,12 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 
 		newTimestamp := newEvStatus.GetOccurrenceDate()
 		if newTimestamp != initialTimestamp {
-			fmt.Fprintf(cmd.OutOrStdout(), "Got fresh status from: %s\n", formatTimestamp(newTimestamp))
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Got fresh status from: %s\n", formatTimestamp(newTimestamp))
 			return newEvStatus, nil
 		}
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "Warning: status did not update within timeout period")
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Warning: status did not update within timeout period")
 	return evStatus, nil
 }
 
@@ -159,17 +159,17 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 func displayStatusWithVehicle(cmd *cobra.Command, statusType string, vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) {
 	switch statusType {
 	case "battery":
-		fmt.Fprintln(cmd.OutOrStdout(), displayBatteryStatus(evStatus, jsonOutput))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), displayBatteryStatus(evStatus, jsonOutput))
 	case "fuel":
-		fmt.Fprintln(cmd.OutOrStdout(), displayFuelStatus(vehicleStatus, jsonOutput))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), displayFuelStatus(vehicleStatus, jsonOutput))
 	case "location":
-		fmt.Fprintln(cmd.OutOrStdout(), displayLocationStatus(vehicleStatus, jsonOutput))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), displayLocationStatus(vehicleStatus, jsonOutput))
 	case "tires":
-		fmt.Fprintln(cmd.OutOrStdout(), displayTiresStatus(vehicleStatus, jsonOutput))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), displayTiresStatus(vehicleStatus, jsonOutput))
 	case "doors":
-		fmt.Fprintln(cmd.OutOrStdout(), displayDoorsStatus(vehicleStatus, jsonOutput))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), displayDoorsStatus(vehicleStatus, jsonOutput))
 	case "all":
-		fmt.Fprint(cmd.OutOrStdout(), displayAllStatus(vehicleStatus, evStatus, vehicleInfo, jsonOutput))
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), displayAllStatus(vehicleStatus, evStatus, vehicleInfo, jsonOutput))
 	}
 }
 

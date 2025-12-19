@@ -46,7 +46,7 @@ func runChargeStart(cmd *cobra.Command) error {
 		if err := client.ChargeStart(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to start charging: %w", err)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Charging started successfully")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charging started successfully")
 		return nil
 	})
 }
@@ -57,7 +57,7 @@ func runChargeStop(cmd *cobra.Command) error {
 		if err := client.ChargeStop(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to stop charging: %w", err)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Charging stopped successfully")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charging stopped successfully")
 		return nil
 	})
 }

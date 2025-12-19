@@ -167,7 +167,7 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response
 	body, err := io.ReadAll(resp.Body)
@@ -199,9 +199,10 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 	case ErrorCodeTokenExpired:
 		return nil, NewTokenExpiredError()
 	case ErrorCodeRequestIssue:
-		if response.ExtraCode == ExtraCodeRequestInProgress {
+		switch response.ExtraCode {
+		case ExtraCodeRequestInProgress:
 			return nil, NewRequestInProgressError()
-		} else if response.ExtraCode == ExtraCodeEngineStartLimit {
+		case ExtraCodeEngineStartLimit:
 			return nil, NewEngineStartLimitError()
 		}
 	}

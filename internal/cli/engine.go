@@ -44,7 +44,7 @@ func runStart(cmd *cobra.Command) error {
 		if err := client.EngineStart(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to start engine: %w", err)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Engine started successfully")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Engine started successfully")
 		return nil
 	})
 }
@@ -55,7 +55,7 @@ func runStop(cmd *cobra.Command) error {
 		if err := client.EngineStop(ctx, internalVIN); err != nil {
 			return fmt.Errorf("failed to stop engine: %w", err)
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), "Engine stopped successfully")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Engine stopped successfully")
 		return nil
 	})
 }

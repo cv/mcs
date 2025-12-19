@@ -7,16 +7,6 @@ import (
 )
 
 func TestLoad(t *testing.T) {
-	// Save and restore env vars
-	oldEmail := os.Getenv("MCS_EMAIL")
-	oldPassword := os.Getenv("MCS_PASSWORD")
-	oldRegion := os.Getenv("MCS_REGION")
-	defer func() {
-		os.Setenv("MCS_EMAIL", oldEmail)
-		os.Setenv("MCS_PASSWORD", oldPassword)
-		os.Setenv("MCS_REGION", oldRegion)
-	}()
-
 	tests := []struct {
 		name       string
 		envVars    map[string]string
@@ -49,14 +39,14 @@ func TestLoad(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Clear env vars
-			os.Unsetenv("MCS_EMAIL")
-			os.Unsetenv("MCS_PASSWORD")
-			os.Unsetenv("MCS_REGION")
+			// Clear env vars using t.Setenv (auto-restores after subtest)
+			t.Setenv("MCS_EMAIL", "")
+			t.Setenv("MCS_PASSWORD", "")
+			t.Setenv("MCS_REGION", "")
 
 			// Set test env vars
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
+				t.Setenv(k, v)
 			}
 
 			cfg, err := Load("")
@@ -93,17 +83,9 @@ region = "MME"
 	}
 
 	// Clear env vars to ensure file values are used
-	oldEmail := os.Getenv("MCS_EMAIL")
-	oldPassword := os.Getenv("MCS_PASSWORD")
-	oldRegion := os.Getenv("MCS_REGION")
-	os.Unsetenv("MCS_EMAIL")
-	os.Unsetenv("MCS_PASSWORD")
-	os.Unsetenv("MCS_REGION")
-	defer func() {
-		os.Setenv("MCS_EMAIL", oldEmail)
-		os.Setenv("MCS_PASSWORD", oldPassword)
-		os.Setenv("MCS_REGION", oldRegion)
-	}()
+	t.Setenv("MCS_EMAIL", "")
+	t.Setenv("MCS_PASSWORD", "")
+	t.Setenv("MCS_REGION", "")
 
 	cfg, err := Load(configPath)
 	if err != nil {
@@ -133,15 +115,9 @@ region = "MME"
 		t.Fatalf("Failed to create test config file: %v", err)
 	}
 
-	// Save and clear existing env vars, then set test values
-	oldEmail := os.Getenv("MCS_EMAIL")
-	oldRegion := os.Getenv("MCS_REGION")
-	os.Setenv("MCS_EMAIL", "env@example.com")
-	os.Setenv("MCS_REGION", "MNAO")
-	defer func() {
-		os.Setenv("MCS_EMAIL", oldEmail)
-		os.Setenv("MCS_REGION", oldRegion)
-	}()
+	// Set test env vars (t.Setenv auto-restores after test)
+	t.Setenv("MCS_EMAIL", "env@example.com")
+	t.Setenv("MCS_REGION", "MNAO")
 
 	cfg, err := Load(configPath)
 	if err != nil {
