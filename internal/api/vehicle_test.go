@@ -25,7 +25,7 @@ func TestGetVecBaseInfos(t *testing.T) {
 		},
 	}
 
-	server := createSuccessServer(t, "/remoteServices/getVecBaseInfos/v4", responseData)
+	server := createSuccessServer(t, "/"+EndpointGetVecBaseInfos, responseData)
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -74,7 +74,7 @@ func TestGetVehicleStatus(t *testing.T) {
 		},
 	}
 
-	server := createSuccessServer(t, "/remoteServices/getVehicleStatus/v4", responseData)
+	server := createSuccessServer(t, "/"+EndpointGetVehicleStatus, responseData)
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -140,7 +140,7 @@ func TestGetEVVehicleStatus(t *testing.T) {
 		},
 	}
 
-	server := createSuccessServer(t, "/remoteServices/getEVVehicleStatus/v4", responseData)
+	server := createSuccessServer(t, "/"+EndpointGetEVVehicleStatus, responseData)
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)

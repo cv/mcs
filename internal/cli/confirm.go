@@ -69,8 +69,21 @@ func pollUntilCondition(
 // vehicleStatusGetter is an interface for getting vehicle status
 // This allows for easier testing by mocking the API client
 type vehicleStatusGetter interface {
-	GetVehicleStatus(ctx context.Context, internalVIN string) (*api.VehicleStatusResponse, error)
-	GetEVVehicleStatus(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error)
+	GetVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error)
+	GetEVVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error)
+}
+
+// clientAdapter adapts api.Client to vehicleStatusGetter by converting InternalVIN to string
+type clientAdapter struct {
+	*api.Client
+}
+
+func (c *clientAdapter) GetVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
+	return c.Client.GetVehicleStatus(ctx, string(internalVIN))
+}
+
+func (c *clientAdapter) GetEVVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
+	return c.Client.GetEVVehicleStatus(ctx, string(internalVIN))
 }
 
 // waitForCondition is a generic function that waits for a vehicle status condition to be met.
@@ -92,7 +105,7 @@ func waitForCondition(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	useEVStatus bool,
 	conditionChecker func(interface{}) (bool, error),
 	timeout time.Duration,
@@ -124,7 +137,7 @@ func waitForDoorsLocked(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
@@ -145,7 +158,7 @@ func waitForDoorsUnlocked(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
@@ -167,7 +180,7 @@ func waitForEngineRunning(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
@@ -188,7 +201,7 @@ func waitForEngineStopped(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
@@ -209,7 +222,7 @@ func waitForCharging(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
@@ -230,7 +243,7 @@ func waitForNotCharging(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
@@ -251,7 +264,7 @@ func waitForHvacOn(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
@@ -272,7 +285,7 @@ func waitForHvacOff(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
@@ -293,7 +306,7 @@ func waitForHvacSettings(
 	ctx context.Context,
 	out io.Writer,
 	client vehicleStatusGetter,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	targetTemp float64,
 	frontDefroster bool,
 	rearDefroster bool,
@@ -325,11 +338,11 @@ func waitForHvacSettings(
 // ConfirmableCommandConfig holds the configuration for a confirmable command
 type ConfirmableCommandConfig struct {
 	// ActionFunc performs the API action (e.g., lock doors, start engine)
-	ActionFunc func(ctx context.Context, client *api.Client, internalVIN string) error
+	ActionFunc func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error
 
 	// WaitFunc waits for confirmation that the action completed
 	// If nil, confirmation is skipped
-	WaitFunc func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult
+	WaitFunc func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult
 
 	// Messages
 	SuccessMsg    string // Message to show on success (e.g., "Doors locked successfully")
@@ -344,7 +357,7 @@ func executeConfirmableCommand(
 	ctx context.Context,
 	out io.Writer,
 	client *api.Client,
-	internalVIN string,
+	internalVIN api.InternalVIN,
 	config ConfirmableCommandConfig,
 	confirm bool,
 	confirmWait int,

@@ -78,7 +78,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		},
 	}
 
-	server := createSuccessServer(t, "/remoteServices/getVehicleStatus/v4", responseData)
+	server := createSuccessServer(t, "/"+EndpointGetVehicleStatus, responseData)
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -288,7 +288,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 		},
 	}
 
-	server := createSuccessServer(t, "/remoteServices/getEVVehicleStatus/v4", responseData)
+	server := createSuccessServer(t, "/"+EndpointGetEVVehicleStatus, responseData)
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -525,7 +525,7 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 		},
 	}
 
-	server := createSuccessServer(t, "/remoteServices/getVehicleStatus/v4", responseData)
+	server := createSuccessServer(t, "/"+EndpointGetVehicleStatus, responseData)
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -621,7 +621,7 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 		},
 	}
 
-	server := createSuccessServer(t, "/remoteServices/getEVVehicleStatus/v4", responseData)
+	server := createSuccessServer(t, "/"+EndpointGetEVVehicleStatus, responseData)
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)

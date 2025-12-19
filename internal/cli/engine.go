@@ -30,13 +30,13 @@ func NewStartCmd() *cobra.Command {
   # Start engine and wait up to 60 seconds for confirmation
   mcs start --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
-						return client.EngineStart(ctx, internalVIN)
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+						return client.EngineStart(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForEngineRunning(ctx, out, client, internalVIN, timeout, pollInterval)
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForEngineRunning(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
 					SuccessMsg:    "Engine started successfully",
 					WaitingMsg:    "Start command sent, waiting for confirmation...",
@@ -77,13 +77,13 @@ func NewStopCmd() *cobra.Command {
   # Stop engine and wait up to 60 seconds for confirmation
   mcs stop --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
-						return client.EngineStop(ctx, internalVIN)
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+						return client.EngineStop(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForEngineStopped(ctx, out, client, internalVIN, timeout, pollInterval)
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForEngineStopped(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
 					SuccessMsg:    "Engine stopped successfully",
 					WaitingMsg:    "Stop command sent, waiting for confirmation...",

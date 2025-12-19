@@ -30,13 +30,13 @@ func NewLockCmd() *cobra.Command {
   # Lock doors and wait up to 60 seconds for confirmation
   mcs lock --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
-						return client.DoorLock(ctx, internalVIN)
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+						return client.DoorLock(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForDoorsLocked(ctx, out, client, internalVIN, timeout, pollInterval)
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForDoorsLocked(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
 					SuccessMsg:    "Doors locked successfully",
 					WaitingMsg:    "Lock command sent, waiting for confirmation...",
@@ -77,13 +77,13 @@ func NewUnlockCmd() *cobra.Command {
   # Unlock doors and wait up to 60 seconds for confirmation
   mcs unlock --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
-						return client.DoorUnlock(ctx, internalVIN)
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+						return client.DoorUnlock(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForDoorsUnlocked(ctx, out, client, internalVIN, timeout, pollInterval)
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForDoorsUnlocked(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
 					SuccessMsg:    "Doors unlocked successfully",
 					WaitingMsg:    "Unlock command sent, waiting for confirmation...",

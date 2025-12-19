@@ -49,13 +49,13 @@ func NewChargeStartCmd() *cobra.Command {
   # Start charging and wait up to 60 seconds for confirmation
   mcs charge start --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
-						return client.ChargeStart(ctx, internalVIN)
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+						return client.ChargeStart(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForCharging(ctx, out, client, internalVIN, timeout, pollInterval)
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForCharging(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
 					SuccessMsg:    "Charging started successfully",
 					WaitingMsg:    "Charge start command sent, waiting for confirmation...",
@@ -96,13 +96,13 @@ func NewChargeStopCmd() *cobra.Command {
   # Stop charging and wait up to 60 seconds for confirmation
   mcs charge stop --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
-						return client.ChargeStop(ctx, internalVIN)
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+						return client.ChargeStop(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForNotCharging(ctx, out, client, internalVIN, timeout, pollInterval)
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForNotCharging(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
 					SuccessMsg:    "Charging stopped successfully",
 					WaitingMsg:    "Charge stop command sent, waiting for confirmation...",

@@ -46,6 +46,13 @@ const (
 	InternalUserID = "__INTERNAL_ID__"
 )
 
+// Authentication endpoint constants
+const (
+	EndpointCheckVersion  = "service/checkVersion"
+	EndpointEncryptionKey = "system/encryptionKey"
+	EndpointLogin         = "user/login"
+)
+
 // Region represents a valid geographic region
 type Region string
 
@@ -187,7 +194,7 @@ func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 		"Content-Type":  "application/json",
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"service/checkVersion", nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+EndpointCheckVersion, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -240,7 +247,7 @@ func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, err
 		"sdkVersion": []string{UsherSDKVersion},
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", c.usherURL+"system/encryptionKey?"+params.Encode(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", c.usherURL+EndpointEncryptionKey+"?"+params.Encode(), nil)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create request: %w", err)
 	}
@@ -300,7 +307,7 @@ func (c *Client) Login(ctx context.Context) error {
 		return fmt.Errorf("failed to marshal login data: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.usherURL+"user/login", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.usherURL+EndpointLogin, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

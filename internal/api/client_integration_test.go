@@ -22,7 +22,7 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 				"errorCode": 600001,
 				"message":   "Encryption error",
 			}
-		} else if requestCount == 2 && r.URL.Path == "/service/checkVersion" {
+		} else if requestCount == 2 && r.URL.Path == "/"+EndpointCheckVersion {
 			// Second request: return new keys
 			testResponse := map[string]interface{}{
 				"encKey":  "newtestenckey123",
@@ -97,7 +97,7 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 			"message":   "Encryption error",
 		}
 
-		if r.URL.Path == "/service/checkVersion" {
+		if r.URL.Path == "/"+EndpointCheckVersion {
 			// Return keys to allow retry
 			testResponse := map[string]interface{}{
 				"encKey":  "newtestenckey123",

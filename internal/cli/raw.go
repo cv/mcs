@@ -87,8 +87,8 @@ func NewRawCmd() *cobra.Command {
 
 // runRawStatus executes the raw status command
 func runRawStatus(cmd *cobra.Command) error {
-	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-		vehicleStatus, err := client.GetVehicleStatus(ctx, internalVIN)
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+		vehicleStatus, err := client.GetVehicleStatus(ctx, string(internalVIN))
 		if err != nil {
 			return fmt.Errorf("failed to get vehicle status: %w", err)
 		}
@@ -105,8 +105,8 @@ func runRawStatus(cmd *cobra.Command) error {
 
 // runRawEV executes the raw ev command
 func runRawEV(cmd *cobra.Command) error {
-	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-		evStatus, err := client.GetEVVehicleStatus(ctx, internalVIN)
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+		evStatus, err := client.GetEVVehicleStatus(ctx, string(internalVIN))
 		if err != nil {
 			return fmt.Errorf("failed to get EV status: %w", err)
 		}

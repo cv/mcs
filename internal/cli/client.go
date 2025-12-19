@@ -74,7 +74,7 @@ func saveClientCache(client *api.Client) {
 
 // VehicleInfo contains identification information about a vehicle
 type VehicleInfo struct {
-	InternalVIN string
+	InternalVIN api.InternalVIN
 	VIN         string
 	Nickname    string
 	ModelName   string
@@ -94,7 +94,7 @@ func setupVehicleClient(ctx context.Context) (*api.Client, VehicleInfo, error) {
 		return nil, VehicleInfo{}, fmt.Errorf("failed to get vehicle info: %w", err)
 	}
 
-	internalVIN, err := vecBaseInfos.GetInternalVIN()
+	internalVINStr, err := vecBaseInfos.GetInternalVIN()
 	if err != nil {
 		return nil, VehicleInfo{}, err
 	}
@@ -102,7 +102,7 @@ func setupVehicleClient(ctx context.Context) (*api.Client, VehicleInfo, error) {
 	vin, nickname, modelName, modelYear, _ := vecBaseInfos.GetVehicleInfo()
 
 	vehicleInfo := VehicleInfo{
-		InternalVIN: internalVIN,
+		InternalVIN: api.InternalVIN(internalVINStr),
 		VIN:         vin,
 		Nickname:    nickname,
 		ModelName:   modelName,
@@ -114,7 +114,7 @@ func setupVehicleClient(ctx context.Context) (*api.Client, VehicleInfo, error) {
 
 // withVehicleClient handles the common CLI setup: create client, get VIN, execute command, save cache.
 // The callback receives the context, authenticated client, and the vehicle's internal VIN.
-func withVehicleClient(ctx context.Context, fn func(context.Context, *api.Client, string) error) error {
+func withVehicleClient(ctx context.Context, fn func(context.Context, *api.Client, api.InternalVIN) error) error {
 	client, vehicleInfo, err := setupVehicleClient(ctx)
 	if err != nil {
 		return err

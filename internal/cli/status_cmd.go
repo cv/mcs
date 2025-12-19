@@ -226,7 +226,7 @@ func NewStatusCmd() *cobra.Command {
 func runStatus(cmd *cobra.Command, jsonOutput bool, statusType StatusType, refresh bool, refreshWait int) error {
 	return withVehicleClientEx(cmd.Context(), func(ctx context.Context, client *api.Client, vehicleInfo VehicleInfo) error {
 		// Get initial EV status (needed for refresh comparison and final display)
-		evStatus, err := client.GetEVVehicleStatus(ctx, vehicleInfo.InternalVIN)
+		evStatus, err := client.GetEVVehicleStatus(ctx, string(vehicleInfo.InternalVIN))
 		if err != nil {
 			return fmt.Errorf("failed to get EV status: %w", err)
 		}
@@ -240,7 +240,7 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType StatusType, refre
 		}
 
 		// Get vehicle status
-		vehicleStatus, err := client.GetVehicleStatus(ctx, vehicleInfo.InternalVIN)
+		vehicleStatus, err := client.GetVehicleStatus(ctx, string(vehicleInfo.InternalVIN))
 		if err != nil {
 			return fmt.Errorf("failed to get vehicle status: %w", err)
 		}
@@ -254,7 +254,7 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType StatusType, refre
 }
 
 // refreshAndWaitForStatus triggers a status refresh and polls until the timestamp changes
-func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *api.Client, internalVIN string, evStatus *api.EVVehicleStatusResponse, refreshWait int) (*api.EVVehicleStatusResponse, error) {
+func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *api.Client, internalVIN api.InternalVIN, evStatus *api.EVVehicleStatusResponse, refreshWait int) (*api.EVVehicleStatusResponse, error) {
 	initialTimestamp, err := evStatus.GetOccurrenceDate()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get occurrence date: %w", err)
@@ -262,7 +262,7 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Current status from: %s\n", formatTimestamp(initialTimestamp))
 	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Requesting fresh status from vehicle...")
 
-	if err := client.RefreshVehicleStatus(ctx, internalVIN); err != nil {
+	if err := client.RefreshVehicleStatus(ctx, string(internalVIN)); err != nil {
 		return nil, fmt.Errorf("failed to refresh vehicle status: %w", err)
 	}
 
@@ -285,7 +285,7 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Waiting for vehicle response... (%ds/%ds)\n", int(elapsed.Seconds()), refreshWait)
 
 			// Fetch new EV status
-			newEvStatus, err := client.GetEVVehicleStatus(timeoutCtx, internalVIN)
+			newEvStatus, err := client.GetEVVehicleStatus(timeoutCtx, string(internalVIN))
 			if err != nil {
 				continue // Keep trying on error
 			}

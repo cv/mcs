@@ -15,7 +15,7 @@ func TestNewSimpleCommand(t *testing.T) {
 		Use:   "test",
 		Short: "Test command",
 		Long:  "This is a test command",
-		APICall: func(ctx context.Context, client *api.Client, vin string) error {
+		APICall: func(ctx context.Context, client *api.Client, vin api.InternalVIN) error {
 			return nil
 		},
 		SuccessMsg:   "Test succeeded",
@@ -49,7 +49,7 @@ func TestNewSimpleCommand_ErrorHandling(t *testing.T) {
 		Use:   "test",
 		Short: "Test command",
 		Long:  "This is a test command",
-		APICall: func(ctx context.Context, client *api.Client, vin string) error {
+		APICall: func(ctx context.Context, client *api.Client, vin api.InternalVIN) error {
 			return testErr
 		},
 		SuccessMsg:   "Test succeeded",
@@ -73,7 +73,7 @@ func TestNewParentWithSubcommands(t *testing.T) {
 			Use:   "start",
 			Short: "Start something",
 			Long:  "Start something long description",
-			APICall: func(ctx context.Context, client *api.Client, vin string) error {
+			APICall: func(ctx context.Context, client *api.Client, vin api.InternalVIN) error {
 				return nil
 			},
 			SuccessMsg:   "Started",
@@ -83,7 +83,7 @@ func TestNewParentWithSubcommands(t *testing.T) {
 			Use:   "stop",
 			Short: "Stop something",
 			Long:  "Stop something long description",
-			APICall: func(ctx context.Context, client *api.Client, vin string) error {
+			APICall: func(ctx context.Context, client *api.Client, vin api.InternalVIN) error {
 				return nil
 			},
 			SuccessMsg:   "Stopped",
@@ -131,7 +131,7 @@ func TestNewSimpleCommand_OutputFormatting(t *testing.T) {
 		Use:   "test",
 		Short: "Test command",
 		Long:  "This is a test command",
-		APICall: func(ctx context.Context, client *api.Client, vin string) error {
+		APICall: func(ctx context.Context, client *api.Client, vin api.InternalVIN) error {
 			return nil
 		},
 		SuccessMsg:   "Test succeeded",

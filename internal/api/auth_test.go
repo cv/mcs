@@ -21,8 +21,8 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/prod/service/checkVersion" {
-			t.Errorf("Expected path /prod/service/checkVersion, got %s", r.URL.Path)
+		if r.URL.Path != "/prod/"+EndpointCheckVersion {
+			t.Errorf("Expected path /prod/"+EndpointCheckVersion+", got %s", r.URL.Path)
 		}
 		if r.Method != "POST" {
 			t.Errorf("Expected POST method, got %s", r.Method)
@@ -78,8 +78,8 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 
 func TestClient_GetUsherEncryptionKey(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/appapi/v1/system/encryptionKey" {
-			t.Errorf("Expected path /appapi/v1/system/encryptionKey, got %s", r.URL.Path)
+		if r.URL.Path != "/appapi/v1/"+EndpointEncryptionKey {
+			t.Errorf("Expected path /appapi/v1/"+EndpointEncryptionKey+", got %s", r.URL.Path)
 		}
 		if r.Method != "GET" {
 			t.Errorf("Expected GET method, got %s", r.Method)
@@ -125,7 +125,7 @@ func TestClient_GetUsherEncryptionKey(t *testing.T) {
 func TestClient_Login(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case "/appapi/v1/system/encryptionKey":
+		case "/appapi/v1/" + EndpointEncryptionKey:
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": map[string]interface{}{
@@ -134,7 +134,7 @@ func TestClient_Login(t *testing.T) {
 				},
 			})
 
-		case "/appapi/v1/user/login":
+		case "/appapi/v1/" + EndpointLogin:
 			// Parse request body
 			var loginReq map[string]interface{}
 			_ = json.NewDecoder(r.Body).Decode(&loginReq)

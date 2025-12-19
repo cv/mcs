@@ -259,7 +259,7 @@ func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, quer
 	}
 
 	// Calculate signature
-	if uri == "service/checkVersion" {
+	if uri == EndpointCheckVersion {
 		headers["sign"] = c.getSignFromTimestamp(timestamp)
 	} else if method == "GET" {
 		headers["sign"] = c.getSignFromPayloadAndTimestamp(originalQueryStr, timestamp)

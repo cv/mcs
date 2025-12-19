@@ -6,13 +6,20 @@ import (
 	"fmt"
 )
 
+// Vehicle information endpoint constants
+const (
+	EndpointGetVecBaseInfos    = "remoteServices/getVecBaseInfos/v4"
+	EndpointGetVehicleStatus   = "remoteServices/getVehicleStatus/v4"
+	EndpointGetEVVehicleStatus = "remoteServices/getEVVehicleStatus/v4"
+)
+
 // GetVecBaseInfos retrieves the base information for all vehicles associated with the account
 func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, error) {
 	bodyParams := map[string]interface{}{
 		"internaluserid": InternalUserID,
 	}
 
-	responseBytes, err := c.APIRequestJSON(ctx, "POST", "remoteServices/getVecBaseInfos/v4", nil, bodyParams, true, true)
+	responseBytes, err := c.APIRequestJSON(ctx, "POST", EndpointGetVecBaseInfos, nil, bodyParams, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +47,7 @@ func buildVehicleStatusParams(internalVIN string) map[string]interface{} {
 func (c *Client) GetVehicleStatus(ctx context.Context, internalVIN string) (*VehicleStatusResponse, error) {
 	bodyParams := buildVehicleStatusParams(internalVIN)
 
-	responseBytes, err := c.APIRequestJSON(ctx, "POST", "remoteServices/getVehicleStatus/v4", nil, bodyParams, true, true)
+	responseBytes, err := c.APIRequestJSON(ctx, "POST", EndpointGetVehicleStatus, nil, bodyParams, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +69,7 @@ func (c *Client) GetVehicleStatus(ctx context.Context, internalVIN string) (*Veh
 func (c *Client) GetEVVehicleStatus(ctx context.Context, internalVIN string) (*EVVehicleStatusResponse, error) {
 	bodyParams := buildVehicleStatusParams(internalVIN)
 
-	responseBytes, err := c.APIRequestJSON(ctx, "POST", "remoteServices/getEVVehicleStatus/v4", nil, bodyParams, true, true)
+	responseBytes, err := c.APIRequestJSON(ctx, "POST", EndpointGetEVVehicleStatus, nil, bodyParams, true, true)
 	if err != nil {
 		return nil, err
 	}

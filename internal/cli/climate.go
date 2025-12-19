@@ -54,13 +54,13 @@ func newClimateOnCmd() *cobra.Command {
   # Turn climate on and wait up to 60 seconds for confirmation
   mcs climate on --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
-						return client.HVACOn(ctx, internalVIN)
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+						return client.HVACOn(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForHvacOn(ctx, out, client, internalVIN, timeout, pollInterval)
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForHvacOn(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
 					SuccessMsg:    "Climate turned on successfully",
 					WaitingMsg:    "Climate on command sent, waiting for confirmation...",
@@ -101,13 +101,13 @@ func newClimateOffCmd() *cobra.Command {
   # Turn climate off and wait up to 60 seconds for confirmation
   mcs climate off --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
-						return client.HVACOff(ctx, internalVIN)
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+						return client.HVACOff(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForHvacOff(ctx, out, client, internalVIN, timeout, pollInterval)
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForHvacOff(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
 					SuccessMsg:    "Climate turned off successfully",
 					WaitingMsg:    "Climate off command sent, waiting for confirmation...",
@@ -166,7 +166,7 @@ func newClimateSetCmd() *cobra.Command {
 				return err
 			}
 
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				// Build success message
 				msg := fmt.Sprintf("Climate set to %.1f%s", temperature, unit.String())
 				if frontDefroster {
@@ -187,11 +187,11 @@ func newClimateSetCmd() *cobra.Command {
 				}
 
 				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
-						return client.SetHVACSetting(ctx, internalVIN, temperature, unit, frontDefroster, rearDefroster)
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+						return client.SetHVACSetting(ctx, string(internalVIN), temperature, unit, frontDefroster, rearDefroster)
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForHvacSettings(ctx, out, client, internalVIN, targetTempC, frontDefroster, rearDefroster, timeout, pollInterval)
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForHvacSettings(ctx, out, &clientAdapter{Client: client}, internalVIN, targetTempC, frontDefroster, rearDefroster, timeout, pollInterval)
 					},
 					SuccessMsg:    msg,
 					WaitingMsg:    "Climate set command sent, waiting for confirmation...",
