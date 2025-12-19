@@ -4,6 +4,12 @@
 
 set -e
 
+# Skip checks for beads-sync branch (bd sync commits)
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+if [ "$CURRENT_BRANCH" = "beads-sync" ]; then
+    exit 0
+fi
+
 echo "Running pre-commit checks..."
 
 # 1. Check Go formatting
