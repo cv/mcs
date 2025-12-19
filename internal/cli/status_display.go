@@ -60,7 +60,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	output := formatVehicleHeader(vehicleInfo) + "\n"
 	output += fmt.Sprintf("Status as of %s\n\n", timestamp)
 	output += formatBatteryStatusCompact(batteryInfo) + "\n"
-	output += formatFuelStatusWithRange(fuelInfo, batteryInfo.RangeKm) + "\n"
+	output += formatFuelStatusWithRange(fuelInfo, batteryInfo) + "\n"
 
 	hvacOutput, err := formatHvacStatus(hvacInfo, false)
 	if err != nil {
