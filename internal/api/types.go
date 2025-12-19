@@ -91,6 +91,7 @@ type AlertInfo struct {
 	PositionInfo PositionInfo `json:"PositionInfo"`
 	Door         DoorInfo     `json:"Door"`
 	Pw           WindowInfo   `json:"Pw"`
+	HazardLamp   HazardLamp   `json:"HazardLamp"`
 }
 
 // PositionInfo contains GPS location information
@@ -120,6 +121,11 @@ type WindowInfo struct {
 	PwPosPsngr float64 `json:"PwPosPsngr"`
 	PwPosRl    float64 `json:"PwPosRl"`
 	PwPosRr    float64 `json:"PwPosRr"`
+}
+
+// HazardLamp contains hazard lights information
+type HazardLamp struct {
+	HazardSw float64 `json:"HazardSw"`
 }
 
 // EVVehicleStatusResponse represents the response from GetEVVehicleStatus API
@@ -324,6 +330,16 @@ func (r *VehicleStatusResponse) GetWindowsInfo() (driver, passenger, rearLeft, r
 	passenger = pw.PwPosPsngr
 	rearLeft = pw.PwPosRl
 	rearRight = pw.PwPosRr
+	return
+}
+
+// GetHazardInfo extracts hazard lights status from the vehicle status response
+func (r *VehicleStatusResponse) GetHazardInfo() (hazardsOn bool, err error) {
+	if len(r.AlertInfos) == 0 {
+		err = fmt.Errorf("no alert info available")
+		return
+	}
+	hazardsOn = int(r.AlertInfos[0].HazardLamp.HazardSw) == 1
 	return
 }
 

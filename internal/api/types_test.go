@@ -845,6 +845,108 @@ func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
 	}
 }
 
+func TestVehicleStatusResponse_HazardParsing(t *testing.T) {
+	jsonData := `{
+		"resultCode": "200S00",
+		"remoteInfos": [],
+		"alertInfos": [
+			{
+				"PositionInfo": {
+					"Latitude": 37.7749,
+					"Longitude": -122.4194,
+					"AcquisitionDatetime": "20231201120000"
+				},
+				"Door": {
+					"DrStatDrv": 0,
+					"DrStatPsngr": 0,
+					"DrStatRl": 0,
+					"DrStatRr": 0,
+					"DrStatTrnkLg": 0,
+					"DrStatHood": 0,
+					"LockLinkSwDrv": 0,
+					"LockLinkSwPsngr": 0,
+					"LockLinkSwRl": 0,
+					"LockLinkSwRr": 0
+				},
+				"HazardLamp": {
+					"HazardSw": 1
+				}
+			}
+		]
+	}`
+
+	var resp VehicleStatusResponse
+	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	if len(resp.AlertInfos) != 1 {
+		t.Fatalf("Expected 1 alertInfo, got %d", len(resp.AlertInfos))
+	}
+
+	hazard := resp.AlertInfos[0].HazardLamp
+	if hazard.HazardSw != 1 {
+		t.Errorf("Expected HazardSw 1, got %f", hazard.HazardSw)
+	}
+}
+
+func TestVehicleStatusResponse_GetHazardInfo(t *testing.T) {
+	tests := []struct {
+		name        string
+		resp        *VehicleStatusResponse
+		wantHazards bool
+		wantErr     bool
+	}{
+		{
+			name: "hazards on",
+			resp: &VehicleStatusResponse{
+				AlertInfos: []AlertInfo{
+					{
+						HazardLamp: HazardLamp{
+							HazardSw: 1,
+						},
+					},
+				},
+			},
+			wantHazards: true,
+			wantErr:     false,
+		},
+		{
+			name: "hazards off",
+			resp: &VehicleStatusResponse{
+				AlertInfos: []AlertInfo{
+					{
+						HazardLamp: HazardLamp{
+							HazardSw: 0,
+						},
+					},
+				},
+			},
+			wantHazards: false,
+			wantErr:     false,
+		},
+		{
+			name:        "no alert infos",
+			resp:        &VehicleStatusResponse{},
+			wantHazards: false,
+			wantErr:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hazards, err := tt.resp.GetHazardInfo()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetHazardInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if hazards != tt.wantHazards {
+				t.Errorf("GetHazardInfo() = %v, want %v", hazards, tt.wantHazards)
+			}
+		})
+	}
+}
+
 func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 	tests := []struct {
 		name              string

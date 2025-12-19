@@ -176,6 +176,7 @@ func displayStatus(cmd *cobra.Command, statusType string, vehicleStatus *api.Veh
 // displayAllStatus displays all status information
 func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, jsonOutput bool) string {
 	if jsonOutput {
+		hazardsOn, _ := vehicleStatus.GetHazardInfo()
 		data := map[string]interface{}{
 			"battery":  extractBatteryData(evStatus),
 			"fuel":     extractFuelData(vehicleStatus),
@@ -183,6 +184,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 			"tires":    extractTiresData(vehicleStatus),
 			"doors":    extractDoorsData(vehicleStatus),
 			"windows":  extractWindowsData(vehicleStatus),
+			"hazards":  hazardsOn,
 			"climate":  extractHvacData(evStatus),
 			"odometer": extractOdometerData(vehicleStatus),
 		}
@@ -202,12 +204,21 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	// Extract windows info
 	driver, passenger, rearLeft, rearRight, _ := vehicleStatus.GetWindowsInfo()
 
+	// Extract hazard info
+	hazardsOn, _ := vehicleStatus.GetHazardInfo()
+
 	output := fmt.Sprintf("\nVehicle Status (Last Updated: %s)\n\n", timestamp)
 	output += displayBatteryStatus(evStatus, false) + "\n"
 	output += displayFuelStatus(vehicleStatus, false) + "\n"
 	output += formatHvacStatus(hvacOn, frontDefroster, rearDefroster, interiorTempC, false) + "\n"
 	output += displayDoorsStatus(vehicleStatus, false) + "\n"
 	output += formatWindowsStatus(driver, passenger, rearLeft, rearRight, false) + "\n"
+
+	// Only show hazards if they're on
+	if hazardsOn {
+		output += "HAZARDS: On\n"
+	}
+
 	output += displayTiresStatus(vehicleStatus, false) + "\n"
 	output += formatOdometerStatus(odometer, false) + "\n"
 
