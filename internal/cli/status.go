@@ -421,7 +421,7 @@ func formatBatteryStatus(batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin
 		return toJSON(data)
 	}
 
-	status := fmt.Sprintf("BATTERY: %.0f%% (%.1f km range)", batteryLevel, range_)
+	status := fmt.Sprintf("BATTERY: %.0f%% (%.1f km EV range)", batteryLevel, range_)
 
 	// Build status flags
 	var flags []string
@@ -467,7 +467,7 @@ func formatFuelStatus(fuelLevel, range_ float64, jsonOutput bool) string {
 		})
 	}
 
-	return fmt.Sprintf("FUEL: %.0f%% (%.1f km range)", fuelLevel, range_)
+	return fmt.Sprintf("FUEL: %.0f%% (%.1f km total range)", fuelLevel, range_)
 }
 
 // formatLocationStatus formats location status for display

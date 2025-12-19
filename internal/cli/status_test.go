@@ -90,7 +90,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 45,
 			pluggedIn:        true,
 			charging:         true,
-			expectedOutput:   "BATTERY: 66% (245.5 km range) [charging, ~45m quick / ~3h AC]",
+			expectedOutput:   "BATTERY: 66% (245.5 km EV range) [charging, ~45m quick / ~3h AC]",
 		},
 		{
 			name:             "charging with only AC time",
@@ -100,7 +100,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 0,
 			pluggedIn:        true,
 			charging:         true,
-			expectedOutput:   "BATTERY: 50% (150.0 km range) [charging, ~2h 30m to full]",
+			expectedOutput:   "BATTERY: 50% (150.0 km EV range) [charging, ~2h 30m to full]",
 		},
 		{
 			name:             "charging with no time estimates",
@@ -110,7 +110,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 0,
 			pluggedIn:        true,
 			charging:         true,
-			expectedOutput:   "BATTERY: 45% (120.0 km range) [charging]",
+			expectedOutput:   "BATTERY: 45% (120.0 km EV range) [charging]",
 		},
 		{
 			name:             "plugged not charging",
@@ -120,7 +120,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 0,
 			pluggedIn:        true,
 			charging:         false,
-			expectedOutput:   "BATTERY: 100% (300.0 km range) [plugged in, not charging]",
+			expectedOutput:   "BATTERY: 100% (300.0 km EV range) [plugged in, not charging]",
 		},
 		{
 			name:             "unplugged",
@@ -130,7 +130,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 0,
 			pluggedIn:        false,
 			charging:         false,
-			expectedOutput:   "BATTERY: 50% (150.0 km range)",
+			expectedOutput:   "BATTERY: 50% (150.0 km EV range)",
 		},
 	}
 
@@ -190,31 +190,31 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 			name:      "heater on with auto",
 			heaterOn:  true,
 			heaterAuto: true,
-			expected:  "BATTERY: 66% (245.5 km range) [battery heater on, auto enabled]",
+			expected:  "BATTERY: 66% (245.5 km EV range) [battery heater on, auto enabled]",
 		},
 		{
 			name:      "heater on without auto",
 			heaterOn:  true,
 			heaterAuto: false,
-			expected:  "BATTERY: 66% (245.5 km range) [battery heater on]",
+			expected:  "BATTERY: 66% (245.5 km EV range) [battery heater on]",
 		},
 		{
 			name:      "heater off with auto enabled",
 			heaterOn:  false,
 			heaterAuto: true,
-			expected:  "BATTERY: 66% (245.5 km range) [battery heater auto enabled]",
+			expected:  "BATTERY: 66% (245.5 km EV range) [battery heater auto enabled]",
 		},
 		{
 			name:      "heater off without auto",
 			heaterOn:  false,
 			heaterAuto: false,
-			expected:  "BATTERY: 66% (245.5 km range)",
+			expected:  "BATTERY: 66% (245.5 km EV range)",
 		},
 		{
 			name:      "charging with heater on",
 			heaterOn:  true,
 			heaterAuto: true,
-			expected:  "BATTERY: 66% (245.5 km range) [charging, ~45m quick / ~3h AC, battery heater on, auto enabled]",
+			expected:  "BATTERY: 66% (245.5 km EV range) [charging, ~45m quick / ~3h AC, battery heater on, auto enabled]",
 		},
 	}
 
@@ -237,7 +237,7 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 // TestFormatFuelStatus tests fuel status formatting
 func TestFormatFuelStatus(t *testing.T) {
 	result := formatFuelStatus(92, 630.0, false)
-	expected := "FUEL: 92% (630.0 km range)"
+	expected := "FUEL: 92% (630.0 km total range)"
 
 	if !strings.Contains(result, expected) {
 		t.Errorf("Expected output to contain '%s', got '%s'", expected, result)
