@@ -12,13 +12,13 @@ import (
 // A simple command is one that takes no arguments, calls a single API method,
 // and displays a success message.
 type SimpleCommandConfig struct {
-	Use          string                                                          // Command name (e.g., "lock", "start")
-	Short        string                                                          // Short description
-	Long         string                                                          // Long description
-	Example      string                                                          // Usage examples with sample output
-	APICall      func(ctx context.Context, client *api.Client, vin string) error // API method to invoke
-	SuccessMsg   string                                                          // Message to display on success
-	ErrorMsgTmpl string                                                          // Error message template (uses fmt.Errorf)
+	Use          string                                                                   // Command name (e.g., "lock", "start")
+	Short        string                                                                   // Short description
+	Long         string                                                                   // Long description
+	Example      string                                                                   // Usage examples with sample output
+	APICall      func(ctx context.Context, client *api.Client, vin api.InternalVIN) error // API method to invoke
+	SuccessMsg   string                                                                   // Message to display on success
+	ErrorMsgTmpl string                                                                   // Error message template (uses fmt.Errorf)
 }
 
 // NewSimpleCommand creates a cobra command from a SimpleCommandConfig.
@@ -35,7 +35,7 @@ func NewSimpleCommand(cfg SimpleCommandConfig) *cobra.Command {
 		Long:    cfg.Long,
 		Example: cfg.Example,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
+			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 				if err := cfg.APICall(ctx, client, internalVIN); err != nil {
 					return fmt.Errorf(cfg.ErrorMsgTmpl, err)
 				}

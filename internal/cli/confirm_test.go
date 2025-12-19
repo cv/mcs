@@ -140,24 +140,24 @@ func TestWaitForCondition(t *testing.T) {
 
 			if tt.useEVStatus {
 				mockClient = &mockClientForConfirm{
-					getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+					getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 						if calls >= len(tt.statusValues) {
 							calls = len(tt.statusValues) - 1
 						}
 						hvacOn := tt.statusValues[calls].(bool)
 						calls++
-						return createMockEVVehicleStatusResponse(hvacOn), nil
+						return NewMockEVVehicleStatus().WithHVAC(hvacOn).Build(), nil
 					},
 				}
 			} else {
 				mockClient = &mockClientForConfirm{
-					getVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.VehicleStatusResponse, error) {
+					getVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
 						if calls >= len(tt.statusValues) {
 							calls = len(tt.statusValues) - 1
 						}
 						doorStatus := tt.statusValues[calls].(api.DoorStatus)
 						calls++
-						return createMockVehicleStatusResponse(doorStatus), nil
+						return NewMockVehicleStatus().WithDoorStatus(doorStatus).Build(), nil
 					},
 				}
 			}
@@ -166,7 +166,7 @@ func TestWaitForCondition(t *testing.T) {
 				ctx,
 				&buf,
 				mockClient,
-				"test-vin",
+				api.InternalVIN("test-vin"),
 				tt.useEVStatus,
 				tt.conditionFunc,
 				200*time.Millisecond, // Use short timeout for tests
@@ -354,17 +354,17 @@ func TestWaitForDoorsLocked(t *testing.T) {
 			// Create mock client that returns the door status sequence
 			calls := 0
 			mockClient := &mockClientForConfirm{
-				getVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.VehicleStatusResponse, error) {
+				getVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
 					if calls >= len(tt.doorStatus) {
 						calls = len(tt.doorStatus) - 1
 					}
 					status := tt.doorStatus[calls]
 					calls++
-					return createMockVehicleStatusResponse(status), nil
+					return NewMockVehicleStatus().WithDoorStatus(status).Build(), nil
 				},
 			}
 
-			result := waitForDoorsLocked(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+			result := waitForDoorsLocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -421,17 +421,17 @@ func TestWaitForEngineRunning(t *testing.T) {
 			// Create mock client that returns the HVAC status sequence
 			calls := 0
 			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 					if calls >= len(tt.hvacStatus) {
 						calls = len(tt.hvacStatus) - 1
 					}
 					hvacOn := tt.hvacStatus[calls]
 					calls++
-					return createMockEVVehicleStatusResponse(hvacOn), nil
+					return NewMockEVVehicleStatus().WithHVAC(hvacOn).Build(), nil
 				},
 			}
 
-			result := waitForEngineRunning(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+			result := waitForEngineRunning(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -488,17 +488,17 @@ func TestWaitForEngineStopped(t *testing.T) {
 			// Create mock client that returns the HVAC status sequence
 			calls := 0
 			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 					if calls >= len(tt.hvacStatus) {
 						calls = len(tt.hvacStatus) - 1
 					}
 					hvacOn := tt.hvacStatus[calls]
 					calls++
-					return createMockEVVehicleStatusResponse(hvacOn), nil
+					return NewMockEVVehicleStatus().WithHVAC(hvacOn).Build(), nil
 				},
 			}
 
-			result := waitForEngineStopped(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+			result := waitForEngineStopped(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -521,111 +521,22 @@ func TestWaitForEngineStopped(t *testing.T) {
 
 // mockClientForConfirm is a mock API client for testing confirmation logic
 type mockClientForConfirm struct {
-	getVehicleStatusFunc   func(ctx context.Context, internalVIN string) (*api.VehicleStatusResponse, error)
-	getEVVehicleStatusFunc func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error)
+	getVehicleStatusFunc   func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error)
+	getEVVehicleStatusFunc func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error)
 }
 
-func (m *mockClientForConfirm) GetVehicleStatus(ctx context.Context, internalVIN string) (*api.VehicleStatusResponse, error) {
+func (m *mockClientForConfirm) GetVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
 	if m.getVehicleStatusFunc != nil {
 		return m.getVehicleStatusFunc(ctx, internalVIN)
 	}
 	return nil, errors.New("not implemented")
 }
 
-func (m *mockClientForConfirm) GetEVVehicleStatus(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+func (m *mockClientForConfirm) GetEVVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 	if m.getEVVehicleStatusFunc != nil {
 		return m.getEVVehicleStatusFunc(ctx, internalVIN)
 	}
 	return nil, errors.New("not implemented")
-}
-
-// createMockVehicleStatusResponse creates a mock response with the given door status
-func createMockVehicleStatusResponse(doorStatus api.DoorStatus) *api.VehicleStatusResponse {
-	// Convert door status to API response format
-	var driverOpen, passengerOpen, rearLeftOpen, rearRightOpen, trunkOpen, hoodOpen float64
-	var driverLocked, passengerLocked, rearLeftLocked, rearRightLocked float64
-
-	if doorStatus.DriverOpen {
-		driverOpen = float64(api.DoorOpen)
-	} else {
-		driverOpen = float64(api.DoorClosed)
-	}
-
-	if doorStatus.PassengerOpen {
-		passengerOpen = float64(api.DoorOpen)
-	} else {
-		passengerOpen = float64(api.DoorClosed)
-	}
-
-	if doorStatus.RearLeftOpen {
-		rearLeftOpen = float64(api.DoorOpen)
-	} else {
-		rearLeftOpen = float64(api.DoorClosed)
-	}
-
-	if doorStatus.RearRightOpen {
-		rearRightOpen = float64(api.DoorOpen)
-	} else {
-		rearRightOpen = float64(api.DoorClosed)
-	}
-
-	if doorStatus.TrunkOpen {
-		trunkOpen = float64(api.DoorOpen)
-	} else {
-		trunkOpen = float64(api.DoorClosed)
-	}
-
-	if doorStatus.HoodOpen {
-		hoodOpen = float64(api.DoorOpen)
-	} else {
-		hoodOpen = float64(api.DoorClosed)
-	}
-
-	if doorStatus.DriverLocked {
-		driverLocked = float64(api.DoorLocked)
-	} else {
-		driverLocked = float64(api.DoorUnlocked)
-	}
-
-	if doorStatus.PassengerLocked {
-		passengerLocked = float64(api.DoorLocked)
-	} else {
-		passengerLocked = float64(api.DoorUnlocked)
-	}
-
-	if doorStatus.RearLeftLocked {
-		rearLeftLocked = float64(api.DoorLocked)
-	} else {
-		rearLeftLocked = float64(api.DoorUnlocked)
-	}
-
-	if doorStatus.RearRightLocked {
-		rearRightLocked = float64(api.DoorLocked)
-	} else {
-		rearRightLocked = float64(api.DoorUnlocked)
-	}
-
-	return &api.VehicleStatusResponse{
-		ResultCode: api.ResultCodeSuccess,
-		AlertInfos: []api.AlertInfo{
-			{
-				Door: api.DoorInfo{
-					DrStatDrv:       driverOpen,
-					DrStatPsngr:     passengerOpen,
-					DrStatRl:        rearLeftOpen,
-					DrStatRr:        rearRightOpen,
-					DrStatTrnkLg:    trunkOpen,
-					DrStatHood:      hoodOpen,
-					LockLinkSwDrv:   driverLocked,
-					LockLinkSwPsngr: passengerLocked,
-					LockLinkSwRl:    rearLeftLocked,
-					LockLinkSwRr:    rearRightLocked,
-				},
-			},
-		},
-		// RemoteInfos required for valid response
-		RemoteInfos: []api.RemoteInfo{{}},
-	}
 }
 
 // TestWaitForCharging tests the charging started confirmation logic
@@ -664,17 +575,17 @@ func TestWaitForCharging(t *testing.T) {
 			// Create mock client that returns the charging status sequence
 			calls := 0
 			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 					if calls >= len(tt.chargingStatus) {
 						calls = len(tt.chargingStatus) - 1
 					}
 					charging := tt.chargingStatus[calls]
 					calls++
-					return createMockEVVehicleStatusResponseWithCharging(charging), nil
+					return NewMockEVVehicleStatus().WithCharging(charging).Build(), nil
 				},
 			}
 
-			result := waitForCharging(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+			result := waitForCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -731,17 +642,17 @@ func TestWaitForNotCharging(t *testing.T) {
 			// Create mock client that returns the charging status sequence
 			calls := 0
 			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 					if calls >= len(tt.chargingStatus) {
 						calls = len(tt.chargingStatus) - 1
 					}
 					charging := tt.chargingStatus[calls]
 					calls++
-					return createMockEVVehicleStatusResponseWithCharging(charging), nil
+					return NewMockEVVehicleStatus().WithCharging(charging).Build(), nil
 				},
 			}
 
-			result := waitForNotCharging(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+			result := waitForNotCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -759,76 +670,6 @@ func TestWaitForNotCharging(t *testing.T) {
 				t.Error("Expected charging to not be stopped but it was")
 			}
 		})
-	}
-}
-
-// createMockEVVehicleStatusResponse creates a mock EV status response with the given HVAC status
-func createMockEVVehicleStatusResponse(hvacOn bool) *api.EVVehicleStatusResponse {
-	var hvacValue float64
-	if hvacOn {
-		hvacValue = float64(api.HVACStatusOn)
-	} else {
-		hvacValue = float64(api.HVACStatusOff)
-	}
-
-	return &api.EVVehicleStatusResponse{
-		ResultCode: api.ResultCodeSuccess,
-		ResultData: []api.EVResultData{
-			{
-				OccurrenceDate: "2025-01-15 12:00:00",
-				PlusBInformation: api.PlusBInformation{
-					VehicleInfo: api.EVVehicleInfo{
-						ChargeInfo: api.ChargeInfo{
-							SmaphSOC:          80.0,
-							SmaphRemDrvDistKm: 200.0,
-						},
-						RemoteHvacInfo: &api.RemoteHvacInfo{
-							HVAC:           hvacValue,
-							FrontDefroster: 0,
-							RearDefogger:   0,
-							InCarTeDC:      20.0,
-							TargetTemp:     22.0,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-// createMockEVVehicleStatusResponseWithCharging creates a mock EV status response with the given charging status
-func createMockEVVehicleStatusResponseWithCharging(charging bool) *api.EVVehicleStatusResponse {
-	var chargeStatus float64
-	if charging {
-		chargeStatus = float64(api.ChargeStatusCharging)
-	} else {
-		chargeStatus = 0
-	}
-
-	return &api.EVVehicleStatusResponse{
-		ResultCode: api.ResultCodeSuccess,
-		ResultData: []api.EVResultData{
-			{
-				OccurrenceDate: "2025-01-15 12:00:00",
-				PlusBInformation: api.PlusBInformation{
-					VehicleInfo: api.EVVehicleInfo{
-						ChargeInfo: api.ChargeInfo{
-							SmaphSOC:                80.0,
-							SmaphRemDrvDistKm:       200.0,
-							ChargerConnectorFitting: float64(api.ChargerConnected),
-							ChargeStatusSub:         chargeStatus,
-						},
-						RemoteHvacInfo: &api.RemoteHvacInfo{
-							HVAC:           float64(api.HVACStatusOff),
-							FrontDefroster: 0,
-							RearDefogger:   0,
-							InCarTeDC:      20.0,
-							TargetTemp:     22.0,
-						},
-					},
-				},
-			},
-		},
 	}
 }
 
@@ -868,17 +709,17 @@ func TestWaitForHvacOn(t *testing.T) {
 			// Create mock client that returns the HVAC status sequence
 			calls := 0
 			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 					if calls >= len(tt.hvacStatus) {
 						calls = len(tt.hvacStatus) - 1
 					}
 					hvacOn := tt.hvacStatus[calls]
 					calls++
-					return createMockEVVehicleStatusResponseWithHvac(hvacOn, 22.0, false, false), nil
+					return NewMockEVVehicleStatus().WithHVACSettings(hvacOn, 22.0, false, false).Build(), nil
 				},
 			}
 
-			result := waitForHvacOn(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+			result := waitForHvacOn(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -935,17 +776,17 @@ func TestWaitForHvacOff(t *testing.T) {
 			// Create mock client that returns the HVAC status sequence
 			calls := 0
 			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 					if calls >= len(tt.hvacStatus) {
 						calls = len(tt.hvacStatus) - 1
 					}
 					hvacOn := tt.hvacStatus[calls]
 					calls++
-					return createMockEVVehicleStatusResponseWithHvac(hvacOn, 22.0, false, false), nil
+					return NewMockEVVehicleStatus().WithHVACSettings(hvacOn, 22.0, false, false).Build(), nil
 				},
 			}
 
-			result := waitForHvacOff(ctx, &buf, mockClient, "test-vin", 5*time.Second, 50*time.Millisecond)
+			result := waitForHvacOff(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -1033,18 +874,18 @@ func TestWaitForHvacSettings(t *testing.T) {
 			// Create mock client that returns the HVAC settings sequence
 			calls := 0
 			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 					if calls >= len(tt.hvacResponses) {
 						calls = len(tt.hvacResponses) - 1
 					}
 					settings := tt.hvacResponses[calls]
 					calls++
-					return createMockEVVehicleStatusResponseWithHvac(
+					return NewMockEVVehicleStatus().WithHVACSettings(
 						settings.hvacOn,
 						settings.temp,
 						settings.frontDefrost,
 						settings.rearDefrost,
-					), nil
+					).Build(), nil
 				},
 			}
 
@@ -1052,7 +893,7 @@ func TestWaitForHvacSettings(t *testing.T) {
 				ctx,
 				&buf,
 				mockClient,
-				"test-vin",
+				api.InternalVIN("test-vin"),
 				tt.targetTemp,
 				tt.frontDefroster,
 				tt.rearDefroster,
@@ -1087,50 +928,6 @@ type hvacSettings struct {
 	rearDefrost  bool
 }
 
-// createMockEVVehicleStatusResponseWithHvac creates a mock EV status response with the given HVAC settings
-func createMockEVVehicleStatusResponseWithHvac(hvacOn bool, targetTemp float64, frontDefrost, rearDefrost bool) *api.EVVehicleStatusResponse {
-	var hvacValue, frontDefrostValue, rearDefrostValue float64
-	if hvacOn {
-		hvacValue = float64(api.HVACStatusOn)
-	} else {
-		hvacValue = float64(api.HVACStatusOff)
-	}
-	if frontDefrost {
-		frontDefrostValue = float64(api.DefrosterOn)
-	} else {
-		frontDefrostValue = float64(api.DefrosterOff)
-	}
-	if rearDefrost {
-		rearDefrostValue = float64(api.DefrosterOn)
-	} else {
-		rearDefrostValue = float64(api.DefrosterOff)
-	}
-
-	return &api.EVVehicleStatusResponse{
-		ResultCode: api.ResultCodeSuccess,
-		ResultData: []api.EVResultData{
-			{
-				OccurrenceDate: "2025-01-15 12:00:00",
-				PlusBInformation: api.PlusBInformation{
-					VehicleInfo: api.EVVehicleInfo{
-						ChargeInfo: api.ChargeInfo{
-							SmaphSOC:          80.0,
-							SmaphRemDrvDistKm: 200.0,
-						},
-						RemoteHvacInfo: &api.RemoteHvacInfo{
-							HVAC:           hvacValue,
-							FrontDefroster: frontDefrostValue,
-							RearDefogger:   rearDefrostValue,
-							InCarTeDC:      20.0,
-							TargetTemp:     targetTemp,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 // TestExecuteConfirmableCommand tests the executeConfirmableCommand helper
 func TestExecuteConfirmableCommand(t *testing.T) {
 	tests := []struct {
@@ -1146,7 +943,7 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 		{
 			name: "success without confirmation",
 			config: ConfirmableCommandConfig{
-				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 					return nil
 				},
 				SuccessMsg:    "Command executed successfully",
@@ -1164,10 +961,10 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 		{
 			name: "success with confirmation",
 			config: ConfirmableCommandConfig{
-				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 					return nil
 				},
-				WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+				WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 					return confirmationResult{success: true, err: nil}
 				},
 				SuccessMsg:    "Command executed successfully",
@@ -1186,10 +983,10 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 		{
 			name: "timeout during confirmation",
 			config: ConfirmableCommandConfig{
-				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 					return nil
 				},
-				WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+				WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 					return confirmationResult{success: false, err: nil}
 				},
 				SuccessMsg:    "Command executed successfully",
@@ -1208,7 +1005,7 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 		{
 			name: "action fails",
 			config: ConfirmableCommandConfig{
-				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 					return errors.New("action failed")
 				},
 				SuccessMsg:    "Command executed successfully",
@@ -1226,10 +1023,10 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 		{
 			name: "confirmation fails with error",
 			config: ConfirmableCommandConfig{
-				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 					return nil
 				},
-				WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+				WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 					return confirmationResult{success: false, err: errors.New("confirmation error")}
 				},
 				SuccessMsg:    "Command executed successfully",
@@ -1255,7 +1052,7 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 				ctx,
 				&buf,
 				nil, // client not used in these tests
-				"test-vin",
+				api.InternalVIN("test-vin"),
 				tt.config,
 				tt.confirm,
 				tt.confirmWait,
