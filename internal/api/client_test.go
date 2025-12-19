@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestAPIRequest_Success tests successful API request with encryption
@@ -420,5 +421,177 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 
 	if result["resultCode"] != "200S00" {
 		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
+	}
+}
+
+// TestCalculateBackoff tests the backoff calculation
+func TestCalculateBackoff(t *testing.T) {
+	tests := []struct {
+		retryCount int
+		expected   time.Duration
+	}{
+		{0, 0},
+		{1, 1 * time.Second},
+		{2, 2 * time.Second},
+		{3, 4 * time.Second},
+		{4, 8 * time.Second},
+		{5, 8 * time.Second}, // Capped at 8 seconds
+		{10, 8 * time.Second},
+	}
+
+	for _, tt := range tests {
+		t.Run(strings.Join([]string{"retry", strings.Repeat("x", tt.retryCount)}, "_"), func(t *testing.T) {
+			result := calculateBackoff(tt.retryCount)
+			if result != tt.expected {
+				t.Errorf("calculateBackoff(%d) = %v, want %v", tt.retryCount, result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestSleepWithContext_Completes tests that sleep completes normally
+func TestSleepWithContext_Completes(t *testing.T) {
+	ctx := context.Background()
+	start := time.Now()
+	duration := 100 * time.Millisecond
+
+	err := sleepWithContext(ctx, duration)
+	elapsed := time.Since(start)
+
+	if err != nil {
+		t.Errorf("sleepWithContext returned error: %v", err)
+	}
+
+	// Allow 50ms tolerance
+	if elapsed < duration || elapsed > duration+50*time.Millisecond {
+		t.Errorf("sleepWithContext took %v, expected around %v", elapsed, duration)
+	}
+}
+
+// TestSleepWithContext_Cancelled tests that sleep returns early on context cancellation
+func TestSleepWithContext_Cancelled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	start := time.Now()
+	duration := 5 * time.Second // Long sleep
+
+	// Cancel after 100ms
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		cancel()
+	}()
+
+	err := sleepWithContext(ctx, duration)
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Error("sleepWithContext should return error on cancellation")
+	}
+
+	if err != context.Canceled {
+		t.Errorf("sleepWithContext returned %v, want context.Canceled", err)
+	}
+
+	// Should return much earlier than 5 seconds
+	if elapsed > 1*time.Second {
+		t.Errorf("sleepWithContext took %v, should have returned early", elapsed)
+	}
+}
+
+// TestSleepWithContext_ZeroDuration tests that zero duration returns immediately
+func TestSleepWithContext_ZeroDuration(t *testing.T) {
+	ctx := context.Background()
+	start := time.Now()
+
+	err := sleepWithContext(ctx, 0)
+	elapsed := time.Since(start)
+
+	if err != nil {
+		t.Errorf("sleepWithContext returned error: %v", err)
+	}
+
+	if elapsed > 10*time.Millisecond {
+		t.Errorf("sleepWithContext with 0 duration took %v, should be immediate", elapsed)
+	}
+}
+
+// TestAPIRequest_RetryWithContextCancellation tests that context cancellation during backoff returns immediately
+func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
+	callCount := 0
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+
+		// Return success response for checkVersion (encryption key retrieval)
+		if strings.Contains(r.URL.Path, "checkVersion") {
+			testResponse := map[string]interface{}{
+				"encKey":  "testenckey123456",
+				"signKey": "testsignkey12345",
+			}
+			responseJSON, _ := json.Marshal(testResponse)
+			encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
+			response := map[string]interface{}{
+				"state":   "S",
+				"payload": encrypted,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				t.Errorf("Failed to encode response: %v", err)
+			}
+			return
+		}
+
+		// Always return token expired error for other requests to trigger retry with backoff
+		response := map[string]interface{}{
+			"state":     "E",
+			"errorCode": 600002,
+			"message":   "Token expired",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client, err := NewClient("test@example.com", "password", "MNAO")
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+	client.baseURL = server.URL + "/"
+	client.encKey = "testenckey123456"
+	client.signKey = "testsignkey12345"
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Cancel context after 500ms
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		cancel()
+	}()
+
+	start := time.Now()
+	_, err = client.APIRequest(ctx, "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Fatal("Expected error due to context cancellation, got nil")
+	}
+
+	// Check if error is or contains context.Canceled
+	if err != context.Canceled && !strings.Contains(err.Error(), "context canceled") {
+		t.Errorf("Expected context.Canceled error, got: %v", err)
+	}
+
+	// Should return quickly after cancellation (within 1 second total)
+	// First retry is after 1 second, so if cancelled at 500ms during first backoff,
+	// it should return before the 1 second completes
+	if elapsed > 1500*time.Millisecond {
+		t.Errorf("Request took %v, should have returned quickly after context cancellation", elapsed)
+	}
+
+	// Should have made 1 initial call, Login will fail but that's expected
+	// The key point is we don't wait through all the retries
+	if callCount > 2 {
+		t.Errorf("Expected at most 2 calls, got %d", callCount)
 	}
 }

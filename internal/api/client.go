@@ -8,12 +8,43 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 const (
 	// MaxRetries is the maximum number of retries for API requests
 	MaxRetries = 4
 )
+
+// calculateBackoff returns the backoff duration for a given retry count.
+// Uses exponential backoff: 1s, 2s, 4s, 8s
+func calculateBackoff(retryCount int) time.Duration {
+	if retryCount <= 0 {
+		return 0
+	}
+	// 2^(retryCount-1) seconds, capped at 8 seconds
+	backoffSeconds := 1 << (retryCount - 1)
+	if backoffSeconds > 8 {
+		backoffSeconds = 8
+	}
+	return time.Duration(backoffSeconds) * time.Second
+}
+
+// sleepWithContext sleeps for the specified duration, but returns early if context is cancelled
+func sleepWithContext(ctx context.Context, duration time.Duration) error {
+	if duration <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(duration)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
 
 // APIRequest makes an API request with proper encryption, signing, and error handling
 func (c *Client) APIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
@@ -56,11 +87,21 @@ func (c *Client) apiRequestWithRetry(ctx context.Context, method, uri string, qu
 			if err := c.GetEncryptionKeys(ctx); err != nil {
 				return nil, fmt.Errorf("failed to retrieve encryption keys: %w", err)
 			}
+			// Apply backoff delay before retry
+			backoff := calculateBackoff(retryCount + 1)
+			if err := sleepWithContext(ctx, backoff); err != nil {
+				return nil, err
+			}
 			return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
 		case *TokenExpiredError:
 			// Login again and retry
 			if err := c.Login(ctx); err != nil {
 				return nil, fmt.Errorf("failed to login: %w", err)
+			}
+			// Apply backoff delay before retry
+			backoff := calculateBackoff(retryCount + 1)
+			if err := sleepWithContext(ctx, backoff); err != nil {
+				return nil, err
 			}
 			return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
 		default:
@@ -102,11 +143,21 @@ func (c *Client) apiRequestJSONWithRetry(ctx context.Context, method, uri string
 			if err := c.GetEncryptionKeys(ctx); err != nil {
 				return nil, fmt.Errorf("failed to retrieve encryption keys: %w", err)
 			}
+			// Apply backoff delay before retry
+			backoff := calculateBackoff(retryCount + 1)
+			if err := sleepWithContext(ctx, backoff); err != nil {
+				return nil, err
+			}
 			return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
 		case *TokenExpiredError:
 			// Login again and retry
 			if err := c.Login(ctx); err != nil {
 				return nil, fmt.Errorf("failed to login: %w", err)
+			}
+			// Apply backoff delay before retry
+			backoff := calculateBackoff(retryCount + 1)
+			if err := sleepWithContext(ctx, backoff); err != nil {
+				return nil, err
 			}
 			return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
 		default:
