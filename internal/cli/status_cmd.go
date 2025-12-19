@@ -45,51 +45,31 @@ func NewStatusCmd() *cobra.Command {
 	statusCmd.PersistentFlags().BoolVar(&refresh, "refresh", false, "request fresh status from vehicle (PHEV/EV only)")
 	statusCmd.PersistentFlags().IntVar(&refreshWait, "refresh-wait", 90, "max seconds to wait for vehicle response")
 
-	// Add subcommands
-	statusCmd.AddCommand(&cobra.Command{
-		Use:   "battery",
-		Short: "Show battery status",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, StatusBattery, refresh, refreshWait)
-		},
-		SilenceUsage: true,
-	})
+	// Add subcommands using configuration slice
+	subcommands := []struct {
+		use        string
+		short      string
+		statusType StatusType
+	}{
+		{"battery", "Show battery status", StatusBattery},
+		{"fuel", "Show fuel status", StatusFuel},
+		{"location", "Show vehicle location", StatusLocation},
+		{"tires", "Show tire pressure", StatusTires},
+		{"doors", "Show door lock status", StatusDoors},
+	}
 
-	statusCmd.AddCommand(&cobra.Command{
-		Use:   "fuel",
-		Short: "Show fuel status",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, StatusFuel, refresh, refreshWait)
-		},
-		SilenceUsage: true,
-	})
-
-	statusCmd.AddCommand(&cobra.Command{
-		Use:   "location",
-		Short: "Show vehicle location",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, StatusLocation, refresh, refreshWait)
-		},
-		SilenceUsage: true,
-	})
-
-	statusCmd.AddCommand(&cobra.Command{
-		Use:   "tires",
-		Short: "Show tire pressure",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, StatusTires, refresh, refreshWait)
-		},
-		SilenceUsage: true,
-	})
-
-	statusCmd.AddCommand(&cobra.Command{
-		Use:   "doors",
-		Short: "Show door lock status",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, StatusDoors, refresh, refreshWait)
-		},
-		SilenceUsage: true,
-	})
+	for _, sc := range subcommands {
+		// Capture loop variable for closure
+		statusType := sc.statusType
+		statusCmd.AddCommand(&cobra.Command{
+			Use:   sc.use,
+			Short: sc.short,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return runStatus(cmd, jsonOutput, statusType, refresh, refreshWait)
+			},
+			SilenceUsage: true,
+		})
+	}
 
 	return statusCmd
 }
