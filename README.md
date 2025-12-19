@@ -46,7 +46,7 @@ mcs charge stop         # Stop charging
 # Climate
 mcs climate on          # Turn on HVAC
 mcs climate off         # Turn off HVAC
-mcs climate set 21      # Set temperature (Celsius)
+mcs climate set --temp 21   # Set temperature (Celsius)
 
 # Debug
 mcs raw status          # Raw vehicle status JSON
