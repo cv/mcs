@@ -11,6 +11,188 @@ import (
 	"github.com/cv/mcs/internal/api"
 )
 
+// TestWaitForCondition tests the generic condition waiting logic
+func TestWaitForCondition(t *testing.T) {
+	tests := []struct {
+		name          string
+		useEVStatus   bool
+		statusValues  []interface{} // Either []api.DoorStatus or []bool
+		conditionFunc func(interface{}) (bool, error)
+		expectError   bool
+		expectMet     bool
+	}{
+		{
+			name:        "regular status - condition met immediately",
+			useEVStatus: false,
+			statusValues: []interface{}{
+				api.DoorStatus{
+					AllLocked:       true,
+					DriverLocked:    true,
+					PassengerLocked: true,
+					RearLeftLocked:  true,
+					RearRightLocked: true,
+				},
+			},
+			conditionFunc: func(status interface{}) (bool, error) {
+				vStatus := status.(*api.VehicleStatusResponse)
+				doorInfo, err := vStatus.GetDoorsInfo()
+				if err != nil {
+					return false, err
+				}
+				return doorInfo.AllLocked, nil
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "regular status - condition met after one check",
+			useEVStatus: false,
+			statusValues: []interface{}{
+				api.DoorStatus{
+					AllLocked:       false,
+					DriverLocked:    false,
+					PassengerLocked: true,
+					RearLeftLocked:  true,
+					RearRightLocked: true,
+				},
+				api.DoorStatus{
+					AllLocked:       true,
+					DriverLocked:    true,
+					PassengerLocked: true,
+					RearLeftLocked:  true,
+					RearRightLocked: true,
+				},
+			},
+			conditionFunc: func(status interface{}) (bool, error) {
+				vStatus := status.(*api.VehicleStatusResponse)
+				doorInfo, err := vStatus.GetDoorsInfo()
+				if err != nil {
+					return false, err
+				}
+				return doorInfo.AllLocked, nil
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "EV status - condition met immediately",
+			useEVStatus: true,
+			statusValues: []interface{}{
+				true, // HVAC on
+			},
+			conditionFunc: func(status interface{}) (bool, error) {
+				evStatus := status.(*api.EVVehicleStatusResponse)
+				hvacInfo, err := evStatus.GetHvacInfo()
+				if err != nil {
+					return false, err
+				}
+				return hvacInfo.HVACOn, nil
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "EV status - condition met after one check",
+			useEVStatus: true,
+			statusValues: []interface{}{
+				false, // HVAC off
+				true,  // HVAC on
+			},
+			conditionFunc: func(status interface{}) (bool, error) {
+				evStatus := status.(*api.EVVehicleStatusResponse)
+				hvacInfo, err := evStatus.GetHvacInfo()
+				if err != nil {
+					return false, err
+				}
+				return hvacInfo.HVACOn, nil
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name:        "condition never met - timeout",
+			useEVStatus: true,
+			statusValues: []interface{}{
+				false,
+				false,
+				false,
+			},
+			conditionFunc: func(status interface{}) (bool, error) {
+				evStatus := status.(*api.EVVehicleStatusResponse)
+				hvacInfo, err := evStatus.GetHvacInfo()
+				if err != nil {
+					return false, err
+				}
+				return hvacInfo.HVACOn, nil
+			},
+			expectError: false,
+			expectMet:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			calls := 0
+			var mockClient *mockClientForConfirm
+
+			if tt.useEVStatus {
+				mockClient = &mockClientForConfirm{
+					getEVVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error) {
+						if calls >= len(tt.statusValues) {
+							calls = len(tt.statusValues) - 1
+						}
+						hvacOn := tt.statusValues[calls].(bool)
+						calls++
+						return createMockEVVehicleStatusResponse(hvacOn), nil
+					},
+				}
+			} else {
+				mockClient = &mockClientForConfirm{
+					getVehicleStatusFunc: func(ctx context.Context, internalVIN string) (*api.VehicleStatusResponse, error) {
+						if calls >= len(tt.statusValues) {
+							calls = len(tt.statusValues) - 1
+						}
+						doorStatus := tt.statusValues[calls].(api.DoorStatus)
+						calls++
+						return createMockVehicleStatusResponse(doorStatus), nil
+					},
+				}
+			}
+
+			result := waitForCondition(
+				ctx,
+				&buf,
+				mockClient,
+				"test-vin",
+				tt.useEVStatus,
+				tt.conditionFunc,
+				200*time.Millisecond, // Use short timeout for tests
+				50*time.Millisecond,
+				"test action",
+			)
+
+			if tt.expectError && result.err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && result.err != nil {
+				t.Errorf("Expected no error but got: %v", result.err)
+			}
+
+			if tt.expectMet && !result.success {
+				t.Errorf("Expected condition to be met but it wasn't (calls: %d)", calls)
+			}
+
+			if !tt.expectMet && result.success {
+				t.Error("Expected condition to not be met but it was")
+			}
+		})
+	}
+}
+
 // TestPollUntilCondition tests the polling logic
 func TestPollUntilCondition(t *testing.T) {
 	tests := []struct {

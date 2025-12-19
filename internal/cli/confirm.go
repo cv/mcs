@@ -73,6 +73,52 @@ type vehicleStatusGetter interface {
 	GetEVVehicleStatus(ctx context.Context, internalVIN string) (*api.EVVehicleStatusResponse, error)
 }
 
+// waitForCondition is a generic function that waits for a vehicle status condition to be met.
+// It polls the vehicle status (either regular or EV) and checks the condition using the provided checker function.
+//
+// Parameters:
+//   - ctx: context for cancellation
+//   - out: writer for status messages
+//   - client: API client for getting vehicle status
+//   - internalVIN: vehicle identifier
+//   - useEVStatus: if true, uses GetEVVehicleStatus; otherwise uses GetVehicleStatus
+//   - conditionChecker: function that receives the status response and returns true if condition is met
+//   - timeout: maximum time to wait for condition
+//   - pollInterval: time between status checks
+//   - actionName: name of the action being confirmed (for error messages)
+//
+// Returns: confirmationResult with success flag and any error encountered
+func waitForCondition(
+	ctx context.Context,
+	out io.Writer,
+	client vehicleStatusGetter,
+	internalVIN string,
+	useEVStatus bool,
+	conditionChecker func(interface{}) (bool, error),
+	timeout time.Duration,
+	pollInterval time.Duration,
+	actionName string,
+) confirmationResult {
+	checkFunc := func() (bool, error) {
+		var status interface{}
+		var err error
+
+		if useEVStatus {
+			status, err = client.GetEVVehicleStatus(ctx, internalVIN)
+		} else {
+			status, err = client.GetVehicleStatus(ctx, internalVIN)
+		}
+
+		if err != nil {
+			return false, err
+		}
+
+		return conditionChecker(status)
+	}
+
+	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, actionName)
+}
+
 // waitForDoorsLocked polls the vehicle status until all doors are locked or timeout occurs
 func waitForDoorsLocked(
 	ctx context.Context,
@@ -82,21 +128,16 @@ func waitForDoorsLocked(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	checkFunc := func() (bool, error) {
-		status, err := client.GetVehicleStatus(ctx, internalVIN)
+	conditionChecker := func(status interface{}) (bool, error) {
+		vStatus := status.(*api.VehicleStatusResponse)
+		doorStatus, err := vStatus.GetDoorsInfo()
 		if err != nil {
 			return false, err
 		}
-
-		doorStatus, err := status.GetDoorsInfo()
-		if err != nil {
-			return false, err
-		}
-
 		return doorStatus.AllLocked, nil
 	}
 
-	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "door lock")
+	return waitForCondition(ctx, out, client, internalVIN, false, conditionChecker, timeout, pollInterval, "door lock")
 }
 
 // waitForDoorsUnlocked polls the vehicle status until all doors are unlocked or timeout occurs
@@ -108,22 +149,17 @@ func waitForDoorsUnlocked(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	checkFunc := func() (bool, error) {
-		status, err := client.GetVehicleStatus(ctx, internalVIN)
+	conditionChecker := func(status interface{}) (bool, error) {
+		vStatus := status.(*api.VehicleStatusResponse)
+		doorStatus, err := vStatus.GetDoorsInfo()
 		if err != nil {
 			return false, err
 		}
-
-		doorStatus, err := status.GetDoorsInfo()
-		if err != nil {
-			return false, err
-		}
-
 		// Unlocked means at least one door is unlocked (not all locked)
 		return !doorStatus.AllLocked, nil
 	}
 
-	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "door unlock")
+	return waitForCondition(ctx, out, client, internalVIN, false, conditionChecker, timeout, pollInterval, "door unlock")
 }
 
 // waitForEngineRunning polls the vehicle status until the engine is running or timeout occurs
@@ -135,21 +171,16 @@ func waitForEngineRunning(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	checkFunc := func() (bool, error) {
-		status, err := client.GetEVVehicleStatus(ctx, internalVIN)
+	conditionChecker := func(status interface{}) (bool, error) {
+		evStatus := status.(*api.EVVehicleStatusResponse)
+		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
 		}
-
-		hvacInfo, err := status.GetHvacInfo()
-		if err != nil {
-			return false, err
-		}
-
 		return hvacInfo.HVACOn, nil
 	}
 
-	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "engine start")
+	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "engine start")
 }
 
 // waitForEngineStopped polls the vehicle status until the engine is stopped or timeout occurs
@@ -161,21 +192,16 @@ func waitForEngineStopped(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	checkFunc := func() (bool, error) {
-		status, err := client.GetEVVehicleStatus(ctx, internalVIN)
+	conditionChecker := func(status interface{}) (bool, error) {
+		evStatus := status.(*api.EVVehicleStatusResponse)
+		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
 		}
-
-		hvacInfo, err := status.GetHvacInfo()
-		if err != nil {
-			return false, err
-		}
-
 		return !hvacInfo.HVACOn, nil
 	}
 
-	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "engine stop")
+	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "engine stop")
 }
 
 // waitForCharging polls the vehicle status until charging is active or timeout occurs
@@ -187,21 +213,16 @@ func waitForCharging(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	checkFunc := func() (bool, error) {
-		status, err := client.GetEVVehicleStatus(ctx, internalVIN)
+	conditionChecker := func(status interface{}) (bool, error) {
+		evStatus := status.(*api.EVVehicleStatusResponse)
+		batteryInfo, err := evStatus.GetBatteryInfo()
 		if err != nil {
 			return false, err
 		}
-
-		batteryInfo, err := status.GetBatteryInfo()
-		if err != nil {
-			return false, err
-		}
-
 		return batteryInfo.Charging, nil
 	}
 
-	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "charging start")
+	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "charging start")
 }
 
 // waitForNotCharging polls the vehicle status until charging is inactive or timeout occurs
@@ -213,21 +234,16 @@ func waitForNotCharging(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	checkFunc := func() (bool, error) {
-		status, err := client.GetEVVehicleStatus(ctx, internalVIN)
+	conditionChecker := func(status interface{}) (bool, error) {
+		evStatus := status.(*api.EVVehicleStatusResponse)
+		batteryInfo, err := evStatus.GetBatteryInfo()
 		if err != nil {
 			return false, err
 		}
-
-		batteryInfo, err := status.GetBatteryInfo()
-		if err != nil {
-			return false, err
-		}
-
 		return !batteryInfo.Charging, nil
 	}
 
-	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "charging stop")
+	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "charging stop")
 }
 
 // waitForHvacOn polls the vehicle status until HVAC is on or timeout occurs
@@ -239,21 +255,16 @@ func waitForHvacOn(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	checkFunc := func() (bool, error) {
-		status, err := client.GetEVVehicleStatus(ctx, internalVIN)
+	conditionChecker := func(status interface{}) (bool, error) {
+		evStatus := status.(*api.EVVehicleStatusResponse)
+		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
 		}
-
-		hvacInfo, err := status.GetHvacInfo()
-		if err != nil {
-			return false, err
-		}
-
 		return hvacInfo.HVACOn, nil
 	}
 
-	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "HVAC on")
+	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "HVAC on")
 }
 
 // waitForHvacOff polls the vehicle status until HVAC is off or timeout occurs
@@ -265,21 +276,16 @@ func waitForHvacOff(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	checkFunc := func() (bool, error) {
-		status, err := client.GetEVVehicleStatus(ctx, internalVIN)
+	conditionChecker := func(status interface{}) (bool, error) {
+		evStatus := status.(*api.EVVehicleStatusResponse)
+		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
 		}
-
-		hvacInfo, err := status.GetHvacInfo()
-		if err != nil {
-			return false, err
-		}
-
 		return !hvacInfo.HVACOn, nil
 	}
 
-	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "HVAC off")
+	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "HVAC off")
 }
 
 // waitForHvacSettings polls the vehicle status until HVAC settings match the requested values or timeout occurs
@@ -294,13 +300,9 @@ func waitForHvacSettings(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	checkFunc := func() (bool, error) {
-		status, err := client.GetEVVehicleStatus(ctx, internalVIN)
-		if err != nil {
-			return false, err
-		}
-
-		hvacInfo, err := status.GetHvacInfo()
+	conditionChecker := func(status interface{}) (bool, error) {
+		evStatus := status.(*api.EVVehicleStatusResponse)
+		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
 		}
@@ -317,7 +319,7 @@ func waitForHvacSettings(
 		return tempMatch && defrostersMatch, nil
 	}
 
-	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "HVAC settings")
+	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "HVAC settings")
 }
 
 // ConfirmableCommandConfig holds the configuration for a confirmable command
