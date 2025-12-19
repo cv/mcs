@@ -90,6 +90,7 @@ type TPMSInformation struct {
 type AlertInfo struct {
 	PositionInfo PositionInfo `json:"PositionInfo"`
 	Door         DoorInfo     `json:"Door"`
+	Pw           WindowInfo   `json:"Pw"`
 }
 
 // PositionInfo contains GPS location information
@@ -111,6 +112,14 @@ type DoorInfo struct {
 	LockLinkSwPsngr float64 `json:"LockLinkSwPsngr"`
 	LockLinkSwRl   float64 `json:"LockLinkSwRl"`
 	LockLinkSwRr   float64 `json:"LockLinkSwRr"`
+}
+
+// WindowInfo contains window position information
+type WindowInfo struct {
+	PwPosDrv   float64 `json:"PwPosDrv"`
+	PwPosPsngr float64 `json:"PwPosPsngr"`
+	PwPosRl    float64 `json:"PwPosRl"`
+	PwPosRr    float64 `json:"PwPosRr"`
 }
 
 // EVVehicleStatusResponse represents the response from GetEVVehicleStatus API
@@ -297,6 +306,20 @@ func (r *VehicleStatusResponse) GetOdometerInfo() (odometerKm float64, err error
 		return
 	}
 	odometerKm = r.RemoteInfos[0].DriveInformation.OdoDispValue
+	return
+}
+
+// GetWindowsInfo extracts window position information from the vehicle status response
+func (r *VehicleStatusResponse) GetWindowsInfo() (driver, passenger, rearLeft, rearRight float64, err error) {
+	if len(r.AlertInfos) == 0 {
+		err = fmt.Errorf("no alert info available")
+		return
+	}
+	pw := r.AlertInfos[0].Pw
+	driver = pw.PwPosDrv
+	passenger = pw.PwPosPsngr
+	rearLeft = pw.PwPosRl
+	rearRight = pw.PwPosRr
 	return
 }
 

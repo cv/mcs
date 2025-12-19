@@ -182,6 +182,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 			"location": extractLocationData(vehicleStatus),
 			"tires":    extractTiresData(vehicleStatus),
 			"doors":    extractDoorsData(vehicleStatus),
+			"windows":  extractWindowsData(vehicleStatus),
 			"climate":  extractHvacData(evStatus),
 			"odometer": extractOdometerData(vehicleStatus),
 		}
@@ -198,11 +199,15 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	// Extract odometer
 	odometer, _ := vehicleStatus.GetOdometerInfo()
 
+	// Extract windows info
+	driver, passenger, rearLeft, rearRight, _ := vehicleStatus.GetWindowsInfo()
+
 	output := fmt.Sprintf("\nVehicle Status (Last Updated: %s)\n\n", timestamp)
 	output += displayBatteryStatus(evStatus, false) + "\n"
 	output += displayFuelStatus(vehicleStatus, false) + "\n"
 	output += formatHvacStatus(hvacOn, frontDefroster, rearDefroster, interiorTempC, false) + "\n"
 	output += displayDoorsStatus(vehicleStatus, false) + "\n"
+	output += formatWindowsStatus(driver, passenger, rearLeft, rearRight, false) + "\n"
 	output += displayTiresStatus(vehicleStatus, false) + "\n"
 	output += formatOdometerStatus(odometer, false) + "\n"
 
@@ -322,6 +327,17 @@ func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]interface
 		"front_defroster":        frontDefroster,
 		"rear_defroster":         rearDefroster,
 		"interior_temperature_c": interiorTempC,
+	}
+}
+
+// extractWindowsData extracts window data for JSON output
+func extractWindowsData(vehicleStatus *api.VehicleStatusResponse) map[string]interface{} {
+	driver, passenger, rearLeft, rearRight, _ := vehicleStatus.GetWindowsInfo()
+	return map[string]interface{}{
+		"driver_position":    driver,
+		"passenger_position": passenger,
+		"rear_left_position": rearLeft,
+		"rear_right_position": rearRight,
 	}
 }
 
@@ -608,4 +624,43 @@ func formatChargeTime(acMinutes, qbcMinutes float64) string {
 	}
 
 	return ""
+}
+
+// formatWindowsStatus formats window status for display
+func formatWindowsStatus(driver, passenger, rearLeft, rearRight float64, jsonOutput bool) string {
+	if jsonOutput {
+		return toJSON(map[string]interface{}{
+			"driver_position":    driver,
+			"passenger_position": passenger,
+			"rear_left_position": rearLeft,
+			"rear_right_position": rearRight,
+		})
+	}
+
+	// If all windows are closed, show simple message
+	if driver == 0 && passenger == 0 && rearLeft == 0 && rearRight == 0 {
+		return "WINDOWS: All closed"
+	}
+
+	// Otherwise, build a list of open windows with percentages
+	var openWindows []string
+
+	if driver > 0 {
+		openWindows = append(openWindows, fmt.Sprintf("Driver %.0f%%", driver))
+	}
+	if passenger > 0 {
+		openWindows = append(openWindows, fmt.Sprintf("Passenger %.0f%%", passenger))
+	}
+	if rearLeft > 0 {
+		openWindows = append(openWindows, fmt.Sprintf("Rear left %.0f%%", rearLeft))
+	}
+	if rearRight > 0 {
+		openWindows = append(openWindows, fmt.Sprintf("Rear right %.0f%%", rearRight))
+	}
+
+	if len(openWindows) == 0 {
+		return "WINDOWS: All closed"
+	}
+
+	return fmt.Sprintf("WINDOWS: %s", strings.Join(openWindows, ", "))
 }

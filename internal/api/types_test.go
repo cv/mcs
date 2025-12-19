@@ -675,3 +675,164 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestVehicleStatusResponse_WindowParsing(t *testing.T) {
+	jsonData := `{
+		"resultCode": "200S00",
+		"remoteInfos": [],
+		"alertInfos": [
+			{
+				"PositionInfo": {
+					"Latitude": 37.7749,
+					"Longitude": -122.4194,
+					"AcquisitionDatetime": "20231201120000"
+				},
+				"Door": {
+					"DrStatDrv": 0,
+					"DrStatPsngr": 0,
+					"DrStatRl": 0,
+					"DrStatRr": 0,
+					"DrStatTrnkLg": 0,
+					"DrStatHood": 0,
+					"LockLinkSwDrv": 0,
+					"LockLinkSwPsngr": 0,
+					"LockLinkSwRl": 0,
+					"LockLinkSwRr": 0
+				},
+				"Pw": {
+					"PwPosDrv": 0,
+					"PwPosPsngr": 50,
+					"PwPosRl": 0,
+					"PwPosRr": 25
+				}
+			}
+		]
+	}`
+
+	var resp VehicleStatusResponse
+	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
+		t.Fatalf("Failed to unmarshal: %v", err)
+	}
+
+	if len(resp.AlertInfos) != 1 {
+		t.Fatalf("Expected 1 alertInfo, got %d", len(resp.AlertInfos))
+	}
+
+	pw := resp.AlertInfos[0].Pw
+	if pw.PwPosDrv != 0 {
+		t.Errorf("Expected PwPosDrv 0, got %f", pw.PwPosDrv)
+	}
+	if pw.PwPosPsngr != 50 {
+		t.Errorf("Expected PwPosPsngr 50, got %f", pw.PwPosPsngr)
+	}
+	if pw.PwPosRl != 0 {
+		t.Errorf("Expected PwPosRl 0, got %f", pw.PwPosRl)
+	}
+	if pw.PwPosRr != 25 {
+		t.Errorf("Expected PwPosRr 25, got %f", pw.PwPosRr)
+	}
+}
+
+func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
+	tests := []struct {
+		name       string
+		resp       *VehicleStatusResponse
+		wantDriver float64
+		wantPass   float64
+		wantRL     float64
+		wantRR     float64
+		wantErr    bool
+	}{
+		{
+			name: "all windows closed",
+			resp: &VehicleStatusResponse{
+				AlertInfos: []AlertInfo{
+					{
+						Pw: WindowInfo{
+							PwPosDrv:   0,
+							PwPosPsngr: 0,
+							PwPosRl:    0,
+							PwPosRr:    0,
+						},
+					},
+				},
+			},
+			wantDriver: 0,
+			wantPass:   0,
+			wantRL:     0,
+			wantRR:     0,
+			wantErr:    false,
+		},
+		{
+			name: "some windows open",
+			resp: &VehicleStatusResponse{
+				AlertInfos: []AlertInfo{
+					{
+						Pw: WindowInfo{
+							PwPosDrv:   0,
+							PwPosPsngr: 50,
+							PwPosRl:    0,
+							PwPosRr:    25,
+						},
+					},
+				},
+			},
+			wantDriver: 0,
+			wantPass:   50,
+			wantRL:     0,
+			wantRR:     25,
+			wantErr:    false,
+		},
+		{
+			name: "all windows fully open",
+			resp: &VehicleStatusResponse{
+				AlertInfos: []AlertInfo{
+					{
+						Pw: WindowInfo{
+							PwPosDrv:   100,
+							PwPosPsngr: 100,
+							PwPosRl:    100,
+							PwPosRr:    100,
+						},
+					},
+				},
+			},
+			wantDriver: 100,
+			wantPass:   100,
+			wantRL:     100,
+			wantRR:     100,
+			wantErr:    false,
+		},
+		{
+			name:       "no alert infos",
+			resp:       &VehicleStatusResponse{},
+			wantDriver: 0,
+			wantPass:   0,
+			wantRL:     0,
+			wantRR:     0,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			driver, pass, rl, rr, err := tt.resp.GetWindowsInfo()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetWindowsInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if driver != tt.wantDriver {
+				t.Errorf("GetWindowsInfo() driver = %v, want %v", driver, tt.wantDriver)
+			}
+			if pass != tt.wantPass {
+				t.Errorf("GetWindowsInfo() passenger = %v, want %v", pass, tt.wantPass)
+			}
+			if rl != tt.wantRL {
+				t.Errorf("GetWindowsInfo() rear left = %v, want %v", rl, tt.wantRL)
+			}
+			if rr != tt.wantRR {
+				t.Errorf("GetWindowsInfo() rear right = %v, want %v", rr, tt.wantRR)
+			}
+		})
+	}
+}
