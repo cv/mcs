@@ -13,11 +13,21 @@ func NewChargeCmd() *cobra.Command {
 		"charge",
 		"Control vehicle charging",
 		`Control vehicle charging (start/stop).`,
+		`  # Start charging the vehicle battery
+  mcs charge start
+
+  # Stop charging the vehicle battery
+  mcs charge stop`,
 		[]SimpleCommandConfig{
 			{
 				Use:   "start",
 				Short: "Start charging",
 				Long:  `Start charging the vehicle battery.`,
+				Example: `  # Start charging the vehicle battery
+  mcs charge start
+
+  # Expected output on success:
+  # Charging started successfully`,
 				APICall: func(ctx context.Context, client *api.Client, vin string) error {
 					return client.ChargeStart(ctx, vin)
 				},
@@ -28,6 +38,11 @@ func NewChargeCmd() *cobra.Command {
 				Use:   "stop",
 				Short: "Stop charging",
 				Long:  `Stop charging the vehicle battery.`,
+				Example: `  # Stop charging the vehicle battery
+  mcs charge stop
+
+  # Expected output on success:
+  # Charging stopped successfully`,
 				APICall: func(ctx context.Context, client *api.Client, vin string) error {
 					return client.ChargeStop(ctx, vin)
 				},

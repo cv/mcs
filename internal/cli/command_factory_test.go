@@ -91,7 +91,7 @@ func TestNewParentWithSubcommands(t *testing.T) {
 		},
 	}
 
-	cmd := NewParentWithSubcommands("parent", "Parent command", "Parent command description", subcommands)
+	cmd := NewParentWithSubcommands("parent", "Parent command", "Parent command description", "", subcommands)
 
 	if cmd.Use != "parent" {
 		t.Errorf("Expected Use to be 'parent', got '%s'", cmd.Use)

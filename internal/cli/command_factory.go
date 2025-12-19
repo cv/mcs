@@ -49,11 +49,12 @@ func NewSimpleCommand(cfg SimpleCommandConfig) *cobra.Command {
 
 // NewParentWithSubcommands creates a parent command with simple subcommands.
 // This is useful for commands like "charge" or "climate" that have multiple actions.
-func NewParentWithSubcommands(use, short, long string, subcommands []SimpleCommandConfig) *cobra.Command {
+func NewParentWithSubcommands(use, short, long, example string, subcommands []SimpleCommandConfig) *cobra.Command {
 	parentCmd := &cobra.Command{
-		Use:   use,
-		Short: short,
-		Long:  long,
+		Use:     use,
+		Short:   short,
+		Long:    long,
+		Example: example,
 	}
 
 	for _, subcfg := range subcommands {

@@ -14,6 +14,7 @@ func NewClimateCmd() *cobra.Command {
 		"climate",
 		"Control vehicle climate (HVAC)",
 		`Control vehicle climate system (on/off/set).`,
+		"", // No example for parent command yet
 		[]SimpleCommandConfig{
 			{
 				Use:   "on",
