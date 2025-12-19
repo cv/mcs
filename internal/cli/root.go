@@ -1,6 +1,11 @@
 package cli
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/spf13/cobra"
 )
 
@@ -53,8 +58,12 @@ Example config.toml:
 	return rootCmd
 }
 
-// Execute runs the root command
+// Execute runs the root command with signal-aware context
 func Execute() error {
+	// Create context that cancels on SIGINT or SIGTERM
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
 	rootCmd := NewRootCmd()
 
 	// Add subcommands
@@ -67,5 +76,5 @@ func Execute() error {
 	rootCmd.AddCommand(NewClimateCmd())
 	rootCmd.AddCommand(NewRawCmd())
 
-	return rootCmd.Execute()
+	return rootCmd.ExecuteContext(ctx)
 }
