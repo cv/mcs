@@ -63,7 +63,7 @@ $ mcs status
 CX-90 PHEV 2.5L (2025)
 VIN: JM3KKDHA*********
 
-Status as of 2025-12-19 09:17:02
+Status as of 2025-12-19 09:17:02 (5 min ago)
 
 BATTERY: 43%
 FUEL: 92% (10 km EV + 610 km fuel = 620 km total)

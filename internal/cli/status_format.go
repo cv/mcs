@@ -303,10 +303,43 @@ func formatHvacStatus(hvacInfo api.HVACInfo, jsonOutput bool) (string, error) {
 	return status, nil
 }
 
-// formatTimestamp converts timestamp from API format to readable format
+// formatRelativeTime returns a human-friendly relative time string
+func formatRelativeTime(t time.Time) string {
+	now := time.Now()
+	diff := now.Sub(t)
+
+	// Handle future times (shouldn't happen, but be safe)
+	if diff < 0 {
+		return "just now"
+	}
+
+	seconds := int(diff.Seconds())
+	minutes := int(diff.Minutes())
+	hours := int(diff.Hours())
+	days := hours / 24
+
+	switch {
+	case seconds < 60:
+		return fmt.Sprintf("%d sec ago", seconds)
+	case minutes < 60:
+		return fmt.Sprintf("%d min ago", minutes)
+	case hours < 24:
+		if hours == 1 {
+			return "1 hour ago"
+		}
+		return fmt.Sprintf("%d hours ago", hours)
+	default:
+		if days == 1 {
+			return "1 day ago"
+		}
+		return fmt.Sprintf("%d days ago", days)
+	}
+}
+
+// formatTimestamp converts timestamp from API format to readable format with relative time
 func formatTimestamp(timestamp string) string {
 	// API returns timestamp in format: YYYYMMDDHHmmss
-	// Convert to: YYYY-MM-DD HH:mm:ss
+	// Convert to: YYYY-MM-DD HH:mm:ss (X ago)
 	if len(timestamp) != 14 {
 		return timestamp
 	}
@@ -316,7 +349,7 @@ func formatTimestamp(timestamp string) string {
 		return timestamp
 	}
 
-	return t.Format("2006-01-02 15:04:05")
+	return fmt.Sprintf("%s (%s)", t.Format("2006-01-02 15:04:05"), formatRelativeTime(t))
 }
 
 // formatThousands formats a float with comma separators for thousands
