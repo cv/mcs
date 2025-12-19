@@ -136,6 +136,45 @@ func (c *Client) apiRequestJSONWithRetry(ctx context.Context, method, uri string
 	return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount, c.sendAPIRequestJSON)
 }
 
+// handleAPIResponse processes the API response and returns the encrypted payload or an error.
+// It centralizes error handling logic for all API responses.
+func handleAPIResponse(response *APIBaseResponse) (string, error) {
+	// Check response state
+	if response.State == "S" {
+		// Success - return encrypted payload for caller to decrypt
+		if response.Payload == "" {
+			return "", fmt.Errorf("payload not found in response")
+		}
+
+		return response.Payload, nil
+	}
+
+	// Handle errors
+	switch int(response.ErrorCode) {
+	case ErrorCodeEncryption:
+		return "", NewEncryptionError()
+	case ErrorCodeTokenExpired:
+		return "", NewTokenExpiredError()
+	case ErrorCodeRequestIssue:
+		switch response.ExtraCode {
+		case ExtraCodeRequestInProgress:
+			return "", NewRequestInProgressError()
+		case ExtraCodeEngineStartLimit:
+			return "", NewEngineStartLimitError()
+		}
+	}
+
+	// Generic error
+	if response.Message != "" {
+		return "", NewAPIError(fmt.Sprintf("Request failed: %s", response.Message))
+	}
+	if response.Error != "" {
+		return "", NewAPIError(fmt.Sprintf("Request failed: %s", response.Error))
+	}
+
+	return "", NewAPIError("Request failed for an unknown reason")
+}
+
 // executeAPIRequest handles the common logic for making API requests.
 // It returns the encrypted payload string on success, or an error.
 func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (string, error) {
@@ -254,40 +293,7 @@ func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, quer
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	// Check response state
-	if response.State == "S" {
-		// Success - return encrypted payload for caller to decrypt
-		if response.Payload == "" {
-			return "", fmt.Errorf("payload not found in response")
-		}
-
-		return response.Payload, nil
-	}
-
-	// Handle errors
-	switch int(response.ErrorCode) {
-	case ErrorCodeEncryption:
-		return "", NewEncryptionError()
-	case ErrorCodeTokenExpired:
-		return "", NewTokenExpiredError()
-	case ErrorCodeRequestIssue:
-		switch response.ExtraCode {
-		case ExtraCodeRequestInProgress:
-			return "", NewRequestInProgressError()
-		case ExtraCodeEngineStartLimit:
-			return "", NewEngineStartLimitError()
-		}
-	}
-
-	// Generic error
-	if response.Message != "" {
-		return "", NewAPIError(fmt.Sprintf("Request failed: %s", response.Message))
-	}
-	if response.Error != "" {
-		return "", NewAPIError(fmt.Sprintf("Request failed: %s", response.Error))
-	}
-
-	return "", NewAPIError("Request failed for an unknown reason")
+	return handleAPIResponse(&response)
 }
 
 func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
