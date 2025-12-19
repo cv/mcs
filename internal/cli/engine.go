@@ -2,7 +2,7 @@ package cli
 
 import (
 	"context"
-	"fmt"
+	"io"
 	"time"
 
 	"github.com/cv/mcs/internal/api"
@@ -31,39 +31,20 @@ func NewStartCmd() *cobra.Command {
   mcs start --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-				// Send start command
-				if err := client.EngineStart(ctx, internalVIN); err != nil {
-					return fmt.Errorf("failed to start engine: %w", err)
+				config := ConfirmableCommandConfig{
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+						return client.EngineStart(ctx, internalVIN)
+					},
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForEngineRunning(ctx, out, client, internalVIN, timeout, pollInterval)
+					},
+					SuccessMsg:    "Engine started successfully",
+					WaitingMsg:    "Start command sent, waiting for confirmation...",
+					ActionName:    "start engine",
+					ConfirmName:   "engine status",
+					TimeoutSuffix: "confirmation timeout",
 				}
-
-				// If confirmation disabled, return immediately
-				if !confirm {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Engine started successfully")
-					return nil
-				}
-
-				// Wait for confirmation
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Start command sent, waiting for confirmation...")
-				result := waitForEngineRunning(
-					ctx,
-					cmd.OutOrStdout(),
-					client,
-					internalVIN,
-					time.Duration(confirmWait)*time.Second,
-					5*time.Second, // poll every 5 seconds
-				)
-
-				if result.err != nil {
-					return fmt.Errorf("failed to confirm engine status: %w", result.err)
-				}
-
-				if result.success {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Engine started successfully")
-				} else {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Start command sent (confirmation timeout)")
-				}
-
-				return nil
+				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
 			})
 		},
 		SilenceUsage: true,
@@ -97,39 +78,20 @@ func NewStopCmd() *cobra.Command {
   mcs stop --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-				// Send stop command
-				if err := client.EngineStop(ctx, internalVIN); err != nil {
-					return fmt.Errorf("failed to stop engine: %w", err)
+				config := ConfirmableCommandConfig{
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+						return client.EngineStop(ctx, internalVIN)
+					},
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForEngineStopped(ctx, out, client, internalVIN, timeout, pollInterval)
+					},
+					SuccessMsg:    "Engine stopped successfully",
+					WaitingMsg:    "Stop command sent, waiting for confirmation...",
+					ActionName:    "stop engine",
+					ConfirmName:   "engine status",
+					TimeoutSuffix: "confirmation timeout",
 				}
-
-				// If confirmation disabled, return immediately
-				if !confirm {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Engine stopped successfully")
-					return nil
-				}
-
-				// Wait for confirmation
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Stop command sent, waiting for confirmation...")
-				result := waitForEngineStopped(
-					ctx,
-					cmd.OutOrStdout(),
-					client,
-					internalVIN,
-					time.Duration(confirmWait)*time.Second,
-					5*time.Second, // poll every 5 seconds
-				)
-
-				if result.err != nil {
-					return fmt.Errorf("failed to confirm engine status: %w", result.err)
-				}
-
-				if result.success {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Engine stopped successfully")
-				} else {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Stop command sent (confirmation timeout)")
-				}
-
-				return nil
+				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
 			})
 		},
 		SilenceUsage: true,

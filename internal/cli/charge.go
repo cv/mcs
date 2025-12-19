@@ -2,7 +2,7 @@ package cli
 
 import (
 	"context"
-	"fmt"
+	"io"
 	"time"
 
 	"github.com/cv/mcs/internal/api"
@@ -50,39 +50,20 @@ func NewChargeStartCmd() *cobra.Command {
   mcs charge start --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-				// Send start command
-				if err := client.ChargeStart(ctx, internalVIN); err != nil {
-					return fmt.Errorf("failed to start charging: %w", err)
+				config := ConfirmableCommandConfig{
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+						return client.ChargeStart(ctx, internalVIN)
+					},
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForCharging(ctx, out, client, internalVIN, timeout, pollInterval)
+					},
+					SuccessMsg:    "Charging started successfully",
+					WaitingMsg:    "Charge start command sent, waiting for confirmation...",
+					ActionName:    "start charging",
+					ConfirmName:   "charging status",
+					TimeoutSuffix: "confirmation timeout",
 				}
-
-				// If confirmation disabled, return immediately
-				if !confirm {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charging started successfully")
-					return nil
-				}
-
-				// Wait for confirmation
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charge start command sent, waiting for confirmation...")
-				result := waitForCharging(
-					ctx,
-					cmd.OutOrStdout(),
-					client,
-					internalVIN,
-					time.Duration(confirmWait)*time.Second,
-					5*time.Second, // poll every 5 seconds
-				)
-
-				if result.err != nil {
-					return fmt.Errorf("failed to confirm charging status: %w", result.err)
-				}
-
-				if result.success {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charging started successfully")
-				} else {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charge start command sent (confirmation timeout)")
-				}
-
-				return nil
+				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
 			})
 		},
 		SilenceUsage: true,
@@ -116,39 +97,20 @@ func NewChargeStopCmd() *cobra.Command {
   mcs charge stop --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-				// Send stop command
-				if err := client.ChargeStop(ctx, internalVIN); err != nil {
-					return fmt.Errorf("failed to stop charging: %w", err)
+				config := ConfirmableCommandConfig{
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+						return client.ChargeStop(ctx, internalVIN)
+					},
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForNotCharging(ctx, out, client, internalVIN, timeout, pollInterval)
+					},
+					SuccessMsg:    "Charging stopped successfully",
+					WaitingMsg:    "Charge stop command sent, waiting for confirmation...",
+					ActionName:    "stop charging",
+					ConfirmName:   "charging status",
+					TimeoutSuffix: "confirmation timeout",
 				}
-
-				// If confirmation disabled, return immediately
-				if !confirm {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charging stopped successfully")
-					return nil
-				}
-
-				// Wait for confirmation
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charge stop command sent, waiting for confirmation...")
-				result := waitForNotCharging(
-					ctx,
-					cmd.OutOrStdout(),
-					client,
-					internalVIN,
-					time.Duration(confirmWait)*time.Second,
-					5*time.Second, // poll every 5 seconds
-				)
-
-				if result.err != nil {
-					return fmt.Errorf("failed to confirm charging status: %w", result.err)
-				}
-
-				if result.success {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charging stopped successfully")
-				} else {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Charge stop command sent (confirmation timeout)")
-				}
-
-				return nil
+				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
 			})
 		},
 		SilenceUsage: true,

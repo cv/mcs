@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"testing"
 	"time"
 
@@ -945,5 +946,151 @@ func createMockEVVehicleStatusResponseWithHvac(hvacOn bool, targetTemp float64, 
 				},
 			},
 		},
+	}
+}
+
+// TestExecuteConfirmableCommand tests the executeConfirmableCommand helper
+func TestExecuteConfirmableCommand(t *testing.T) {
+	tests := []struct {
+		name           string
+		config         ConfirmableCommandConfig
+		confirm        bool
+		confirmWait    int
+		actionError    error
+		waitResult     confirmationResult
+		expectError    bool
+		expectedOutput string
+	}{
+		{
+			name: "success without confirmation",
+			config: ConfirmableCommandConfig{
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+					return nil
+				},
+				SuccessMsg:    "Command executed successfully",
+				WaitingMsg:    "Command sent, waiting for confirmation...",
+				ActionName:    "execute command",
+				ConfirmName:   "command status",
+				TimeoutSuffix: "confirmation timeout",
+			},
+			confirm:        false,
+			confirmWait:    90,
+			actionError:    nil,
+			expectError:    false,
+			expectedOutput: "Command executed successfully\n",
+		},
+		{
+			name: "success with confirmation",
+			config: ConfirmableCommandConfig{
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+					return nil
+				},
+				WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+					return confirmationResult{success: true, err: nil}
+				},
+				SuccessMsg:    "Command executed successfully",
+				WaitingMsg:    "Command sent, waiting for confirmation...",
+				ActionName:    "execute command",
+				ConfirmName:   "command status",
+				TimeoutSuffix: "confirmation timeout",
+			},
+			confirm:        true,
+			confirmWait:    90,
+			actionError:    nil,
+			waitResult:     confirmationResult{success: true, err: nil},
+			expectError:    false,
+			expectedOutput: "Command sent, waiting for confirmation...\nCommand executed successfully\n",
+		},
+		{
+			name: "timeout during confirmation",
+			config: ConfirmableCommandConfig{
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+					return nil
+				},
+				WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+					return confirmationResult{success: false, err: nil}
+				},
+				SuccessMsg:    "Command executed successfully",
+				WaitingMsg:    "Command sent, waiting for confirmation...",
+				ActionName:    "execute command",
+				ConfirmName:   "command status",
+				TimeoutSuffix: "confirmation timeout",
+			},
+			confirm:        true,
+			confirmWait:    90,
+			actionError:    nil,
+			waitResult:     confirmationResult{success: false, err: nil},
+			expectError:    false,
+			expectedOutput: "Command sent, waiting for confirmation...\nCommand sent (confirmation timeout)\n",
+		},
+		{
+			name: "action fails",
+			config: ConfirmableCommandConfig{
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+					return errors.New("action failed")
+				},
+				SuccessMsg:    "Command executed successfully",
+				WaitingMsg:    "Command sent, waiting for confirmation...",
+				ActionName:    "execute command",
+				ConfirmName:   "command status",
+				TimeoutSuffix: "confirmation timeout",
+			},
+			confirm:        true,
+			confirmWait:    90,
+			actionError:    errors.New("action failed"),
+			expectError:    true,
+			expectedOutput: "",
+		},
+		{
+			name: "confirmation fails with error",
+			config: ConfirmableCommandConfig{
+				ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+					return nil
+				},
+				WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+					return confirmationResult{success: false, err: errors.New("confirmation error")}
+				},
+				SuccessMsg:    "Command executed successfully",
+				WaitingMsg:    "Command sent, waiting for confirmation...",
+				ActionName:    "execute command",
+				ConfirmName:   "command status",
+				TimeoutSuffix: "confirmation timeout",
+			},
+			confirm:        true,
+			confirmWait:    90,
+			waitResult:     confirmationResult{success: false, err: errors.New("confirmation error")},
+			expectError:    true,
+			expectedOutput: "Command sent, waiting for confirmation...\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			err := executeConfirmableCommand(
+				ctx,
+				&buf,
+				nil, // client not used in these tests
+				"test-vin",
+				tt.config,
+				tt.confirm,
+				tt.confirmWait,
+			)
+
+			if tt.expectError && err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && err != nil {
+				t.Errorf("Expected no error but got: %v", err)
+			}
+
+			output := buf.String()
+			if output != tt.expectedOutput {
+				t.Errorf("Expected output %q but got %q", tt.expectedOutput, output)
+			}
+		})
 	}
 }

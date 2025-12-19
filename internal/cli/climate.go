@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/cv/mcs/internal/api"
@@ -54,39 +55,20 @@ func newClimateOnCmd() *cobra.Command {
   mcs climate on --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-				// Send HVAC on command
-				if err := client.HVACOn(ctx, internalVIN); err != nil {
-					return fmt.Errorf("failed to turn HVAC on: %w", err)
+				config := ConfirmableCommandConfig{
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+						return client.HVACOn(ctx, internalVIN)
+					},
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForHvacOn(ctx, out, client, internalVIN, timeout, pollInterval)
+					},
+					SuccessMsg:    "Climate turned on successfully",
+					WaitingMsg:    "Climate on command sent, waiting for confirmation...",
+					ActionName:    "turn HVAC on",
+					ConfirmName:   "HVAC status",
+					TimeoutSuffix: "confirmation timeout",
 				}
-
-				// If confirmation disabled, return immediately
-				if !confirm {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate turned on successfully")
-					return nil
-				}
-
-				// Wait for confirmation
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate on command sent, waiting for confirmation...")
-				result := waitForHvacOn(
-					ctx,
-					cmd.OutOrStdout(),
-					client,
-					internalVIN,
-					time.Duration(confirmWait)*time.Second,
-					5*time.Second, // poll every 5 seconds
-				)
-
-				if result.err != nil {
-					return fmt.Errorf("failed to confirm HVAC status: %w", result.err)
-				}
-
-				if result.success {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate turned on successfully")
-				} else {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate on command sent (confirmation timeout)")
-				}
-
-				return nil
+				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
 			})
 		},
 		SilenceUsage: true,
@@ -120,39 +102,20 @@ func newClimateOffCmd() *cobra.Command {
   mcs climate off --confirm-wait 60`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-				// Send HVAC off command
-				if err := client.HVACOff(ctx, internalVIN); err != nil {
-					return fmt.Errorf("failed to turn HVAC off: %w", err)
+				config := ConfirmableCommandConfig{
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+						return client.HVACOff(ctx, internalVIN)
+					},
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForHvacOff(ctx, out, client, internalVIN, timeout, pollInterval)
+					},
+					SuccessMsg:    "Climate turned off successfully",
+					WaitingMsg:    "Climate off command sent, waiting for confirmation...",
+					ActionName:    "turn HVAC off",
+					ConfirmName:   "HVAC status",
+					TimeoutSuffix: "confirmation timeout",
 				}
-
-				// If confirmation disabled, return immediately
-				if !confirm {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate turned off successfully")
-					return nil
-				}
-
-				// Wait for confirmation
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate off command sent, waiting for confirmation...")
-				result := waitForHvacOff(
-					ctx,
-					cmd.OutOrStdout(),
-					client,
-					internalVIN,
-					time.Duration(confirmWait)*time.Second,
-					5*time.Second, // poll every 5 seconds
-				)
-
-				if result.err != nil {
-					return fmt.Errorf("failed to confirm HVAC status: %w", result.err)
-				}
-
-				if result.success {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate turned off successfully")
-				} else {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate off command sent (confirmation timeout)")
-				}
-
-				return nil
+				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
 			})
 		},
 		SilenceUsage: true,
@@ -204,11 +167,6 @@ func newClimateSetCmd() *cobra.Command {
 			}
 
 			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN string) error {
-				// Send HVAC settings command
-				if err := client.SetHVACSetting(ctx, internalVIN, temperature, unit, frontDefroster, rearDefroster); err != nil {
-					return fmt.Errorf("failed to set HVAC settings: %w", err)
-				}
-
 				// Build success message
 				msg := fmt.Sprintf("Climate set to %.1f%s", temperature, unit.String())
 				if frontDefroster {
@@ -222,43 +180,26 @@ func newClimateSetCmd() *cobra.Command {
 					}
 				}
 
-				// If confirmation disabled, return immediately
-				if !confirm {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), msg)
-					return nil
-				}
-
 				// Convert temperature to Celsius for comparison (API returns Celsius)
 				targetTempC := temperature
 				if unit == api.Fahrenheit {
 					targetTempC = (temperature - 32) * 5 / 9
 				}
 
-				// Wait for confirmation
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate set command sent, waiting for confirmation...")
-				result := waitForHvacSettings(
-					ctx,
-					cmd.OutOrStdout(),
-					client,
-					internalVIN,
-					targetTempC,
-					frontDefroster,
-					rearDefroster,
-					time.Duration(confirmWait)*time.Second,
-					5*time.Second, // poll every 5 seconds
-				)
-
-				if result.err != nil {
-					return fmt.Errorf("failed to confirm HVAC settings: %w", result.err)
+				config := ConfirmableCommandConfig{
+					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN string) error {
+						return client.SetHVACSetting(ctx, internalVIN, temperature, unit, frontDefroster, rearDefroster)
+					},
+					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult {
+						return waitForHvacSettings(ctx, out, client, internalVIN, targetTempC, frontDefroster, rearDefroster, timeout, pollInterval)
+					},
+					SuccessMsg:    msg,
+					WaitingMsg:    "Climate set command sent, waiting for confirmation...",
+					ActionName:    "set HVAC settings",
+					ConfirmName:   "HVAC settings",
+					TimeoutSuffix: "confirmation timeout",
 				}
-
-				if result.success {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), msg)
-				} else {
-					_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Climate set command sent (confirmation timeout)")
-				}
-
-				return nil
+				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
 			})
 		},
 		SilenceUsage: true,

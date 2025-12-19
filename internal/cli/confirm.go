@@ -319,3 +319,71 @@ func waitForHvacSettings(
 
 	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, "HVAC settings")
 }
+
+// ConfirmableCommandConfig holds the configuration for a confirmable command
+type ConfirmableCommandConfig struct {
+	// ActionFunc performs the API action (e.g., lock doors, start engine)
+	ActionFunc func(ctx context.Context, client *api.Client, internalVIN string) error
+
+	// WaitFunc waits for confirmation that the action completed
+	// If nil, confirmation is skipped
+	WaitFunc func(ctx context.Context, out io.Writer, client *api.Client, internalVIN string, timeout, pollInterval time.Duration) confirmationResult
+
+	// Messages
+	SuccessMsg    string // Message to show on success (e.g., "Doors locked successfully")
+	WaitingMsg    string // Message to show while waiting (e.g., "Lock command sent, waiting for confirmation...")
+	ActionName    string // Name for error messages (e.g., "lock doors")
+	ConfirmName   string // Name for confirmation error (e.g., "lock status")
+	TimeoutSuffix string // Suffix for timeout message (e.g., "confirmation timeout")
+}
+
+// executeConfirmableCommand executes a confirmable command with the given configuration
+func executeConfirmableCommand(
+	ctx context.Context,
+	out io.Writer,
+	client *api.Client,
+	internalVIN string,
+	config ConfirmableCommandConfig,
+	confirm bool,
+	confirmWait int,
+) error {
+	// Execute the action
+	if err := config.ActionFunc(ctx, client, internalVIN); err != nil {
+		return fmt.Errorf("failed to %s: %w", config.ActionName, err)
+	}
+
+	// If confirmation disabled, return immediately
+	if !confirm || config.WaitFunc == nil {
+		_, _ = fmt.Fprintln(out, config.SuccessMsg)
+		return nil
+	}
+
+	// Wait for confirmation
+	_, _ = fmt.Fprintln(out, config.WaitingMsg)
+	result := config.WaitFunc(
+		ctx,
+		out,
+		client,
+		internalVIN,
+		time.Duration(confirmWait)*time.Second,
+		5*time.Second, // poll every 5 seconds
+	)
+
+	if result.err != nil {
+		return fmt.Errorf("failed to confirm %s: %w", config.ConfirmName, result.err)
+	}
+
+	if result.success {
+		_, _ = fmt.Fprintln(out, config.SuccessMsg)
+	} else {
+		// Extract the command part from waiting message (e.g., "Lock command sent" from "Lock command sent, waiting for confirmation...")
+		// and append the timeout suffix
+		commandMsg := config.WaitingMsg
+		if idx := len(commandMsg) - len(", waiting for confirmation..."); idx > 0 {
+			commandMsg = commandMsg[:idx]
+		}
+		_, _ = fmt.Fprintf(out, "%s (%s)\n", commandMsg, config.TimeoutSuffix)
+	}
+
+	return nil
+}
