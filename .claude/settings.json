@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go test:*)",
+      "Bash(go build:*)",
+      "Bash(go run:*)",
+      "Bash(go vet:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(go clean:*)",
+      "Bash(go version:*)",
+      "Bash(gofmt:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(./mcs:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git tag:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(gh run:*)",
+      "Bash(gh release view:*)",
+      "Bash(bd:*)"
+    ]
+  }
+}
