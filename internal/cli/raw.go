@@ -38,6 +38,16 @@ func NewRawCmd() *cobra.Command {
 		SilenceUsage: true,
 	})
 
+	rawCmd.AddCommand(&cobra.Command{
+		Use:   "vehicle",
+		Short: "Get raw vehicle info",
+		Long:  `Get the raw vehicle base info JSON from the API.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runRawVehicle(cmd)
+		},
+		SilenceUsage: true,
+	})
+
 	return rawCmd
 }
 
@@ -75,4 +85,26 @@ func runRawEV(cmd *cobra.Command) error {
 		fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
 		return nil
 	})
+}
+
+// runRawVehicle executes the raw vehicle command
+func runRawVehicle(cmd *cobra.Command) error {
+	client, err := createAPIClient()
+	if err != nil {
+		return err
+	}
+	defer saveClientCache(client)
+
+	vecBaseInfos, err := client.GetVecBaseInfos(cmd.Context())
+	if err != nil {
+		return fmt.Errorf("failed to get vehicle info: %w", err)
+	}
+
+	jsonBytes, err := json.MarshalIndent(vecBaseInfos, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
+
+	fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+	return nil
 }
