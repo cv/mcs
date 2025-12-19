@@ -235,29 +235,65 @@ func timestampToMillis(t time.Time) int64 {
 	return t.UnixMilli()
 }
 
+// feistelCipher implements a simplified Feistel network cipher for obfuscating sensor data metrics.
+//
+// A Feistel cipher is a symmetric structure used in block cipher designs (e.g., DES).
+// It splits data into two halves and iteratively applies a round function, swapping halves each round.
+// This makes the transformation reversible while providing confusion and diffusion.
+//
+// Why it's used here:
+// The anti-bot system needs to obscure relationships between raw event counts and timing data
+// to prevent bots from easily reverse-engineering valid sensor patterns. This Feistel cipher
+// provides a deterministic but non-obvious transformation that the server can verify.
+//
+// Parameters:
+//   - upper32Bits: High-order 32 bits of input (typically event sum)
+//   - lower32Bits: Low-order 32 bits of input (typically event count)
+//   - key: Shared secret for round function (typically time since collection start)
+//
+// Returns: 64-bit obfuscated value combining transformed upper and lower halves
 func feistelCipher(upper32Bits, lower32Bits, key int) int64 {
-	toSigned32 := func(n int64) int32 {
+	// toInt32 safely converts int64 to int32, truncating to 32 bits
+	toInt32 := func(n int64) int32 {
 		return int32(n)
 	}
 
-	iterate := func(arg1, arg2, arg3 int32) int32 {
-		return arg1 ^ (arg2>>(32-arg3) | toSigned32(int64(arg2)<<arg3))
+	// roundFunction applies the F-function in the Feistel network.
+	// It XORs the left half with a rotated version of the right half.
+	// The rotation amount is determined by the round index, providing different
+	// transformations in each round for better diffusion.
+	//
+	// Formula: left ^ (right >>> (32-round) | right <<< round)
+	// This is a circular bit rotation of 'right' by 'round' positions, then XOR with 'left'.
+	roundFunction := func(left, right, round int32) int32 {
+		// Circular rotation: shift right by (32-round) and shift left by round, then OR them
+		return left ^ (right>>(32-round) | toInt32(int64(right)<<round))
 	}
 
-	upper := toSigned32(int64(upper32Bits))
-	lower := toSigned32(int64(lower32Bits))
+	// Convert inputs to 32-bit signed integers
+	rightHalf := toInt32(int64(upper32Bits))
+	leftHalf := toInt32(int64(lower32Bits))
 
-	data := (int64(lower) & 0xFFFFFFFF) | (int64(upper) << 32)
+	// Combine into 64-bit value (left in lower 32 bits, right in upper 32 bits)
+	combined := (int64(leftHalf) & 0xFFFFFFFF) | (int64(rightHalf) << 32)
 
-	lower2 := toSigned32(data & 0xFFFFFFFF)
-	upper2 := toSigned32((data >> 32) & 0xFFFFFFFF)
+	// Extract halves from combined value (this is redundant but matches original structure)
+	leftHalf = toInt32(combined & 0xFFFFFFFF)
+	rightHalf = toInt32((combined >> 32) & 0xFFFFFFFF)
 
-	for i := 0; i < 16; i++ {
-		v21 := upper2 ^ iterate(lower2, int32(key), int32(i))
-		v8 := lower2
-		lower2 = v21
-		upper2 = v8
+	// Feistel network: 16 rounds of transformation
+	// Each round:
+	//   1. Apply round function: newLeft = right ^ F(left, key, round)
+	//   2. Swap halves: (left, right) = (newLeft, left)
+	for round := 0; round < 16; round++ {
+		newLeft := rightHalf ^ roundFunction(leftHalf, int32(key), int32(round))
+		// Swap: old left becomes new right, new left becomes new left
+		oldLeft := leftHalf
+		leftHalf = newLeft
+		rightHalf = oldLeft
 	}
 
-	return (int64(upper2) << 32) | (int64(lower2) & 0xFFFFFFFF)
+	// Recombine the two halves into final 64-bit result
+	// Right half in upper 32 bits, left half in lower 32 bits
+	return (int64(rightHalf) << 32) | (int64(leftHalf) & 0xFFFFFFFF)
 }

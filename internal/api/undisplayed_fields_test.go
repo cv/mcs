@@ -11,8 +11,8 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	// Create a comprehensive mock response with ALL fields we want to verify
 	responseData := map[string]interface{}{
 		"resultCode": "200S00",
-		"alertInfos": []map[string]interface{}{
-			{
+		"alertInfos": []interface{}{
+			map[string]interface{}{
 				"OccurrenceDate": "20231201120000",
 				"Door": map[string]interface{}{
 					// Already displayed fields
@@ -51,8 +51,8 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 				},
 			},
 		},
-		"remoteInfos": []map[string]interface{}{
-			{
+		"remoteInfos": []interface{}{
+			map[string]interface{}{
 				"PositionInfo": map[string]interface{}{
 					"Latitude":            37.7749,
 					"LatitudeFlag":        0,
@@ -106,11 +106,18 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	// test against the raw response data structure
 	t.Run("VerifyOdometerField", func(t *testing.T) {
 		// DriveInformation.OdoDispValue
-		driveInfo, ok := responseData["remoteInfos"].([]map[string]interface{})[0]["DriveInformation"].(map[string]interface{})
+		remoteInfos, ok := getMapSlice(responseData, "remoteInfos")
+		if !ok {
+			t.Fatal("remoteInfos not found in response")
+		}
+		if len(remoteInfos) == 0 {
+			t.Fatal("remoteInfos is empty")
+		}
+		driveInfo, ok := getMap(remoteInfos[0], "DriveInformation")
 		if !ok {
 			t.Fatal("DriveInformation not found in response")
 		}
-		odometer, ok := driveInfo["OdoDispValue"].(float64)
+		odometer, ok := getFloat64(driveInfo, "OdoDispValue")
 		if !ok {
 			t.Fatal("OdoDispValue not found or wrong type")
 		}
@@ -121,11 +128,18 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyHoodStatusField", func(t *testing.T) {
 		// alertInfos[].Door.DrStatHood
-		door, ok := responseData["alertInfos"].([]map[string]interface{})[0]["Door"].(map[string]interface{})
+		alertInfos, ok := getMapSlice(responseData, "alertInfos")
+		if !ok {
+			t.Fatal("alertInfos not found in response")
+		}
+		if len(alertInfos) == 0 {
+			t.Fatal("alertInfos is empty")
+		}
+		door, ok := getMap(alertInfos[0], "Door")
 		if !ok {
 			t.Fatal("Door not found in response")
 		}
-		hoodStatus, ok := door["DrStatHood"].(float64)
+		hoodStatus, ok := getFloat64(door, "DrStatHood")
 		if !ok {
 			t.Fatal("DrStatHood not found or wrong type")
 		}
@@ -136,11 +150,18 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyFuelLidStatusField", func(t *testing.T) {
 		// alertInfos[].Door.FuelLidOpenStatus
-		door, ok := responseData["alertInfos"].([]map[string]interface{})[0]["Door"].(map[string]interface{})
+		alertInfos, ok := getMapSlice(responseData, "alertInfos")
+		if !ok {
+			t.Fatal("alertInfos not found in response")
+		}
+		if len(alertInfos) == 0 {
+			t.Fatal("alertInfos is empty")
+		}
+		door, ok := getMap(alertInfos[0], "Door")
 		if !ok {
 			t.Fatal("Door not found in response")
 		}
-		fuelLid, ok := door["FuelLidOpenStatus"].(float64)
+		fuelLid, ok := getFloat64(door, "FuelLidOpenStatus")
 		if !ok {
 			t.Fatal("FuelLidOpenStatus not found or wrong type")
 		}
@@ -151,14 +172,21 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyIndividualDoorLockFields", func(t *testing.T) {
 		// alertInfos[].Door.LockLinkSwDrv/Psngr/Rl/Rr
-		door, ok := responseData["alertInfos"].([]map[string]interface{})[0]["Door"].(map[string]interface{})
+		alertInfos, ok := getMapSlice(responseData, "alertInfos")
+		if !ok {
+			t.Fatal("alertInfos not found in response")
+		}
+		if len(alertInfos) == 0 {
+			t.Fatal("alertInfos is empty")
+		}
+		door, ok := getMap(alertInfos[0], "Door")
 		if !ok {
 			t.Fatal("Door not found in response")
 		}
 
 		locks := []string{"LockLinkSwDrv", "LockLinkSwPsngr", "LockLinkSwRl", "LockLinkSwRr"}
 		for _, lockField := range locks {
-			lockStatus, ok := door[lockField].(float64)
+			lockStatus, ok := getFloat64(door, lockField)
 			if !ok {
 				t.Fatalf("%s not found or wrong type", lockField)
 			}
@@ -170,14 +198,21 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyWindowPositionFields", func(t *testing.T) {
 		// alertInfos[].Pw.PwPosDrv/Psngr/Rl/Rr
-		pw, ok := responseData["alertInfos"].([]map[string]interface{})[0]["Pw"].(map[string]interface{})
+		alertInfos, ok := getMapSlice(responseData, "alertInfos")
+		if !ok {
+			t.Fatal("alertInfos not found in response")
+		}
+		if len(alertInfos) == 0 {
+			t.Fatal("alertInfos is empty")
+		}
+		pw, ok := getMap(alertInfos[0], "Pw")
 		if !ok {
 			t.Fatal("Pw not found in response")
 		}
 
 		windows := []string{"PwPosDrv", "PwPosPsngr", "PwPosRl", "PwPosRr"}
 		for _, windowField := range windows {
-			windowPos, ok := pw[windowField].(float64)
+			windowPos, ok := getFloat64(pw, windowField)
 			if !ok {
 				t.Fatalf("%s not found or wrong type", windowField)
 			}
@@ -189,11 +224,18 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyHazardLightField", func(t *testing.T) {
 		// alertInfos[].HazardLamp.HazardSw
-		hazard, ok := responseData["alertInfos"].([]map[string]interface{})[0]["HazardLamp"].(map[string]interface{})
+		alertInfos, ok := getMapSlice(responseData, "alertInfos")
+		if !ok {
+			t.Fatal("alertInfos not found in response")
+		}
+		if len(alertInfos) == 0 {
+			t.Fatal("alertInfos is empty")
+		}
+		hazard, ok := getMap(alertInfos[0], "HazardLamp")
 		if !ok {
 			t.Fatal("HazardLamp not found in response")
 		}
-		hazardSw, ok := hazard["HazardSw"].(float64)
+		hazardSw, ok := getFloat64(hazard, "HazardSw")
 		if !ok {
 			t.Fatal("HazardSw not found or wrong type")
 		}
@@ -209,8 +251,8 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	// Create a comprehensive mock response with ALL fields we want to verify
 	responseData := map[string]interface{}{
 		"resultCode": "200S00",
-		"resultData": []map[string]interface{}{
-			{
+		"resultData": []interface{}{
+			map[string]interface{}{
 				"OccurrenceDate": "20231201120000",
 				"PlusBInformation": map[string]interface{}{
 					"VehicleInfo": map[string]interface{}{
@@ -266,11 +308,23 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyACChargeTimeField", func(t *testing.T) {
 		// ChargeInfo.MaxChargeMinuteAC
-		chargeInfo, ok := responseData["resultData"].([]map[string]interface{})[0]["PlusBInformation"].(map[string]interface{})["VehicleInfo"].(map[string]interface{})["ChargeInfo"].(map[string]interface{})
+		resultData, ok := getMapSlice(responseData, "resultData")
+		if !ok || len(resultData) == 0 {
+			t.Fatal("resultData not found in response")
+		}
+		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
+		if !ok {
+			t.Fatal("PlusBInformation not found in response")
+		}
+		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
+		if !ok {
+			t.Fatal("VehicleInfo not found in response")
+		}
+		chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
 		if !ok {
 			t.Fatal("ChargeInfo not found in response")
 		}
-		acChargeTime, ok := chargeInfo["MaxChargeMinuteAC"].(float64)
+		acChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteAC")
 		if !ok {
 			t.Fatal("MaxChargeMinuteAC not found or wrong type")
 		}
@@ -281,11 +335,23 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyQuickChargeTimeField", func(t *testing.T) {
 		// ChargeInfo.MaxChargeMinuteQBC
-		chargeInfo, ok := responseData["resultData"].([]map[string]interface{})[0]["PlusBInformation"].(map[string]interface{})["VehicleInfo"].(map[string]interface{})["ChargeInfo"].(map[string]interface{})
+		resultData, ok := getMapSlice(responseData, "resultData")
+		if !ok || len(resultData) == 0 {
+			t.Fatal("resultData not found in response")
+		}
+		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
+		if !ok {
+			t.Fatal("PlusBInformation not found in response")
+		}
+		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
+		if !ok {
+			t.Fatal("VehicleInfo not found in response")
+		}
+		chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
 		if !ok {
 			t.Fatal("ChargeInfo not found in response")
 		}
-		qbcChargeTime, ok := chargeInfo["MaxChargeMinuteQBC"].(float64)
+		qbcChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteQBC")
 		if !ok {
 			t.Fatal("MaxChargeMinuteQBC not found or wrong type")
 		}
@@ -296,11 +362,23 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyBatteryHeaterAutoField", func(t *testing.T) {
 		// ChargeInfo.CstmzStatBatHeatAutoSW
-		chargeInfo, ok := responseData["resultData"].([]map[string]interface{})[0]["PlusBInformation"].(map[string]interface{})["VehicleInfo"].(map[string]interface{})["ChargeInfo"].(map[string]interface{})
+		resultData, ok := getMapSlice(responseData, "resultData")
+		if !ok || len(resultData) == 0 {
+			t.Fatal("resultData not found in response")
+		}
+		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
+		if !ok {
+			t.Fatal("PlusBInformation not found in response")
+		}
+		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
+		if !ok {
+			t.Fatal("VehicleInfo not found in response")
+		}
+		chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
 		if !ok {
 			t.Fatal("ChargeInfo not found in response")
 		}
-		batHeatAuto, ok := chargeInfo["CstmzStatBatHeatAutoSW"].(float64)
+		batHeatAuto, ok := getFloat64(chargeInfo, "CstmzStatBatHeatAutoSW")
 		if !ok {
 			t.Fatal("CstmzStatBatHeatAutoSW not found or wrong type")
 		}
@@ -311,11 +389,23 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyBatteryHeaterOnField", func(t *testing.T) {
 		// ChargeInfo.BatteryHeaterON
-		chargeInfo, ok := responseData["resultData"].([]map[string]interface{})[0]["PlusBInformation"].(map[string]interface{})["VehicleInfo"].(map[string]interface{})["ChargeInfo"].(map[string]interface{})
+		resultData, ok := getMapSlice(responseData, "resultData")
+		if !ok || len(resultData) == 0 {
+			t.Fatal("resultData not found in response")
+		}
+		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
+		if !ok {
+			t.Fatal("PlusBInformation not found in response")
+		}
+		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
+		if !ok {
+			t.Fatal("VehicleInfo not found in response")
+		}
+		chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
 		if !ok {
 			t.Fatal("ChargeInfo not found in response")
 		}
-		batHeaterOn, ok := chargeInfo["BatteryHeaterON"].(float64)
+		batHeaterOn, ok := getFloat64(chargeInfo, "BatteryHeaterON")
 		if !ok {
 			t.Fatal("BatteryHeaterON not found or wrong type")
 		}
@@ -326,11 +416,23 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyInteriorTempField", func(t *testing.T) {
 		// RemoteHvacInfo.InteriorTemp
-		hvacInfo, ok := responseData["resultData"].([]map[string]interface{})[0]["PlusBInformation"].(map[string]interface{})["VehicleInfo"].(map[string]interface{})["RemoteHvacInfo"].(map[string]interface{})
+		resultData, ok := getMapSlice(responseData, "resultData")
+		if !ok || len(resultData) == 0 {
+			t.Fatal("resultData not found in response")
+		}
+		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
+		if !ok {
+			t.Fatal("PlusBInformation not found in response")
+		}
+		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
+		if !ok {
+			t.Fatal("VehicleInfo not found in response")
+		}
+		hvacInfo, ok := getMap(vehicleInfo, "RemoteHvacInfo")
 		if !ok {
 			t.Fatal("RemoteHvacInfo not found in response")
 		}
-		interiorTemp, ok := hvacInfo["InteriorTemp"].(float64)
+		interiorTemp, ok := getFloat64(hvacInfo, "InteriorTemp")
 		if !ok {
 			t.Fatal("InteriorTemp not found or wrong type")
 		}
@@ -341,11 +443,23 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 
 	t.Run("VerifyTargetTempField", func(t *testing.T) {
 		// RemoteHvacInfo.TargetTemp
-		hvacInfo, ok := responseData["resultData"].([]map[string]interface{})[0]["PlusBInformation"].(map[string]interface{})["VehicleInfo"].(map[string]interface{})["RemoteHvacInfo"].(map[string]interface{})
+		resultData, ok := getMapSlice(responseData, "resultData")
+		if !ok || len(resultData) == 0 {
+			t.Fatal("resultData not found in response")
+		}
+		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
+		if !ok {
+			t.Fatal("PlusBInformation not found in response")
+		}
+		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
+		if !ok {
+			t.Fatal("VehicleInfo not found in response")
+		}
+		hvacInfo, ok := getMap(vehicleInfo, "RemoteHvacInfo")
 		if !ok {
 			t.Fatal("RemoteHvacInfo not found in response")
 		}
-		targetTemp, ok := hvacInfo["TargetTemp"].(float64)
+		targetTemp, ok := getFloat64(hvacInfo, "TargetTemp")
 		if !ok {
 			t.Fatal("TargetTemp not found or wrong type")
 		}
@@ -360,8 +474,8 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	// Test with hood open, fuel lid open, windows partially open, hazard on
 	responseData := map[string]interface{}{
 		"resultCode": "200S00",
-		"alertInfos": []map[string]interface{}{
-			{
+		"alertInfos": []interface{}{
+			map[string]interface{}{
 				"OccurrenceDate": "20231201120000",
 				"Door": map[string]interface{}{
 					"DrStatDrv":         0,
@@ -392,8 +506,8 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 				},
 			},
 		},
-		"remoteInfos": []map[string]interface{}{
-			{
+		"remoteInfos": []interface{}{
+			map[string]interface{}{
 				"ResidualFuel": map[string]interface{}{
 					"FuelSegementDActl": 75.5,
 					"RemDrvDistDActlKm": 350.2,
@@ -426,29 +540,49 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	}
 
 	// Verify varied values
-	door := responseData["alertInfos"].([]map[string]interface{})[0]["Door"].(map[string]interface{})
-	if door["DrStatHood"].(float64) != 1 {
+	alertInfos, ok := getMapSlice(responseData, "alertInfos")
+	if !ok || len(alertInfos) == 0 {
+		t.Fatal("alertInfos not found in response")
+	}
+	door, ok := getMap(alertInfos[0], "Door")
+	if !ok {
+		t.Fatal("Door not found")
+	}
+	if hoodStatus, ok := getFloat64(door, "DrStatHood"); !ok || hoodStatus != 1 {
 		t.Error("Expected hood open (1)")
 	}
-	if door["FuelLidOpenStatus"].(float64) != 1 {
+	if fuelLid, ok := getFloat64(door, "FuelLidOpenStatus"); !ok || fuelLid != 1 {
 		t.Error("Expected fuel lid open (1)")
 	}
 
-	pw := responseData["alertInfos"].([]map[string]interface{})[0]["Pw"].(map[string]interface{})
-	if pw["PwPosDrv"].(float64) != 50 {
+	pw, ok := getMap(alertInfos[0], "Pw")
+	if !ok {
+		t.Fatal("Pw not found")
+	}
+	if drvWindow, ok := getFloat64(pw, "PwPosDrv"); !ok || drvWindow != 50 {
 		t.Error("Expected driver window at 50")
 	}
-	if pw["PwPosPsngr"].(float64) != 100 {
+	if psWindow, ok := getFloat64(pw, "PwPosPsngr"); !ok || psWindow != 100 {
 		t.Error("Expected passenger window at 100")
 	}
 
-	hazard := responseData["alertInfos"].([]map[string]interface{})[0]["HazardLamp"].(map[string]interface{})
-	if hazard["HazardSw"].(float64) != 1 {
+	hazard, ok := getMap(alertInfos[0], "HazardLamp")
+	if !ok {
+		t.Fatal("HazardLamp not found")
+	}
+	if hazardSw, ok := getFloat64(hazard, "HazardSw"); !ok || hazardSw != 1 {
 		t.Error("Expected hazard lights on (1)")
 	}
 
-	driveInfo := responseData["remoteInfos"].([]map[string]interface{})[0]["DriveInformation"].(map[string]interface{})
-	if driveInfo["OdoDispValue"].(float64) != 99999.9 {
+	remoteInfos, ok := getMapSlice(responseData, "remoteInfos")
+	if !ok || len(remoteInfos) == 0 {
+		t.Fatal("remoteInfos not found in response")
+	}
+	driveInfo, ok := getMap(remoteInfos[0], "DriveInformation")
+	if !ok {
+		t.Fatal("DriveInformation not found")
+	}
+	if odometer, ok := getFloat64(driveInfo, "OdoDispValue"); !ok || odometer != 99999.9 {
 		t.Error("Expected odometer at 99999.9")
 	}
 }
@@ -458,8 +592,8 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 	// Test with battery heater on, different temps
 	responseData := map[string]interface{}{
 		"resultCode": "200S00",
-		"resultData": []map[string]interface{}{
-			{
+		"resultData": []interface{}{
+			map[string]interface{}{
 				"OccurrenceDate": "20231201120000",
 				"PlusBInformation": map[string]interface{}{
 					"VehicleInfo": map[string]interface{}{
@@ -502,19 +636,37 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 	}
 
 	// Verify varied values
-	chargeInfo := responseData["resultData"].([]map[string]interface{})[0]["PlusBInformation"].(map[string]interface{})["VehicleInfo"].(map[string]interface{})["ChargeInfo"].(map[string]interface{})
-	if chargeInfo["MaxChargeMinuteAC"].(float64) != 240 {
+	resultData, ok := getMapSlice(responseData, "resultData")
+	if !ok || len(resultData) == 0 {
+		t.Fatal("resultData not found in response")
+	}
+	plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
+	if !ok {
+		t.Fatal("PlusBInformation not found in response")
+	}
+	vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
+	if !ok {
+		t.Fatal("VehicleInfo not found in response")
+	}
+	chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
+	if !ok {
+		t.Fatal("ChargeInfo not found in response")
+	}
+	if acChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteAC"); !ok || acChargeTime != 240 {
 		t.Error("Expected AC charge time 240 minutes")
 	}
-	if chargeInfo["BatteryHeaterON"].(float64) != 1 {
+	if batHeaterOn, ok := getFloat64(chargeInfo, "BatteryHeaterON"); !ok || batHeaterOn != 1 {
 		t.Error("Expected battery heater on (1)")
 	}
 
-	hvacInfo := responseData["resultData"].([]map[string]interface{})[0]["PlusBInformation"].(map[string]interface{})["VehicleInfo"].(map[string]interface{})["RemoteHvacInfo"].(map[string]interface{})
-	if hvacInfo["InteriorTemp"].(float64) != 18 {
+	hvacInfo, ok := getMap(vehicleInfo, "RemoteHvacInfo")
+	if !ok {
+		t.Fatal("RemoteHvacInfo not found in response")
+	}
+	if interiorTemp, ok := getFloat64(hvacInfo, "InteriorTemp"); !ok || interiorTemp != 18 {
 		t.Error("Expected interior temp 18")
 	}
-	if hvacInfo["TargetTemp"].(float64) != 24 {
+	if targetTemp, ok := getFloat64(hvacInfo, "TargetTemp"); !ok || targetTemp != 24 {
 		t.Error("Expected target temp 24")
 	}
 }

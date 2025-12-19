@@ -545,10 +545,14 @@ func TestParseTemperatureUnit(t *testing.T) {
 		{"C", Celsius, false},
 		{"celsius", Celsius, false},
 		{"Celsius", Celsius, false},
+		{"CELSIUS", Celsius, false},
+		{"CeLsIuS", Celsius, false},
 		{"f", Fahrenheit, false},
 		{"F", Fahrenheit, false},
 		{"fahrenheit", Fahrenheit, false},
 		{"Fahrenheit", Fahrenheit, false},
+		{"FAHRENHEIT", Fahrenheit, false},
+		{"FaHrEnHeIt", Fahrenheit, false},
 		{"invalid", 0, true},
 		{"", 0, true},
 		{"kelvin", 0, true},
@@ -570,10 +574,10 @@ func TestParseTemperatureUnit(t *testing.T) {
 
 func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
 	tests := []struct {
-		name         string
-		resp         *VehicleStatusResponse
-		wantOdometer float64
-		wantErr      bool
+		name    string
+		resp    *VehicleStatusResponse
+		want    OdometerInfo
+		wantErr bool
 	}{
 		{
 			name: "valid odometer",
@@ -586,8 +590,8 @@ func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
 					},
 				},
 			},
-			wantOdometer: 12345.6,
-			wantErr:      false,
+			want:    OdometerInfo{OdometerKm: 12345.6},
+			wantErr: false,
 		},
 		{
 			name: "high odometer value",
@@ -600,8 +604,8 @@ func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
 					},
 				},
 			},
-			wantOdometer: 99999.9,
-			wantErr:      false,
+			want:    OdometerInfo{OdometerKm: 99999.9},
+			wantErr: false,
 		},
 		{
 			name: "zero odometer",
@@ -614,26 +618,26 @@ func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
 					},
 				},
 			},
-			wantOdometer: 0,
-			wantErr:      false,
+			want:    OdometerInfo{OdometerKm: 0},
+			wantErr: false,
 		},
 		{
-			name:         "no remote infos",
-			resp:         &VehicleStatusResponse{},
-			wantOdometer: 0,
-			wantErr:      true,
+			name:    "no remote infos",
+			resp:    &VehicleStatusResponse{},
+			want:    OdometerInfo{},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			odometer, err := tt.resp.GetOdometerInfo()
+			got, err := tt.resp.GetOdometerInfo()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetOdometerInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if odometer != tt.wantOdometer {
-				t.Errorf("GetOdometerInfo() = %v, want %v", odometer, tt.wantOdometer)
+			if got != tt.want {
+				t.Errorf("GetOdometerInfo() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
@@ -875,13 +879,10 @@ func TestVehicleStatusResponse_WindowParsing(t *testing.T) {
 
 func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
 	tests := []struct {
-		name       string
-		resp       *VehicleStatusResponse
-		wantDriver float64
-		wantPass   float64
-		wantRL     float64
-		wantRR     float64
-		wantErr    bool
+		name    string
+		resp    *VehicleStatusResponse
+		want    WindowStatus
+		wantErr bool
 	}{
 		{
 			name: "all windows closed",
@@ -897,11 +898,13 @@ func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
 					},
 				},
 			},
-			wantDriver: 0,
-			wantPass:   0,
-			wantRL:     0,
-			wantRR:     0,
-			wantErr:    false,
+			want: WindowStatus{
+				DriverPosition:    0,
+				PassengerPosition: 0,
+				RearLeftPosition:  0,
+				RearRightPosition: 0,
+			},
+			wantErr: false,
 		},
 		{
 			name: "some windows open",
@@ -917,11 +920,13 @@ func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
 					},
 				},
 			},
-			wantDriver: 0,
-			wantPass:   50,
-			wantRL:     0,
-			wantRR:     25,
-			wantErr:    false,
+			want: WindowStatus{
+				DriverPosition:    0,
+				PassengerPosition: 50,
+				RearLeftPosition:  0,
+				RearRightPosition: 25,
+			},
+			wantErr: false,
 		},
 		{
 			name: "all windows fully open",
@@ -937,41 +942,31 @@ func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
 					},
 				},
 			},
-			wantDriver: 100,
-			wantPass:   100,
-			wantRL:     100,
-			wantRR:     100,
-			wantErr:    false,
+			want: WindowStatus{
+				DriverPosition:    100,
+				PassengerPosition: 100,
+				RearLeftPosition:  100,
+				RearRightPosition: 100,
+			},
+			wantErr: false,
 		},
 		{
-			name:       "no alert infos",
-			resp:       &VehicleStatusResponse{},
-			wantDriver: 0,
-			wantPass:   0,
-			wantRL:     0,
-			wantRR:     0,
-			wantErr:    true,
+			name:    "no alert infos",
+			resp:    &VehicleStatusResponse{},
+			want:    WindowStatus{},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			driver, pass, rl, rr, err := tt.resp.GetWindowsInfo()
+			got, err := tt.resp.GetWindowsInfo()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetWindowsInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if driver != tt.wantDriver {
-				t.Errorf("GetWindowsInfo() driver = %v, want %v", driver, tt.wantDriver)
-			}
-			if pass != tt.wantPass {
-				t.Errorf("GetWindowsInfo() passenger = %v, want %v", pass, tt.wantPass)
-			}
-			if rl != tt.wantRL {
-				t.Errorf("GetWindowsInfo() rear left = %v, want %v", rl, tt.wantRL)
-			}
-			if rr != tt.wantRR {
-				t.Errorf("GetWindowsInfo() rear right = %v, want %v", rr, tt.wantRR)
+			if got != tt.want {
+				t.Errorf("GetWindowsInfo() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
@@ -1081,13 +1076,10 @@ func TestVehicleStatusResponse_GetHazardInfo(t *testing.T) {
 
 func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
 	tests := []struct {
-		name          string
-		resp          *EVVehicleStatusResponse
-		wantHvacOn    bool
-		wantFrontDef  bool
-		wantRearDef   bool
-		wantInteriorC float64
-		wantTargetC   float64
+		name    string
+		resp    *EVVehicleStatusResponse
+		want    HVACInfo
+		wantErr bool
 	}{
 		{
 			name: "HVAC on with target temp",
@@ -1108,11 +1100,14 @@ func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
 					},
 				},
 			},
-			wantHvacOn:    true,
-			wantFrontDef:  true,
-			wantRearDef:   false,
-			wantInteriorC: 18.0,
-			wantTargetC:   22.0,
+			want: HVACInfo{
+				HVACOn:         true,
+				FrontDefroster: true,
+				RearDefroster:  false,
+				InteriorTempC:  18.0,
+				TargetTempC:    22.0,
+			},
+			wantErr: false,
 		},
 		{
 			name: "HVAC off",
@@ -1133,11 +1128,14 @@ func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
 					},
 				},
 			},
-			wantHvacOn:    false,
-			wantFrontDef:  false,
-			wantRearDef:   false,
-			wantInteriorC: 20.0,
-			wantTargetC:   21.0,
+			want: HVACInfo{
+				HVACOn:         false,
+				FrontDefroster: false,
+				RearDefroster:  false,
+				InteriorTempC:  20.0,
+				TargetTempC:    21.0,
+			},
+			wantErr: false,
 		},
 		{
 			name: "no HVAC info",
@@ -1150,40 +1148,26 @@ func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
 					},
 				},
 			},
-			wantHvacOn:    false,
-			wantFrontDef:  false,
-			wantRearDef:   false,
-			wantInteriorC: 0,
-			wantTargetC:   0,
+			want:    HVACInfo{},
+			wantErr: true,
 		},
 		{
-			name:          "no result data",
-			resp:          &EVVehicleStatusResponse{},
-			wantHvacOn:    false,
-			wantFrontDef:  false,
-			wantRearDef:   false,
-			wantInteriorC: 0,
-			wantTargetC:   0,
+			name:    "no result data",
+			resp:    &EVVehicleStatusResponse{},
+			want:    HVACInfo{},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hvacOn, frontDef, rearDef, interiorC, targetC := tt.resp.GetHvacInfo()
-			if hvacOn != tt.wantHvacOn {
-				t.Errorf("GetHvacInfo() hvacOn = %v, want %v", hvacOn, tt.wantHvacOn)
+			got, err := tt.resp.GetHvacInfo()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetHvacInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			if frontDef != tt.wantFrontDef {
-				t.Errorf("GetHvacInfo() frontDef = %v, want %v", frontDef, tt.wantFrontDef)
-			}
-			if rearDef != tt.wantRearDef {
-				t.Errorf("GetHvacInfo() rearDef = %v, want %v", rearDef, tt.wantRearDef)
-			}
-			if interiorC != tt.wantInteriorC {
-				t.Errorf("GetHvacInfo() interiorC = %v, want %v", interiorC, tt.wantInteriorC)
-			}
-			if targetC != tt.wantTargetC {
-				t.Errorf("GetHvacInfo() targetC = %v, want %v", targetC, tt.wantTargetC)
+			if got != tt.want {
+				t.Errorf("GetHvacInfo() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
@@ -1191,17 +1175,10 @@ func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
 
 func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 	tests := []struct {
-		name              string
-		resp              *EVVehicleStatusResponse
-		wantBattery       float64
-		wantRange         float64
-		wantChargeTimeAC  float64
-		wantChargeTimeQBC float64
-		wantPluggedIn     bool
-		wantCharging      bool
-		wantHeaterOn      bool
-		wantHeaterAuto    bool
-		wantErr           bool
+		name    string
+		resp    *EVVehicleStatusResponse
+		want    BatteryInfo
+		wantErr bool
 	}{
 		{
 			name: "charging with heater on",
@@ -1225,15 +1202,17 @@ func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 					},
 				},
 			},
-			wantBattery:       66.0,
-			wantRange:         245.5,
-			wantChargeTimeAC:  180,
-			wantChargeTimeQBC: 45,
-			wantPluggedIn:     true,
-			wantCharging:      true,
-			wantHeaterOn:      true,
-			wantHeaterAuto:    true,
-			wantErr:           false,
+			want: BatteryInfo{
+				BatteryLevel:     66.0,
+				RangeKm:          245.5,
+				ChargeTimeACMin:  180,
+				ChargeTimeQBCMin: 45,
+				PluggedIn:        true,
+				Charging:         true,
+				HeaterOn:         true,
+				HeaterAuto:       true,
+			},
+			wantErr: false,
 		},
 		{
 			name: "not charging, heater off",
@@ -1255,15 +1234,17 @@ func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 					},
 				},
 			},
-			wantBattery:       80.0,
-			wantRange:         300.0,
-			wantChargeTimeAC:  0,
-			wantChargeTimeQBC: 0,
-			wantPluggedIn:     false,
-			wantCharging:      false,
-			wantHeaterOn:      false,
-			wantHeaterAuto:    false,
-			wantErr:           false,
+			want: BatteryInfo{
+				BatteryLevel:     80.0,
+				RangeKm:          300.0,
+				ChargeTimeACMin:  0,
+				ChargeTimeQBCMin: 0,
+				PluggedIn:        false,
+				Charging:         false,
+				HeaterOn:         false,
+				HeaterAuto:       false,
+			},
+			wantErr: false,
 		},
 		{
 			name: "heater on auto but not running",
@@ -1285,61 +1266,35 @@ func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 					},
 				},
 			},
-			wantBattery:       75.0,
-			wantRange:         280.0,
-			wantChargeTimeAC:  0,
-			wantChargeTimeQBC: 0,
-			wantPluggedIn:     false,
-			wantCharging:      false,
-			wantHeaterOn:      false,
-			wantHeaterAuto:    true,
-			wantErr:           false,
+			want: BatteryInfo{
+				BatteryLevel:     75.0,
+				RangeKm:          280.0,
+				ChargeTimeACMin:  0,
+				ChargeTimeQBCMin: 0,
+				PluggedIn:        false,
+				Charging:         false,
+				HeaterOn:         false,
+				HeaterAuto:       true,
+			},
+			wantErr: false,
 		},
 		{
-			name:              "no result data",
-			resp:              &EVVehicleStatusResponse{},
-			wantBattery:       0,
-			wantRange:         0,
-			wantChargeTimeAC:  0,
-			wantChargeTimeQBC: 0,
-			wantPluggedIn:     false,
-			wantCharging:      false,
-			wantHeaterOn:      false,
-			wantHeaterAuto:    false,
-			wantErr:           true,
+			name:    "no result data",
+			resp:    &EVVehicleStatusResponse{},
+			want:    BatteryInfo{},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			battery, rangeKm, chargeTimeAC, chargeTimeQBC, pluggedIn, charging, heaterOn, heaterAuto, err := tt.resp.GetBatteryInfo()
+			got, err := tt.resp.GetBatteryInfo()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetBatteryInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if battery != tt.wantBattery {
-				t.Errorf("GetBatteryInfo() battery = %v, want %v", battery, tt.wantBattery)
-			}
-			if rangeKm != tt.wantRange {
-				t.Errorf("GetBatteryInfo() range = %v, want %v", rangeKm, tt.wantRange)
-			}
-			if chargeTimeAC != tt.wantChargeTimeAC {
-				t.Errorf("GetBatteryInfo() chargeTimeAC = %v, want %v", chargeTimeAC, tt.wantChargeTimeAC)
-			}
-			if chargeTimeQBC != tt.wantChargeTimeQBC {
-				t.Errorf("GetBatteryInfo() chargeTimeQBC = %v, want %v", chargeTimeQBC, tt.wantChargeTimeQBC)
-			}
-			if pluggedIn != tt.wantPluggedIn {
-				t.Errorf("GetBatteryInfo() pluggedIn = %v, want %v", pluggedIn, tt.wantPluggedIn)
-			}
-			if charging != tt.wantCharging {
-				t.Errorf("GetBatteryInfo() charging = %v, want %v", charging, tt.wantCharging)
-			}
-			if heaterOn != tt.wantHeaterOn {
-				t.Errorf("GetBatteryInfo() heaterOn = %v, want %v", heaterOn, tt.wantHeaterOn)
-			}
-			if heaterAuto != tt.wantHeaterAuto {
-				t.Errorf("GetBatteryInfo() heaterAuto = %v, want %v", heaterAuto, tt.wantHeaterAuto)
+			if got != tt.want {
+				t.Errorf("GetBatteryInfo() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}

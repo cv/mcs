@@ -25,7 +25,7 @@ func (c *Client) executeControl(ctx context.Context, endpoint, actionDesc, inter
 		return err
 	}
 
-	resultCode, ok := response["resultCode"].(string)
+	resultCode, ok := getString(response, "resultCode")
 	if !ok || resultCode != "200S00" {
 		return fmt.Errorf("failed to %s: result code %s", actionDesc, resultCode)
 	}
@@ -104,7 +104,7 @@ func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, tempera
 		return err
 	}
 
-	resultCode, ok := response["resultCode"].(string)
+	resultCode, ok := getString(response, "resultCode")
 	if !ok || resultCode != "200S00" {
 		return fmt.Errorf("failed to set HVAC settings: result code %s", resultCode)
 	}

@@ -20,6 +20,11 @@ func (c *Client) APIRequest(ctx context.Context, method, uri string, queryParams
 	return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, 0)
 }
 
+// APIRequestJSON makes an API request and returns the raw decrypted JSON bytes
+func (c *Client) APIRequestJSON(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) ([]byte, error) {
+	return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, 0)
+}
+
 func (c *Client) apiRequestWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool, retryCount int) (map[string]interface{}, error) {
 	if retryCount > MaxRetries {
 		return nil, NewAPIError("Request exceeded max number of retries")
@@ -58,6 +63,52 @@ func (c *Client) apiRequestWithRetry(ctx context.Context, method, uri string, qu
 				return nil, fmt.Errorf("failed to login: %w", err)
 			}
 			return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
+		default:
+			return nil, err
+		}
+	}
+
+	return response, nil
+}
+
+func (c *Client) apiRequestJSONWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool, retryCount int) ([]byte, error) {
+	if retryCount > MaxRetries {
+		return nil, NewAPIError("Request exceeded max number of retries")
+	}
+
+	// Check for context cancellation
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	if needsKeys {
+		if err := c.ensureKeysPresent(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	if needsAuth {
+		if err := c.ensureTokenValid(ctx); err != nil {
+			return nil, err
+		}
+	}
+
+	response, err := c.sendAPIRequestJSON(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
+	if err != nil {
+		// Handle retryable errors
+		switch err.(type) {
+		case *EncryptionError:
+			// Retrieve new encryption keys and retry
+			if err := c.GetEncryptionKeys(ctx); err != nil {
+				return nil, fmt.Errorf("failed to retrieve encryption keys: %w", err)
+			}
+			return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
+		case *TokenExpiredError:
+			// Login again and retry
+			if err := c.Login(ctx); err != nil {
+				return nil, fmt.Errorf("failed to login: %w", err)
+			}
+			return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1)
 		default:
 			return nil, err
 		}
@@ -218,6 +269,158 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 	return nil, NewAPIError("Request failed for an unknown reason")
 }
 
+func (c *Client) sendAPIRequestJSON(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) ([]byte, error) {
+	timestamp := getTimestampStrMs()
+
+	// Prepare query parameters (encrypted if provided)
+	originalQueryStr := ""
+	encryptedQueryParams := url.Values{}
+	if len(queryParams) > 0 {
+		queryValues := url.Values{}
+		for k, v := range queryParams {
+			queryValues.Add(k, v)
+		}
+		originalQueryStr = queryValues.Encode()
+
+		encrypted, err := c.encryptPayloadUsingKey(originalQueryStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encrypt query params: %w", err)
+		}
+		encryptedQueryParams.Add("params", encrypted)
+	}
+
+	// Prepare body (encrypted if provided)
+	originalBodyStr := ""
+	encryptedBody := ""
+	if len(bodyParams) > 0 {
+		bodyJSON, err := json.Marshal(bodyParams)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal body params: %w", err)
+		}
+		originalBodyStr = string(bodyJSON)
+
+		encrypted, err := c.encryptPayloadUsingKey(originalBodyStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encrypt body: %w", err)
+		}
+		encryptedBody = encrypted
+	}
+
+	// Build URL
+	requestURL := c.baseURL + uri
+	if len(encryptedQueryParams) > 0 {
+		requestURL += "?" + encryptedQueryParams.Encode()
+	}
+
+	// Create request with context
+	var req *http.Request
+	var err error
+	if encryptedBody != "" {
+		req, err = http.NewRequestWithContext(ctx, method, requestURL, bytes.NewBufferString(encryptedBody))
+	} else {
+		req, err = http.NewRequestWithContext(ctx, method, requestURL, nil)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Generate sensor data
+	sensorData, err := c.sensorDataBuilder.GenerateSensorData()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate sensor data: %w", err)
+	}
+
+	// Set headers
+	headers := map[string]string{
+		"device-id":         c.baseAPIDeviceID,
+		"app-code":          c.appCode,
+		"app-os":            AppOS,
+		"user-agent":        UserAgentBaseAPI,
+		"app-version":       AppVersion,
+		"app-unique-id":     AppPackageID,
+		"req-id":            "req_" + timestamp,
+		"timestamp":         timestamp,
+		"Content-Type":      "application/json",
+		"X-acf-sensor-data": sensorData,
+	}
+
+	if needsAuth {
+		headers["access-token"] = c.accessToken
+	} else {
+		headers["access-token"] = ""
+	}
+
+	// Calculate signature
+	if uri == "service/checkVersion" {
+		headers["sign"] = c.getSignFromTimestamp(timestamp)
+	} else if method == "GET" {
+		headers["sign"] = c.getSignFromPayloadAndTimestamp(originalQueryStr, timestamp)
+	} else if method == "POST" {
+		headers["sign"] = c.getSignFromPayloadAndTimestamp(originalBodyStr, timestamp)
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	c.logRequest(method, requestURL, headers, originalBodyStr)
+
+	// Send request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	// Read response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	c.logResponse(resp.StatusCode, body)
+
+	var response APIBaseResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	// Check response state
+	if response.State == "S" {
+		// Success - decrypt payload and return raw bytes
+		if response.Payload == "" {
+			return nil, fmt.Errorf("payload not found in response")
+		}
+
+		return c.decryptPayloadBytes(response.Payload)
+	}
+
+	// Handle errors
+	switch int(response.ErrorCode) {
+	case ErrorCodeEncryption:
+		return nil, NewEncryptionError()
+	case ErrorCodeTokenExpired:
+		return nil, NewTokenExpiredError()
+	case ErrorCodeRequestIssue:
+		switch response.ExtraCode {
+		case ExtraCodeRequestInProgress:
+			return nil, NewRequestInProgressError()
+		case ExtraCodeEngineStartLimit:
+			return nil, NewEngineStartLimitError()
+		}
+	}
+
+	// Generic error
+	if response.Message != "" {
+		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", response.Message))
+	}
+	if response.Error != "" {
+		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", response.Error))
+	}
+
+	return nil, NewAPIError("Request failed for an unknown reason")
+}
+
 // ensureKeysPresent ensures encryption keys are available
 func (c *Client) ensureKeysPresent(ctx context.Context) error {
 	if c.encKey == "" || c.signKey == "" {
@@ -262,6 +465,20 @@ func (c *Client) decryptPayloadUsingKey(payload string) (map[string]interface{},
 	}
 
 	return result, nil
+}
+
+// decryptPayloadBytes decrypts a payload and returns raw JSON bytes
+func (c *Client) decryptPayloadBytes(payload string) ([]byte, error) {
+	if c.encKey == "" {
+		return nil, NewAPIError("Missing encryption key")
+	}
+
+	decrypted, err := DecryptAES128CBC(payload, c.encKey, IV)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt payload: %w", err)
+	}
+
+	return decrypted, nil
 }
 
 // getSignFromPayloadAndTimestamp generates a signature from payload and timestamp

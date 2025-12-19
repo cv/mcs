@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // InternalVIN is a custom type that handles the API returning internalVin as either string or number
@@ -244,85 +245,86 @@ func (r *VecBaseInfosResponse) GetVehicleInfo() (vin, nickname, modelName, model
 }
 
 // GetBatteryInfo extracts battery information from the EV status response
-func (r *EVVehicleStatusResponse) GetBatteryInfo() (batteryLevel, rangeKm, chargeTimeACMin, chargeTimeQBCMin float64, pluggedIn, charging, heaterOn, heaterAuto bool, err error) {
+func (r *EVVehicleStatusResponse) GetBatteryInfo() (BatteryInfo, error) {
 	if len(r.ResultData) == 0 {
-		err = fmt.Errorf("no EV status data available")
-		return
+		return BatteryInfo{}, fmt.Errorf("no EV status data available")
 	}
 	chargeInfo := r.ResultData[0].PlusBInformation.VehicleInfo.ChargeInfo
-	batteryLevel = chargeInfo.SmaphSOC
-	rangeKm = chargeInfo.SmaphRemDrvDistKm
-	chargeTimeACMin = chargeInfo.MaxChargeMinuteAC
-	chargeTimeQBCMin = chargeInfo.MaxChargeMinuteQBC
-	pluggedIn = int(chargeInfo.ChargerConnectorFitting) == 1
-	charging = int(chargeInfo.ChargeStatusSub) == 6
-	heaterOn = int(chargeInfo.BatteryHeaterON) == 1
-	heaterAuto = int(chargeInfo.CstmzStatBatHeatAutoSW) == 1
-	return
+	return BatteryInfo{
+		BatteryLevel:     chargeInfo.SmaphSOC,
+		RangeKm:          chargeInfo.SmaphRemDrvDistKm,
+		ChargeTimeACMin:  chargeInfo.MaxChargeMinuteAC,
+		ChargeTimeQBCMin: chargeInfo.MaxChargeMinuteQBC,
+		PluggedIn:        int(chargeInfo.ChargerConnectorFitting) == ChargerConnected,
+		Charging:         int(chargeInfo.ChargeStatusSub) == ChargeStatusCharging,
+		HeaterOn:         int(chargeInfo.BatteryHeaterON) == BatteryHeaterOn,
+		HeaterAuto:       int(chargeInfo.CstmzStatBatHeatAutoSW) == BatteryHeaterAutoEnabled,
+	}, nil
 }
 
 // GetHvacInfo extracts HVAC information from the EV status response
-func (r *EVVehicleStatusResponse) GetHvacInfo() (hvacOn, frontDefroster, rearDefroster bool, interiorTempC, targetTempC float64) {
+func (r *EVVehicleStatusResponse) GetHvacInfo() (HVACInfo, error) {
 	if len(r.ResultData) == 0 {
-		return false, false, false, 0, 0
+		return HVACInfo{}, fmt.Errorf("no EV status data available")
 	}
 	hvacInfo := r.ResultData[0].PlusBInformation.VehicleInfo.RemoteHvacInfo
 	if hvacInfo == nil {
-		return false, false, false, 0, 0
+		return HVACInfo{}, fmt.Errorf("no HVAC info available")
 	}
-	hvacOn = int(hvacInfo.HVAC) == 1
-	frontDefroster = int(hvacInfo.FrontDefroster) == 1
-	rearDefroster = int(hvacInfo.RearDefogger) == 1
-	interiorTempC = hvacInfo.InCarTeDC
-	targetTempC = hvacInfo.TargetTemp
-	return
+	return HVACInfo{
+		HVACOn:         int(hvacInfo.HVAC) == HVACStatusOn,
+		FrontDefroster: int(hvacInfo.FrontDefroster) == DefrosterOn,
+		RearDefroster:  int(hvacInfo.RearDefogger) == DefrosterOn,
+		InteriorTempC:  hvacInfo.InCarTeDC,
+		TargetTempC:    hvacInfo.TargetTemp,
+	}, nil
 }
 
 // GetOccurrenceDate returns the occurrence date from the first result
-func (r *EVVehicleStatusResponse) GetOccurrenceDate() string {
+func (r *EVVehicleStatusResponse) GetOccurrenceDate() (string, error) {
 	if len(r.ResultData) == 0 {
-		return ""
+		return "", fmt.Errorf("no EV status data available")
 	}
-	return r.ResultData[0].OccurrenceDate
+	return r.ResultData[0].OccurrenceDate, nil
 }
 
 // GetFuelInfo extracts fuel information from the vehicle status response
-func (r *VehicleStatusResponse) GetFuelInfo() (fuelLevel, rangeKm float64, err error) {
+func (r *VehicleStatusResponse) GetFuelInfo() (FuelInfo, error) {
 	if len(r.RemoteInfos) == 0 {
-		err = fmt.Errorf("no vehicle status data available")
-		return
+		return FuelInfo{}, fmt.Errorf("no vehicle status data available")
 	}
 	fuel := r.RemoteInfos[0].ResidualFuel
-	fuelLevel = fuel.FuelSegmentDActl
-	rangeKm = fuel.RemDrvDistDActlKm
-	return
+	return FuelInfo{
+		FuelLevel: fuel.FuelSegmentDActl,
+		RangeKm:   fuel.RemDrvDistDActlKm,
+	}, nil
 }
 
 // GetTiresInfo extracts tire pressure information from the vehicle status response
-func (r *VehicleStatusResponse) GetTiresInfo() (fl, fr, rl, rr float64, err error) {
+func (r *VehicleStatusResponse) GetTiresInfo() (TireInfo, error) {
 	if len(r.RemoteInfos) == 0 {
-		err = fmt.Errorf("no vehicle status data available")
-		return
+		return TireInfo{}, fmt.Errorf("no vehicle status data available")
 	}
 	tpms := r.RemoteInfos[0].TPMSInformation
-	fl = tpms.FLTPrsDispPsi
-	fr = tpms.FRTPrsDispPsi
-	rl = tpms.RLTPrsDispPsi
-	rr = tpms.RRTPrsDispPsi
-	return
+	return TireInfo{
+		FrontLeftPsi:  tpms.FLTPrsDispPsi,
+		FrontRightPsi: tpms.FRTPrsDispPsi,
+		RearLeftPsi:   tpms.RLTPrsDispPsi,
+		RearRightPsi:  tpms.RRTPrsDispPsi,
+	}, nil
 }
 
 // GetLocationInfo extracts location information from the vehicle status response
-func (r *VehicleStatusResponse) GetLocationInfo() (lat, lon float64, timestamp string, err error) {
+func (r *VehicleStatusResponse) GetLocationInfo() (LocationInfo, error) {
 	if len(r.AlertInfos) == 0 {
-		err = fmt.Errorf("no alert info available")
-		return
+		return LocationInfo{}, fmt.Errorf("no alert info available")
 	}
 	pos := r.AlertInfos[0].PositionInfo
-	lat = pos.Latitude
-	lon = pos.Longitude
-	timestamp = pos.AcquisitionDatetime
-	return
+	return LocationInfo{
+		Latitude:  pos.Latitude,
+		Longitude: pos.Longitude,
+		Timestamp: pos.AcquisitionDatetime,
+	}, nil
 }
 
 // DoorStatus represents the detailed status of all doors
@@ -341,6 +343,61 @@ type DoorStatus struct {
 	AllLocked       bool
 }
 
+// BatteryInfo represents battery and charging information
+type BatteryInfo struct {
+	BatteryLevel     float64
+	RangeKm          float64
+	ChargeTimeACMin  float64
+	ChargeTimeQBCMin float64
+	PluggedIn        bool
+	Charging         bool
+	HeaterOn         bool
+	HeaterAuto       bool
+}
+
+// FuelInfo represents fuel information
+type FuelInfo struct {
+	FuelLevel float64
+	RangeKm   float64
+}
+
+// TireInfo represents tire pressure information
+type TireInfo struct {
+	FrontLeftPsi  float64
+	FrontRightPsi float64
+	RearLeftPsi   float64
+	RearRightPsi  float64
+}
+
+// LocationInfo represents GPS location information
+type LocationInfo struct {
+	Latitude  float64
+	Longitude float64
+	Timestamp string
+}
+
+// OdometerInfo represents odometer information
+type OdometerInfo struct {
+	OdometerKm float64
+}
+
+// WindowInfo represents window position information
+type WindowStatus struct {
+	DriverPosition    float64
+	PassengerPosition float64
+	RearLeftPosition  float64
+	RearRightPosition float64
+}
+
+// HVACInfo represents HVAC system information
+type HVACInfo struct {
+	HVACOn         bool
+	FrontDefroster bool
+	RearDefroster  bool
+	InteriorTempC  float64
+	TargetTempC    float64
+}
+
 // GetDoorsInfo extracts door lock status from the vehicle status response
 func (r *VehicleStatusResponse) GetDoorsInfo() (status DoorStatus, err error) {
 	if len(r.AlertInfos) == 0 {
@@ -350,19 +407,19 @@ func (r *VehicleStatusResponse) GetDoorsInfo() (status DoorStatus, err error) {
 	door := r.AlertInfos[0].Door
 
 	// Open status (1=open, 0=closed)
-	status.DriverOpen = int(door.DrStatDrv) == 1
-	status.PassengerOpen = int(door.DrStatPsngr) == 1
-	status.RearLeftOpen = int(door.DrStatRl) == 1
-	status.RearRightOpen = int(door.DrStatRr) == 1
-	status.TrunkOpen = int(door.DrStatTrnkLg) == 1
-	status.HoodOpen = int(door.DrStatHood) == 1
-	status.FuelLidOpen = int(door.FuelLidOpenStatus) == 1
+	status.DriverOpen = int(door.DrStatDrv) == DoorOpen
+	status.PassengerOpen = int(door.DrStatPsngr) == DoorOpen
+	status.RearLeftOpen = int(door.DrStatRl) == DoorOpen
+	status.RearRightOpen = int(door.DrStatRr) == DoorOpen
+	status.TrunkOpen = int(door.DrStatTrnkLg) == DoorOpen
+	status.HoodOpen = int(door.DrStatHood) == DoorOpen
+	status.FuelLidOpen = int(door.FuelLidOpenStatus) == DoorOpen
 
 	// Lock status (0=locked, 1=unlocked)
-	status.DriverLocked = int(door.LockLinkSwDrv) == 0
-	status.PassengerLocked = int(door.LockLinkSwPsngr) == 0
-	status.RearLeftLocked = int(door.LockLinkSwRl) == 0
-	status.RearRightLocked = int(door.LockLinkSwRr) == 0
+	status.DriverLocked = int(door.LockLinkSwDrv) == DoorLocked
+	status.PassengerLocked = int(door.LockLinkSwPsngr) == DoorLocked
+	status.RearLeftLocked = int(door.LockLinkSwRl) == DoorLocked
+	status.RearRightLocked = int(door.LockLinkSwRr) == DoorLocked
 
 	// All locked if no doors are open and all are locked
 	status.AllLocked = !status.DriverOpen && !status.PassengerOpen &&
@@ -375,27 +432,27 @@ func (r *VehicleStatusResponse) GetDoorsInfo() (status DoorStatus, err error) {
 }
 
 // GetOdometerInfo extracts odometer reading from the vehicle status response
-func (r *VehicleStatusResponse) GetOdometerInfo() (odometerKm float64, err error) {
+func (r *VehicleStatusResponse) GetOdometerInfo() (OdometerInfo, error) {
 	if len(r.RemoteInfos) == 0 {
-		err = fmt.Errorf("no vehicle status data available")
-		return
+		return OdometerInfo{}, fmt.Errorf("no vehicle status data available")
 	}
-	odometerKm = r.RemoteInfos[0].DriveInformation.OdoDispValue
-	return
+	return OdometerInfo{
+		OdometerKm: r.RemoteInfos[0].DriveInformation.OdoDispValue,
+	}, nil
 }
 
 // GetWindowsInfo extracts window position information from the vehicle status response
-func (r *VehicleStatusResponse) GetWindowsInfo() (driver, passenger, rearLeft, rearRight float64, err error) {
+func (r *VehicleStatusResponse) GetWindowsInfo() (WindowStatus, error) {
 	if len(r.AlertInfos) == 0 {
-		err = fmt.Errorf("no alert info available")
-		return
+		return WindowStatus{}, fmt.Errorf("no alert info available")
 	}
 	pw := r.AlertInfos[0].Pw
-	driver = pw.PwPosDrv
-	passenger = pw.PwPosPsngr
-	rearLeft = pw.PwPosRl
-	rearRight = pw.PwPosRr
-	return
+	return WindowStatus{
+		DriverPosition:    pw.PwPosDrv,
+		PassengerPosition: pw.PwPosPsngr,
+		RearLeftPosition:  pw.PwPosRl,
+		RearRightPosition: pw.PwPosRr,
+	}, nil
 }
 
 // GetHazardInfo extracts hazard lights status from the vehicle status response
@@ -404,7 +461,7 @@ func (r *VehicleStatusResponse) GetHazardInfo() (hazardsOn bool, err error) {
 		err = fmt.Errorf("no alert info available")
 		return
 	}
-	hazardsOn = int(r.AlertInfos[0].HazardLamp.HazardSw) == 1
+	hazardsOn = int(r.AlertInfos[0].HazardLamp.HazardSw) == HazardLightsOn
 	return
 }
 
@@ -459,6 +516,86 @@ const (
 	Fahrenheit TemperatureUnit = 2
 )
 
+// Charger status constants
+const (
+	// ChargerConnected indicates the charger is connected/plugged in
+	ChargerConnected = 1
+	// ChargerDisconnected indicates the charger is not connected
+	ChargerDisconnected = 0
+)
+
+// Charging status constants
+const (
+	// ChargeStatusCharging indicates the vehicle is actively charging
+	ChargeStatusCharging = 6
+	// ChargeStatusNotCharging indicates the vehicle is not charging
+	ChargeStatusNotCharging = 0
+)
+
+// Battery heater status constants
+const (
+	// BatteryHeaterOn indicates the battery heater is actively running
+	BatteryHeaterOn = 1
+	// BatteryHeaterOff indicates the battery heater is off
+	BatteryHeaterOff = 0
+)
+
+// Battery heater auto mode constants
+const (
+	// BatteryHeaterAutoEnabled indicates automatic battery heater control is enabled
+	BatteryHeaterAutoEnabled = 1
+	// BatteryHeaterAutoDisabled indicates automatic battery heater control is disabled
+	BatteryHeaterAutoDisabled = 0
+)
+
+// HVAC system status constants
+const (
+	// HVACStatusOn indicates the HVAC system is running
+	HVACStatusOn = 1
+	// HVACStatusOff indicates the HVAC system is off
+	HVACStatusOff = 0
+)
+
+// Defroster status constants
+const (
+	// DefrosterOn indicates a defroster is on
+	DefrosterOn = 1
+	// DefrosterOff indicates a defroster is off
+	DefrosterOff = 0
+)
+
+// Door and compartment open/closed status constants
+const (
+	// DoorOpen indicates a door or compartment is open
+	DoorOpen = 1
+	// DoorClosed indicates a door or compartment is closed
+	DoorClosed = 0
+)
+
+// Door lock status constants
+const (
+	// DoorLocked indicates a door is locked
+	DoorLocked = 0
+	// DoorUnlocked indicates a door is unlocked
+	DoorUnlocked = 1
+)
+
+// Hazard lights status constants
+const (
+	// HazardLightsOn indicates hazard lights are on
+	HazardLightsOn = 1
+	// HazardLightsOff indicates hazard lights are off
+	HazardLightsOff = 0
+)
+
+// Window position constants
+const (
+	// WindowClosed indicates a window is fully closed
+	WindowClosed = 0
+	// WindowFullyOpen indicates a window is fully open (100%)
+	WindowFullyOpen = 100
+)
+
 // String returns the string representation of the temperature unit
 func (t TemperatureUnit) String() string {
 	switch t {
@@ -473,11 +610,12 @@ func (t TemperatureUnit) String() string {
 
 // ParseTemperatureUnit converts a string to a TemperatureUnit.
 // Accepts "c", "C", "celsius" for Celsius and "f", "F", "fahrenheit" for Fahrenheit.
+// Case-insensitive: handles any combination of uppercase/lowercase.
 func ParseTemperatureUnit(s string) (TemperatureUnit, error) {
-	switch s {
-	case "c", "C", "celsius", "Celsius":
+	switch strings.ToLower(s) {
+	case "c", "celsius":
 		return Celsius, nil
-	case "f", "F", "fahrenheit", "Fahrenheit":
+	case "f", "fahrenheit":
 		return Fahrenheit, nil
 	default:
 		return 0, fmt.Errorf("invalid temperature unit: %s (must be 'c' or 'f')", s)

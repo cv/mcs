@@ -136,7 +136,20 @@ func TestFormatBatteryStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatBatteryStatus(tt.batteryLevel, tt.range_, tt.chargeTimeACMin, tt.chargeTimeQBCMin, tt.pluggedIn, tt.charging, false, false, false)
+			batteryInfo := api.BatteryInfo{
+				BatteryLevel:     tt.batteryLevel,
+				RangeKm:          tt.range_,
+				ChargeTimeACMin:  tt.chargeTimeACMin,
+				ChargeTimeQBCMin: tt.chargeTimeQBCMin,
+				PluggedIn:        tt.pluggedIn,
+				Charging:         tt.charging,
+				HeaterOn:         false,
+				HeaterAuto:       false,
+			}
+			result, err := formatBatteryStatus(batteryInfo, false)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 			if result != tt.expectedOutput {
 				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
 			}
@@ -146,7 +159,20 @@ func TestFormatBatteryStatus(t *testing.T) {
 
 // TestFormatBatteryStatus_JSON tests battery status JSON formatting
 func TestFormatBatteryStatus_JSON(t *testing.T) {
-	result := formatBatteryStatus(66, 245.5, 180, 45, true, true, false, false, true)
+	batteryInfo := api.BatteryInfo{
+		BatteryLevel:     66,
+		RangeKm:          245.5,
+		ChargeTimeACMin:  180,
+		ChargeTimeQBCMin: 45,
+		PluggedIn:        true,
+		Charging:         true,
+		HeaterOn:         false,
+		HeaterAuto:       false,
+	}
+	result, err := formatBatteryStatus(batteryInfo, true)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &data); err != nil {
@@ -220,12 +246,34 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var result string
+			var batteryInfo api.BatteryInfo
 			if i == 4 {
 				// Last test case includes charging
-				result = formatBatteryStatus(66, 245.5, 180, 45, true, true, tt.heaterOn, tt.heaterAuto, false)
+				batteryInfo = api.BatteryInfo{
+					BatteryLevel:     66,
+					RangeKm:          245.5,
+					ChargeTimeACMin:  180,
+					ChargeTimeQBCMin: 45,
+					PluggedIn:        true,
+					Charging:         true,
+					HeaterOn:         tt.heaterOn,
+					HeaterAuto:       tt.heaterAuto,
+				}
 			} else {
-				result = formatBatteryStatus(66, 245.5, 0, 0, false, false, tt.heaterOn, tt.heaterAuto, false)
+				batteryInfo = api.BatteryInfo{
+					BatteryLevel:     66,
+					RangeKm:          245.5,
+					ChargeTimeACMin:  0,
+					ChargeTimeQBCMin: 0,
+					PluggedIn:        false,
+					Charging:         false,
+					HeaterOn:         tt.heaterOn,
+					HeaterAuto:       tt.heaterAuto,
+				}
+			}
+			result, err := formatBatteryStatus(batteryInfo, false)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
 			}
 			if result != tt.expected {
 				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
@@ -236,7 +284,14 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 
 // TestFormatFuelStatus tests fuel status formatting
 func TestFormatFuelStatus(t *testing.T) {
-	result := formatFuelStatus(92, 630.0, false)
+	fuelInfo := api.FuelInfo{
+		FuelLevel: 92,
+		RangeKm:   630.0,
+	}
+	result, err := formatFuelStatus(fuelInfo, false)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 	expected := "FUEL: 92% (630.0 km range)"
 
 	if !strings.Contains(result, expected) {
@@ -246,7 +301,14 @@ func TestFormatFuelStatus(t *testing.T) {
 
 // TestFormatFuelStatus_JSON tests fuel status JSON formatting
 func TestFormatFuelStatus_JSON(t *testing.T) {
-	result := formatFuelStatus(92, 630.0, true)
+	fuelInfo := api.FuelInfo{
+		FuelLevel: 92,
+		RangeKm:   630.0,
+	}
+	result, err := formatFuelStatus(fuelInfo, true)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &data); err != nil {
@@ -341,7 +403,10 @@ func TestFormatDoorsStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatDoorsStatus(tt.doorStatus, false)
+			result, err := formatDoorsStatus(tt.doorStatus, false)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 			if result != tt.expectedOutput {
 				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
 			}
@@ -351,7 +416,16 @@ func TestFormatDoorsStatus(t *testing.T) {
 
 // TestFormatTiresStatus tests tire status formatting
 func TestFormatTiresStatus(t *testing.T) {
-	result := formatTiresStatus(32.5, 32.0, 31.5, 31.8, false)
+	tireInfo := api.TireInfo{
+		FrontLeftPsi:  32.5,
+		FrontRightPsi: 32.0,
+		RearLeftPsi:   31.5,
+		RearRightPsi:  31.8,
+	}
+	result, err := formatTiresStatus(tireInfo, false)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 	expected := "TIRES: FL:32.5 FR:32.0 RL:31.5 RR:31.8 PSI"
 
 	if !strings.Contains(result, expected) {
@@ -361,7 +435,15 @@ func TestFormatTiresStatus(t *testing.T) {
 
 // TestFormatLocationStatus tests location status formatting
 func TestFormatLocationStatus(t *testing.T) {
-	result := formatLocationStatus(37.7749, 122.4194, "20231201120000", false)
+	locationInfo := api.LocationInfo{
+		Latitude:  37.7749,
+		Longitude: 122.4194,
+		Timestamp: "20231201120000",
+	}
+	result, err := formatLocationStatus(locationInfo, false)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 
 	if !strings.Contains(result, "LOCATION:") {
 		t.Error("Expected output to contain 'LOCATION:'")
@@ -498,7 +580,17 @@ func TestFormatHvacStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatHvacStatus(tt.hvacOn, tt.frontDefroster, tt.rearDefroster, tt.interiorTempC, tt.targetTempC, false)
+			hvacInfo := api.HVACInfo{
+				HVACOn:         tt.hvacOn,
+				FrontDefroster: tt.frontDefroster,
+				RearDefroster:  tt.rearDefroster,
+				InteriorTempC:  tt.interiorTempC,
+				TargetTempC:    tt.targetTempC,
+			}
+			result, err := formatHvacStatus(hvacInfo, false)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 			if result != tt.expectedOutput {
 				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
 			}
@@ -508,7 +600,17 @@ func TestFormatHvacStatus(t *testing.T) {
 
 // TestFormatHvacStatus_JSON tests HVAC status JSON formatting
 func TestFormatHvacStatus_JSON(t *testing.T) {
-	result := formatHvacStatus(true, true, false, 21, 22, true)
+	hvacInfo := api.HVACInfo{
+		HVACOn:         true,
+		FrontDefroster: true,
+		RearDefroster:  false,
+		InteriorTempC:  21,
+		TargetTempC:    22,
+	}
+	result, err := formatHvacStatus(hvacInfo, true)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &data); err != nil {
@@ -559,22 +661,25 @@ func TestGetHvacInfo(t *testing.T) {
 		},
 	}
 
-	hvacOn, frontDefroster, rearDefroster, interiorTempC, targetTempC := evStatus.GetHvacInfo()
+	hvacInfo, err := evStatus.GetHvacInfo()
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 
-	if !hvacOn {
-		t.Error("Expected hvacOn to be true")
+	if !hvacInfo.HVACOn {
+		t.Error("Expected HVACOn to be true")
 	}
-	if !frontDefroster {
-		t.Error("Expected frontDefroster to be true")
+	if !hvacInfo.FrontDefroster {
+		t.Error("Expected FrontDefroster to be true")
 	}
-	if rearDefroster {
-		t.Error("Expected rearDefroster to be false")
+	if hvacInfo.RearDefroster {
+		t.Error("Expected RearDefroster to be false")
 	}
-	if interiorTempC != 21.5 {
-		t.Errorf("Expected interiorTempC 21.5, got %v", interiorTempC)
+	if hvacInfo.InteriorTempC != 21.5 {
+		t.Errorf("Expected InteriorTempC 21.5, got %v", hvacInfo.InteriorTempC)
 	}
-	if targetTempC != 22.0 {
-		t.Errorf("Expected targetTempC 22.0, got %v", targetTempC)
+	if hvacInfo.TargetTempC != 22.0 {
+		t.Errorf("Expected TargetTempC 22.0, got %v", hvacInfo.TargetTempC)
 	}
 }
 
@@ -595,22 +700,9 @@ func TestGetHvacInfo_MissingData(t *testing.T) {
 		},
 	}
 
-	hvacOn, frontDefroster, rearDefroster, interiorTempC, targetTempC := evStatus.GetHvacInfo()
-
-	if hvacOn {
-		t.Error("Expected hvacOn to be false when data missing")
-	}
-	if frontDefroster {
-		t.Error("Expected frontDefroster to be false when data missing")
-	}
-	if rearDefroster {
-		t.Error("Expected rearDefroster to be false when data missing")
-	}
-	if interiorTempC != 0 {
-		t.Errorf("Expected interiorTempC 0 when data missing, got %v", interiorTempC)
-	}
-	if targetTempC != 0 {
-		t.Errorf("Expected targetTempC 0 when data missing, got %v", targetTempC)
+	_, err := evStatus.GetHvacInfo()
+	if err == nil {
+		t.Fatal("Expected error when HVAC info is missing, got nil")
 	}
 }
 
@@ -687,7 +779,11 @@ func TestFormatOdometerStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatOdometerStatus(tt.odometerKm, false)
+			odometerInfo := api.OdometerInfo{OdometerKm: tt.odometerKm}
+			result, err := formatOdometerStatus(odometerInfo, false)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 			if result != tt.expectedOutput {
 				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
 			}
@@ -697,7 +793,11 @@ func TestFormatOdometerStatus(t *testing.T) {
 
 // TestFormatOdometerStatus_JSON tests odometer status JSON formatting
 func TestFormatOdometerStatus_JSON(t *testing.T) {
-	result := formatOdometerStatus(12345.6, true)
+	odometerInfo := api.OdometerInfo{OdometerKm: 12345.6}
+	result, err := formatOdometerStatus(odometerInfo, true)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &data); err != nil {
@@ -722,13 +822,13 @@ func TestGetOdometerInfo(t *testing.T) {
 		},
 	}
 
-	odometer, err := vehicleStatus.GetOdometerInfo()
+	odometerInfo, err := vehicleStatus.GetOdometerInfo()
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
 
-	if odometer != 12345.6 {
-		t.Errorf("Expected odometer 12345.6, got %v", odometer)
+	if odometerInfo.OdometerKm != 12345.6 {
+		t.Errorf("Expected odometer 12345.6, got %v", odometerInfo.OdometerKm)
 	}
 }
 

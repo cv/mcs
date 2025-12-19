@@ -72,28 +72,6 @@ func saveClientCache(client *api.Client) {
 	}
 }
 
-// withVehicleClient handles the common CLI setup: create client, get VIN, execute command, save cache.
-// The callback receives the context, authenticated client, and the vehicle's internal VIN.
-func withVehicleClient(ctx context.Context, fn func(context.Context, *api.Client, string) error) error {
-	client, err := createAPIClient()
-	if err != nil {
-		return err
-	}
-	defer saveClientCache(client)
-
-	vecBaseInfos, err := client.GetVecBaseInfos(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
-	}
-
-	internalVIN, err := vecBaseInfos.GetInternalVIN()
-	if err != nil {
-		return err
-	}
-
-	return fn(ctx, client, internalVIN)
-}
-
 // VehicleInfo contains identification information about a vehicle
 type VehicleInfo struct {
 	InternalVIN string
@@ -103,23 +81,22 @@ type VehicleInfo struct {
 	ModelYear   string
 }
 
-// withVehicleClientEx handles CLI setup and provides extended vehicle info.
-// The callback receives the context, authenticated client, and full vehicle info.
-func withVehicleClientEx(ctx context.Context, fn func(context.Context, *api.Client, VehicleInfo) error) error {
+// setupVehicleClient is a shared helper that creates the API client and retrieves vehicle info.
+// It returns the authenticated client and full vehicle info, deferring cache save to the caller.
+func setupVehicleClient(ctx context.Context) (*api.Client, VehicleInfo, error) {
 	client, err := createAPIClient()
 	if err != nil {
-		return err
+		return nil, VehicleInfo{}, err
 	}
-	defer saveClientCache(client)
 
 	vecBaseInfos, err := client.GetVecBaseInfos(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get vehicle info: %w", err)
+		return nil, VehicleInfo{}, fmt.Errorf("failed to get vehicle info: %w", err)
 	}
 
 	internalVIN, err := vecBaseInfos.GetInternalVIN()
 	if err != nil {
-		return err
+		return nil, VehicleInfo{}, err
 	}
 
 	vin, nickname, modelName, modelYear, _ := vecBaseInfos.GetVehicleInfo()
@@ -131,6 +108,30 @@ func withVehicleClientEx(ctx context.Context, fn func(context.Context, *api.Clie
 		ModelName:   modelName,
 		ModelYear:   modelYear,
 	}
+
+	return client, vehicleInfo, nil
+}
+
+// withVehicleClient handles the common CLI setup: create client, get VIN, execute command, save cache.
+// The callback receives the context, authenticated client, and the vehicle's internal VIN.
+func withVehicleClient(ctx context.Context, fn func(context.Context, *api.Client, string) error) error {
+	client, vehicleInfo, err := setupVehicleClient(ctx)
+	if err != nil {
+		return err
+	}
+	defer saveClientCache(client)
+
+	return fn(ctx, client, vehicleInfo.InternalVIN)
+}
+
+// withVehicleClientEx handles CLI setup and provides extended vehicle info.
+// The callback receives the context, authenticated client, and full vehicle info.
+func withVehicleClientEx(ctx context.Context, fn func(context.Context, *api.Client, VehicleInfo) error) error {
+	client, vehicleInfo, err := setupVehicleClient(ctx)
+	if err != nil {
+		return err
+	}
+	defer saveClientCache(client)
 
 	return fn(ctx, client, vehicleInfo)
 }
