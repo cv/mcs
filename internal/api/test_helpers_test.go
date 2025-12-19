@@ -17,7 +17,7 @@ const testSignKey = "testsignkey12345"
 // createTestClient creates a test API client with mock credentials
 func createTestClient(t *testing.T, serverURL string) *Client {
 	t.Helper()
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}

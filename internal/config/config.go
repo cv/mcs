@@ -13,7 +13,7 @@ import (
 type Config struct {
 	Email    string
 	Password string
-	Region   string
+	Region   api.Region
 }
 
 // Load loads configuration from file and environment variables
@@ -50,10 +50,16 @@ func Load(configPath string) (*Config, error) {
 	v.AutomaticEnv()
 
 	// Load config
+	regionStr := v.GetString("region")
+	region, err := api.ParseRegion(regionStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid region in configuration: %w", err)
+	}
+
 	cfg := &Config{
 		Email:    v.GetString("email"),
 		Password: v.GetString("password"),
-		Region:   v.GetString("region"),
+		Region:   region,
 	}
 
 	return cfg, nil
@@ -67,7 +73,7 @@ func (c *Config) Validate() error {
 	if c.Password == "" {
 		return fmt.Errorf("password is required")
 	}
-	if _, ok := api.RegionConfigs[c.Region]; !ok {
+	if !c.Region.IsValid() {
 		return fmt.Errorf("invalid region: %s (must be one of: MNAO, MME, MJO)", c.Region)
 	}
 	return nil

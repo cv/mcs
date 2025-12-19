@@ -14,7 +14,7 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 	testClient := &Client{
 		email:    "test@example.com",
 		password: "password",
-		region:   "MNAO",
+		region:   RegionMNAO,
 		appCode:  "202007270941270111799",
 	}
 	decryptionKey := testClient.getDecryptionKeyFromAppCode()
@@ -54,7 +54,7 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 	client := &Client{
 		email:      "test@example.com",
 		password:   "password",
-		region:     "MNAO",
+		region:     RegionMNAO,
 		baseURL:    server.URL + "/prod/",
 		usherURL:   server.URL + "/appapi/v1/",
 		appCode:    "202007270941270111799",
@@ -103,7 +103,7 @@ func TestClient_GetUsherEncryptionKey(t *testing.T) {
 
 	client := &Client{
 		email:      "test@example.com",
-		region:     "MNAO",
+		region:     RegionMNAO,
 		usherURL:   server.URL + "/appapi/v1/",
 		httpClient: server.Client(),
 	}
@@ -162,7 +162,7 @@ func TestClient_Login(t *testing.T) {
 	client := &Client{
 		email:      "test@example.com",
 		password:   "password123",
-		region:     "MNAO",
+		region:     RegionMNAO,
 		usherURL:   server.URL + "/appapi/v1/",
 		httpClient: server.Client(),
 	}
@@ -217,6 +217,141 @@ func TestClient_IsTokenValid(t *testing.T) {
 			got := client.IsTokenValid()
 			if got != tt.want {
 				t.Errorf("IsTokenValid() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRegion_String(t *testing.T) {
+	tests := []struct {
+		name   string
+		region Region
+		want   string
+	}{
+		{
+			name:   "MNAO region",
+			region: RegionMNAO,
+			want:   "MNAO",
+		},
+		{
+			name:   "MME region",
+			region: RegionMME,
+			want:   "MME",
+		},
+		{
+			name:   "MJO region",
+			region: RegionMJO,
+			want:   "MJO",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.region.String()
+			if got != tt.want {
+				t.Errorf("Region.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseRegion(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    Region
+		wantErr bool
+	}{
+		{
+			name:    "valid MNAO",
+			input:   "MNAO",
+			want:    RegionMNAO,
+			wantErr: false,
+		},
+		{
+			name:    "valid MME",
+			input:   "MME",
+			want:    RegionMME,
+			wantErr: false,
+		},
+		{
+			name:    "valid MJO",
+			input:   "MJO",
+			want:    RegionMJO,
+			wantErr: false,
+		},
+		{
+			name:    "invalid region",
+			input:   "INVALID",
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "empty string",
+			input:   "",
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "lowercase mnao",
+			input:   "mnao",
+			want:    "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseRegion(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseRegion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("ParseRegion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRegion_IsValid(t *testing.T) {
+	tests := []struct {
+		name   string
+		region Region
+		want   bool
+	}{
+		{
+			name:   "valid MNAO",
+			region: RegionMNAO,
+			want:   true,
+		},
+		{
+			name:   "valid MME",
+			region: RegionMME,
+			want:   true,
+		},
+		{
+			name:   "valid MJO",
+			region: RegionMJO,
+			want:   true,
+		},
+		{
+			name:   "invalid empty",
+			region: "",
+			want:   false,
+		},
+		{
+			name:   "invalid random",
+			region: "INVALID",
+			want:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.region.IsValid()
+			if got != tt.want {
+				t.Errorf("Region.IsValid() = %v, want %v", got, tt.want)
 			}
 		})
 	}

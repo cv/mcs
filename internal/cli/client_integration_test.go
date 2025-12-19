@@ -177,7 +177,7 @@ func TestSaveClientCache_ValidCredentials(t *testing.T) {
 	t.Setenv("HOME", tmpDir)
 
 	// Setup: Create client with valid credentials
-	client, err := api.NewClient("test@example.com", "password", "MNAO")
+	client, err := api.NewClient("test@example.com", "password", api.RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestSaveClientCache_EmptyCredentials(t *testing.T) {
 	t.Setenv("HOME", tmpDir)
 
 	// Setup: Create client without credentials
-	client, err := api.NewClient("test@example.com", "password", "MNAO")
+	client, err := api.NewClient("test@example.com", "password", api.RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -245,7 +245,7 @@ func TestSaveClientCache_PartialCredentials(t *testing.T) {
 	t.Setenv("HOME", tmpDir)
 
 	// Setup: Create client with partial credentials
-	client, err := api.NewClient("test@example.com", "password", "MNAO")
+	client, err := api.NewClient("test@example.com", "password", api.RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -320,5 +320,32 @@ func TestCreateAPIClient_MissingCredentials(t *testing.T) {
 	_, err := createAPIClient(context.Background())
 	if err == nil {
 		t.Fatal("Expected error with missing credentials, got nil")
+	}
+}
+
+// TestVehicleInfo_InternalVINType tests that VehicleInfo.InternalVIN uses api.InternalVIN type
+func TestVehicleInfo_InternalVINType(t *testing.T) {
+	// This test verifies compile-time type safety for InternalVIN
+	// Create a VehicleInfo with api.InternalVIN type
+	vehicleInfo := VehicleInfo{
+		InternalVIN: api.InternalVIN("test-vin-123"),
+		VIN:         "JM3XXXXXXXXXX1234",
+		Nickname:    "Test Vehicle",
+		ModelName:   "CX-90",
+		ModelYear:   "2024",
+	}
+
+	// Verify that InternalVIN is of type api.InternalVIN
+	var _ = vehicleInfo.InternalVIN
+
+	// Verify that we can convert to string using String() method
+	vinString := vehicleInfo.InternalVIN.String()
+	if vinString != "test-vin-123" {
+		t.Errorf("Expected VIN string 'test-vin-123', got '%s'", vinString)
+	}
+
+	// Verify that we can use it directly as string (implicit conversion)
+	if string(vehicleInfo.InternalVIN) != "test-vin-123" {
+		t.Errorf("Expected VIN string 'test-vin-123', got '%s'", string(vehicleInfo.InternalVIN))
 	}
 }

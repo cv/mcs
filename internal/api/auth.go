@@ -46,6 +46,38 @@ const (
 	InternalUserID = "__INTERNAL_ID__"
 )
 
+// Region represents a valid geographic region
+type Region string
+
+const (
+	// RegionMNAO represents Mazda North American Operations
+	RegionMNAO Region = "MNAO"
+	// RegionMME represents Mazda Europe
+	RegionMME Region = "MME"
+	// RegionMJO represents Mazda Japan
+	RegionMJO Region = "MJO"
+)
+
+// String returns the string representation of the region
+func (r Region) String() string {
+	return string(r)
+}
+
+// IsValid checks if the region is valid
+func (r Region) IsValid() bool {
+	_, ok := RegionConfigs[string(r)]
+	return ok
+}
+
+// ParseRegion parses a string into a Region, returning an error if invalid
+func ParseRegion(s string) (Region, error) {
+	r := Region(s)
+	if !r.IsValid() {
+		return "", fmt.Errorf("invalid region: %s (must be one of: MNAO, MME, MJO)", s)
+	}
+	return r, nil
+}
+
 // RegionConfig holds configuration for a specific region
 type RegionConfig struct {
 	AppCode  string
@@ -76,7 +108,7 @@ var RegionConfigs = map[string]RegionConfig{
 type Client struct {
 	email    string
 	password string
-	region   string
+	region   Region
 
 	baseURL  string
 	usherURL string
@@ -97,11 +129,12 @@ type Client struct {
 }
 
 // NewClient creates a new API client
-func NewClient(email, password, region string) (*Client, error) {
-	config, ok := RegionConfigs[region]
-	if !ok {
+func NewClient(email, password string, region Region) (*Client, error) {
+	if !region.IsValid() {
 		return nil, fmt.Errorf("invalid region: %s", region)
 	}
+
+	config := RegionConfigs[string(region)]
 
 	return &Client{
 		email:             email,

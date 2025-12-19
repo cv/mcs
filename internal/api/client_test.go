@@ -52,7 +52,7 @@ func TestAPIRequest_Success(t *testing.T) {
 	defer server.Close()
 
 	// Create client with test server URL
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -91,7 +91,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -127,7 +127,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -185,7 +185,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 
 // TestEncryptPayloadUsingKey tests payload encryption
 func TestEncryptPayloadUsingKey(t *testing.T) {
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestEncryptPayloadUsingKey(t *testing.T) {
 
 // TestDecryptPayloadUsingKey tests payload decryption
 func TestDecryptPayloadUsingKey(t *testing.T) {
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -259,7 +259,7 @@ func TestDecryptPayloadUsingKey(t *testing.T) {
 
 // TestGetSignFromPayloadAndTimestamp tests signature generation
 func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -296,7 +296,7 @@ func TestAPIRequest_MissingKeys(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -345,7 +345,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -402,7 +402,7 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
@@ -558,7 +558,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", "MNAO")
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}

@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/cv/mcs/internal/api"
 )
 
 func TestLoad(t *testing.T) {
@@ -11,7 +13,7 @@ func TestLoad(t *testing.T) {
 		name       string
 		envVars    map[string]string
 		wantEmail  string
-		wantRegion string
+		wantRegion api.Region
 		wantErr    bool
 	}{
 		{
@@ -22,7 +24,7 @@ func TestLoad(t *testing.T) {
 				"MCS_REGION":   "MNAO",
 			},
 			wantEmail:  "test@example.com",
-			wantRegion: "MNAO",
+			wantRegion: api.RegionMNAO,
 			wantErr:    false,
 		},
 		{
@@ -32,7 +34,7 @@ func TestLoad(t *testing.T) {
 				"MCS_PASSWORD": "password123",
 			},
 			wantEmail:  "test@example.com",
-			wantRegion: "MNAO",
+			wantRegion: api.RegionMNAO,
 			wantErr:    false,
 		},
 	}
@@ -95,7 +97,7 @@ region = "MME"
 	if cfg.Email != "file@example.com" {
 		t.Errorf("Load() Email = %v, want file@example.com", cfg.Email)
 	}
-	if cfg.Region != "MME" {
+	if cfg.Region != api.RegionMME {
 		t.Errorf("Load() Region = %v, want MME", cfg.Region)
 	}
 }
@@ -128,7 +130,7 @@ region = "MME"
 	if cfg.Email != "env@example.com" {
 		t.Errorf("Load() Email = %v, want env@example.com (env should override)", cfg.Email)
 	}
-	if cfg.Region != "MNAO" {
+	if cfg.Region != api.RegionMNAO {
 		t.Errorf("Load() Region = %v, want MNAO (env should override)", cfg.Region)
 	}
 }
@@ -144,7 +146,7 @@ func TestConfig_Validate(t *testing.T) {
 			config: &Config{
 				Email:    "test@example.com",
 				Password: "password123",
-				Region:   "MNAO",
+				Region:   api.RegionMNAO,
 			},
 			wantErr: false,
 		},
@@ -152,7 +154,7 @@ func TestConfig_Validate(t *testing.T) {
 			name: "missing email",
 			config: &Config{
 				Password: "password123",
-				Region:   "MNAO",
+				Region:   api.RegionMNAO,
 			},
 			wantErr: true,
 		},
@@ -160,7 +162,7 @@ func TestConfig_Validate(t *testing.T) {
 			name: "missing password",
 			config: &Config{
 				Email:  "test@example.com",
-				Region: "MNAO",
+				Region: api.RegionMNAO,
 			},
 			wantErr: true,
 		},
