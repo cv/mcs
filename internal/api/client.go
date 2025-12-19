@@ -168,7 +168,9 @@ func (c *Client) apiRequestJSONWithRetry(ctx context.Context, method, uri string
 	return response, nil
 }
 
-func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
+// executeAPIRequest handles the common logic for making API requests.
+// It returns the encrypted payload string on success, or an error.
+func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (string, error) {
 	timestamp := getTimestampStrMs()
 
 	// Prepare query parameters (encrypted if provided)
@@ -183,7 +185,7 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 
 		encrypted, err := c.encryptPayloadUsingKey(originalQueryStr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to encrypt query params: %w", err)
+			return "", fmt.Errorf("failed to encrypt query params: %w", err)
 		}
 		encryptedQueryParams.Add("params", encrypted)
 	}
@@ -194,13 +196,13 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 	if len(bodyParams) > 0 {
 		bodyJSON, err := json.Marshal(bodyParams)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal body params: %w", err)
+			return "", fmt.Errorf("failed to marshal body params: %w", err)
 		}
 		originalBodyStr = string(bodyJSON)
 
 		encrypted, err := c.encryptPayloadUsingKey(originalBodyStr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to encrypt body: %w", err)
+			return "", fmt.Errorf("failed to encrypt body: %w", err)
 		}
 		encryptedBody = encrypted
 	}
@@ -220,13 +222,13 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 		req, err = http.NewRequestWithContext(ctx, method, requestURL, nil)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Generate sensor data
 	sensorData, err := c.sensorDataBuilder.GenerateSensorData()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate sensor data: %w", err)
+		return "", fmt.Errorf("failed to generate sensor data: %w", err)
 	}
 
 	// Set headers
@@ -267,209 +269,75 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 	// Send request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return "", fmt.Errorf("failed to send request: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	// Read response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return "", fmt.Errorf("failed to read response: %w", err)
 	}
 
 	c.logResponse(resp.StatusCode, body)
 
 	var response APIBaseResponse
 	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
+		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
 	// Check response state
 	if response.State == "S" {
-		// Success - decrypt payload
+		// Success - return encrypted payload for caller to decrypt
 		if response.Payload == "" {
-			return nil, fmt.Errorf("payload not found in response")
+			return "", fmt.Errorf("payload not found in response")
 		}
 
-		return c.decryptPayloadUsingKey(response.Payload)
+		return response.Payload, nil
 	}
 
 	// Handle errors
 	switch int(response.ErrorCode) {
 	case ErrorCodeEncryption:
-		return nil, NewEncryptionError()
+		return "", NewEncryptionError()
 	case ErrorCodeTokenExpired:
-		return nil, NewTokenExpiredError()
+		return "", NewTokenExpiredError()
 	case ErrorCodeRequestIssue:
 		switch response.ExtraCode {
 		case ExtraCodeRequestInProgress:
-			return nil, NewRequestInProgressError()
+			return "", NewRequestInProgressError()
 		case ExtraCodeEngineStartLimit:
-			return nil, NewEngineStartLimitError()
+			return "", NewEngineStartLimitError()
 		}
 	}
 
 	// Generic error
 	if response.Message != "" {
-		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", response.Message))
+		return "", NewAPIError(fmt.Sprintf("Request failed: %s", response.Message))
 	}
 	if response.Error != "" {
-		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", response.Error))
+		return "", NewAPIError(fmt.Sprintf("Request failed: %s", response.Error))
 	}
 
-	return nil, NewAPIError("Request failed for an unknown reason")
+	return "", NewAPIError("Request failed for an unknown reason")
+}
+
+func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
+	encryptedPayload, err := c.executeAPIRequest(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.decryptPayloadUsingKey(encryptedPayload)
 }
 
 func (c *Client) sendAPIRequestJSON(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) ([]byte, error) {
-	timestamp := getTimestampStrMs()
-
-	// Prepare query parameters (encrypted if provided)
-	originalQueryStr := ""
-	encryptedQueryParams := url.Values{}
-	if len(queryParams) > 0 {
-		queryValues := url.Values{}
-		for k, v := range queryParams {
-			queryValues.Add(k, v)
-		}
-		originalQueryStr = queryValues.Encode()
-
-		encrypted, err := c.encryptPayloadUsingKey(originalQueryStr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to encrypt query params: %w", err)
-		}
-		encryptedQueryParams.Add("params", encrypted)
-	}
-
-	// Prepare body (encrypted if provided)
-	originalBodyStr := ""
-	encryptedBody := ""
-	if len(bodyParams) > 0 {
-		bodyJSON, err := json.Marshal(bodyParams)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal body params: %w", err)
-		}
-		originalBodyStr = string(bodyJSON)
-
-		encrypted, err := c.encryptPayloadUsingKey(originalBodyStr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to encrypt body: %w", err)
-		}
-		encryptedBody = encrypted
-	}
-
-	// Build URL
-	requestURL := c.baseURL + uri
-	if len(encryptedQueryParams) > 0 {
-		requestURL += "?" + encryptedQueryParams.Encode()
-	}
-
-	// Create request with context
-	var req *http.Request
-	var err error
-	if encryptedBody != "" {
-		req, err = http.NewRequestWithContext(ctx, method, requestURL, bytes.NewBufferString(encryptedBody))
-	} else {
-		req, err = http.NewRequestWithContext(ctx, method, requestURL, nil)
-	}
+	encryptedPayload, err := c.executeAPIRequest(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, err
 	}
 
-	// Generate sensor data
-	sensorData, err := c.sensorDataBuilder.GenerateSensorData()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate sensor data: %w", err)
-	}
-
-	// Set headers
-	headers := map[string]string{
-		"device-id":         c.baseAPIDeviceID,
-		"app-code":          c.appCode,
-		"app-os":            AppOS,
-		"user-agent":        UserAgentBaseAPI,
-		"app-version":       AppVersion,
-		"app-unique-id":     AppPackageID,
-		"req-id":            "req_" + timestamp,
-		"timestamp":         timestamp,
-		"Content-Type":      "application/json",
-		"X-acf-sensor-data": sensorData,
-	}
-
-	if needsAuth {
-		headers["access-token"] = c.accessToken
-	} else {
-		headers["access-token"] = ""
-	}
-
-	// Calculate signature
-	if uri == "service/checkVersion" {
-		headers["sign"] = c.getSignFromTimestamp(timestamp)
-	} else if method == "GET" {
-		headers["sign"] = c.getSignFromPayloadAndTimestamp(originalQueryStr, timestamp)
-	} else if method == "POST" {
-		headers["sign"] = c.getSignFromPayloadAndTimestamp(originalBodyStr, timestamp)
-	}
-
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-
-	c.logRequest(method, requestURL, headers, originalBodyStr)
-
-	// Send request
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	// Read response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	c.logResponse(resp.StatusCode, body)
-
-	var response APIBaseResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	// Check response state
-	if response.State == "S" {
-		// Success - decrypt payload and return raw bytes
-		if response.Payload == "" {
-			return nil, fmt.Errorf("payload not found in response")
-		}
-
-		return c.decryptPayloadBytes(response.Payload)
-	}
-
-	// Handle errors
-	switch int(response.ErrorCode) {
-	case ErrorCodeEncryption:
-		return nil, NewEncryptionError()
-	case ErrorCodeTokenExpired:
-		return nil, NewTokenExpiredError()
-	case ErrorCodeRequestIssue:
-		switch response.ExtraCode {
-		case ExtraCodeRequestInProgress:
-			return nil, NewRequestInProgressError()
-		case ExtraCodeEngineStartLimit:
-			return nil, NewEngineStartLimitError()
-		}
-	}
-
-	// Generic error
-	if response.Message != "" {
-		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", response.Message))
-	}
-	if response.Error != "" {
-		return nil, NewAPIError(fmt.Sprintf("Request failed: %s", response.Error))
-	}
-
-	return nil, NewAPIError("Request failed for an unknown reason")
+	return c.decryptPayloadBytes(encryptedPayload)
 }
 
 // ensureKeysPresent ensures encryption keys are available
