@@ -9,6 +9,11 @@ import (
 	"github.com/cv/mcs/internal/api"
 )
 
+func init() {
+	// Disable colors for tests
+	SetColorEnabled(false)
+}
+
 // parseJSONToMap is a test helper that parses a JSON string into a map
 func parseJSONToMap(t *testing.T, jsonStr string) map[string]interface{} {
 	t.Helper()
@@ -113,7 +118,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 45,
 			pluggedIn:        true,
 			charging:         true,
-			expectedOutput:   "BATTERY: 66% (245.5 km range) [charging, ~45m quick / ~3h AC]",
+			expectedOutput:   "BATTERY: [██████░░░░] 66% (245.5 km range) [charging, ~45m quick / ~3h AC]",
 		},
 		{
 			name:             "charging with only AC time",
@@ -123,7 +128,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 0,
 			pluggedIn:        true,
 			charging:         true,
-			expectedOutput:   "BATTERY: 50% (150.0 km range) [charging, ~2h 30m to full]",
+			expectedOutput:   "BATTERY: [█████░░░░░] 50% (150.0 km range) [charging, ~2h 30m to full]",
 		},
 		{
 			name:             "charging with no time estimates",
@@ -133,7 +138,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 0,
 			pluggedIn:        true,
 			charging:         true,
-			expectedOutput:   "BATTERY: 45% (120.0 km range) [charging]",
+			expectedOutput:   "BATTERY: [████░░░░░░] 45% (120.0 km range) [charging]",
 		},
 		{
 			name:             "plugged not charging",
@@ -143,7 +148,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 0,
 			pluggedIn:        true,
 			charging:         false,
-			expectedOutput:   "BATTERY: 100% (300.0 km range) [plugged in, not charging]",
+			expectedOutput:   "BATTERY: [██████████] 100% (300.0 km range) [plugged in, not charging]",
 		},
 		{
 			name:             "unplugged",
@@ -153,7 +158,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			chargeTimeQBCMin: 0,
 			pluggedIn:        false,
 			charging:         false,
-			expectedOutput:   "BATTERY: 50% (150.0 km range)",
+			expectedOutput:   "BATTERY: [█████░░░░░] 50% (150.0 km range)",
 		},
 	}
 
@@ -218,31 +223,31 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 			name:       "heater on with auto",
 			heaterOn:   true,
 			heaterAuto: true,
-			expected:   "BATTERY: 66% (245.5 km range) [battery heater on, auto enabled]",
+			expected:   "BATTERY: [██████░░░░] 66% (245.5 km range) [battery heater on, auto enabled]",
 		},
 		{
 			name:       "heater on without auto",
 			heaterOn:   true,
 			heaterAuto: false,
-			expected:   "BATTERY: 66% (245.5 km range) [battery heater on]",
+			expected:   "BATTERY: [██████░░░░] 66% (245.5 km range) [battery heater on]",
 		},
 		{
 			name:       "heater off with auto enabled",
 			heaterOn:   false,
 			heaterAuto: true,
-			expected:   "BATTERY: 66% (245.5 km range) [battery heater auto enabled]",
+			expected:   "BATTERY: [██████░░░░] 66% (245.5 km range) [battery heater auto enabled]",
 		},
 		{
 			name:       "heater off without auto",
 			heaterOn:   false,
 			heaterAuto: false,
-			expected:   "BATTERY: 66% (245.5 km range)",
+			expected:   "BATTERY: [██████░░░░] 66% (245.5 km range)",
 		},
 		{
 			name:       "charging with heater on",
 			heaterOn:   true,
 			heaterAuto: true,
-			expected:   "BATTERY: 66% (245.5 km range) [charging, ~45m quick / ~3h AC, battery heater on, auto enabled]",
+			expected:   "BATTERY: [██████░░░░] 66% (245.5 km range) [charging, ~45m quick / ~3h AC, battery heater on, auto enabled]",
 		},
 	}
 
@@ -294,10 +299,10 @@ func TestFormatFuelStatus(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	expected := "FUEL: 92% (630.0 km range)"
+	expected := "FUEL: [█████████░] 92% (630.0 km range)"
 
-	if !strings.Contains(result, expected) {
-		t.Errorf("Expected output to contain '%s', got '%s'", expected, result)
+	if result != expected {
+		t.Errorf("Expected '%s', got '%s'", expected, result)
 	}
 }
 

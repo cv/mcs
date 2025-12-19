@@ -15,6 +15,9 @@ var (
 
 	// ConfigFile is the path to the config file
 	ConfigFile string
+
+	// NoColor disables color output
+	NoColor bool
 )
 
 // NewRootCmd creates the root command
@@ -22,6 +25,12 @@ func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "mcs",
 		Short: "Control your connected vehicle",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Disable colors if --no-color flag is set or not a TTY
+			if NoColor || !IsTTY(os.Stdout) {
+				SetColorEnabled(false)
+			}
+		},
 		Long: `mcs is a CLI tool for controlling your connected vehicle via manufacturer API.
 
 Features:
@@ -80,6 +89,7 @@ Example config.toml:
 
 	// Add global flags
 	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "c", "", "config file (default is ~/.config/mcs/config.toml)")
+	rootCmd.PersistentFlags().BoolVar(&NoColor, "no-color", false, "disable colored output")
 
 	return rootCmd
 }

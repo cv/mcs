@@ -86,7 +86,9 @@ func formatBatteryStatus(batteryInfo api.BatteryInfo, jsonOutput bool) (string, 
 		return toJSON(batteryInfoToMap(batteryInfo))
 	}
 
-	status := fmt.Sprintf("BATTERY: %.0f%% (%.1f km range)", batteryInfo.BatteryLevel, batteryInfo.RangeKm)
+	// Create progress bar and format percentage/range
+	progressBar := ProgressBar(batteryInfo.BatteryLevel, 10)
+	status := fmt.Sprintf("BATTERY: %s (%.1f km range)", progressBar, batteryInfo.RangeKm)
 
 	// Build status flags
 	flags := buildBatteryStatusFlags(batteryInfo)
@@ -104,12 +106,14 @@ func formatFuelStatus(fuelInfo api.FuelInfo, jsonOutput bool) (string, error) {
 		return toJSON(fuelInfoToMap(fuelInfo))
 	}
 
-	return fmt.Sprintf("FUEL: %.0f%% (%.1f km range)", fuelInfo.FuelLevel, fuelInfo.RangeKm), nil
+	progressBar := ProgressBar(fuelInfo.FuelLevel, 10)
+	return fmt.Sprintf("FUEL: %s (%.1f km range)", progressBar, fuelInfo.RangeKm), nil
 }
 
 // formatBatteryStatusCompact formats battery status without range (for combined view)
 func formatBatteryStatusCompact(batteryInfo api.BatteryInfo) string {
-	status := fmt.Sprintf("BATTERY: %.0f%%", batteryInfo.BatteryLevel)
+	progressBar := ProgressBar(batteryInfo.BatteryLevel, 10)
+	status := fmt.Sprintf("BATTERY: %s", progressBar)
 
 	// Build status flags
 	flags := buildBatteryStatusFlags(batteryInfo)
@@ -125,13 +129,14 @@ func formatBatteryStatusCompact(batteryInfo api.BatteryInfo) string {
 // For PHEVs: RemDrvDistDActlKm (fuel API) = total range, SmaphRemDrvDistKm (EV API) = fuel-only range
 // EV range = total - fuel-only
 func formatFuelStatusWithRange(fuelInfo api.FuelInfo, fuelOnlyRange float64) string {
+	progressBar := ProgressBar(fuelInfo.FuelLevel, 10)
 	// Calculate EV range as difference between total and fuel-only
 	evRange := fuelInfo.RangeKm - fuelOnlyRange
 	if evRange > 0.5 { // Only show EV range if meaningful (> 0.5 km)
-		return fmt.Sprintf("FUEL: %.0f%% (%.0f km EV + %.0f km fuel = %.0f km total)",
-			fuelInfo.FuelLevel, evRange, fuelOnlyRange, fuelInfo.RangeKm)
+		return fmt.Sprintf("FUEL: %s (%.0f km EV + %.0f km fuel = %.0f km total)",
+			progressBar, evRange, fuelOnlyRange, fuelInfo.RangeKm)
 	}
-	return fmt.Sprintf("FUEL: %.0f%% (%.1f km range)", fuelInfo.FuelLevel, fuelInfo.RangeKm)
+	return fmt.Sprintf("FUEL: %s (%.1f km range)", progressBar, fuelInfo.RangeKm)
 }
 
 // formatLocationStatus formats location status for display
@@ -170,7 +175,7 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, erro
 
 	// If all locked and closed, show simple message
 	if doorStatus.AllLocked {
-		return "DOORS: All locked", nil
+		return fmt.Sprintf("DOORS: %s", Green("All locked")), nil
 	}
 
 	// Define all door positions to check
@@ -190,12 +195,12 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, erro
 	for _, door := range doors {
 		// Check unlocked doors (closed but not locked)
 		if door.hasLock && !door.isLocked && !door.isOpen {
-			issues = append(issues, fmt.Sprintf("%s unlocked", door.name))
+			issues = append(issues, Yellow(fmt.Sprintf("%s unlocked", door.name)))
 		}
 
 		// Check open doors/trunk/hood/fuel lid
 		if door.isOpen {
-			issues = append(issues, fmt.Sprintf("%s open", door.name))
+			issues = append(issues, Red(fmt.Sprintf("%s open", door.name)))
 		}
 	}
 
@@ -356,27 +361,27 @@ func formatWindowsStatus(windowsInfo api.WindowStatus, jsonOutput bool) (string,
 	// If all windows are closed, show simple message
 	if windowsInfo.DriverPosition == api.WindowClosed && windowsInfo.PassengerPosition == api.WindowClosed &&
 		windowsInfo.RearLeftPosition == api.WindowClosed && windowsInfo.RearRightPosition == api.WindowClosed {
-		return "WINDOWS: All closed", nil
+		return fmt.Sprintf("WINDOWS: %s", Green("All closed")), nil
 	}
 
 	// Otherwise, build a list of open windows with percentages
 	var openWindows []string
 
 	if windowsInfo.DriverPosition > api.WindowClosed {
-		openWindows = append(openWindows, fmt.Sprintf("Driver %.0f%%", windowsInfo.DriverPosition))
+		openWindows = append(openWindows, Yellow(fmt.Sprintf("Driver %.0f%%", windowsInfo.DriverPosition)))
 	}
 	if windowsInfo.PassengerPosition > api.WindowClosed {
-		openWindows = append(openWindows, fmt.Sprintf("Passenger %.0f%%", windowsInfo.PassengerPosition))
+		openWindows = append(openWindows, Yellow(fmt.Sprintf("Passenger %.0f%%", windowsInfo.PassengerPosition)))
 	}
 	if windowsInfo.RearLeftPosition > api.WindowClosed {
-		openWindows = append(openWindows, fmt.Sprintf("Rear left %.0f%%", windowsInfo.RearLeftPosition))
+		openWindows = append(openWindows, Yellow(fmt.Sprintf("Rear left %.0f%%", windowsInfo.RearLeftPosition)))
 	}
 	if windowsInfo.RearRightPosition > api.WindowClosed {
-		openWindows = append(openWindows, fmt.Sprintf("Rear right %.0f%%", windowsInfo.RearRightPosition))
+		openWindows = append(openWindows, Yellow(fmt.Sprintf("Rear right %.0f%%", windowsInfo.RearRightPosition)))
 	}
 
 	if len(openWindows) == 0 {
-		return "WINDOWS: All closed", nil
+		return fmt.Sprintf("WINDOWS: %s", Green("All closed")), nil
 	}
 
 	return fmt.Sprintf("WINDOWS: %s", strings.Join(openWindows, ", ")), nil
