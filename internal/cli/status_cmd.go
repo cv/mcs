@@ -9,6 +9,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// StatusType represents the type of status information to display
+type StatusType string
+
+const (
+	StatusAll      StatusType = "all"
+	StatusBattery  StatusType = "battery"
+	StatusFuel     StatusType = "fuel"
+	StatusLocation StatusType = "location"
+	StatusTires    StatusType = "tires"
+	StatusDoors    StatusType = "doors"
+	StatusWindows  StatusType = "windows"
+	StatusOdometer StatusType = "odometer"
+	StatusHVAC     StatusType = "hvac"
+)
+
 // NewStatusCmd creates the status command
 func NewStatusCmd() *cobra.Command {
 	var jsonOutput bool
@@ -20,7 +35,7 @@ func NewStatusCmd() *cobra.Command {
 		Short: "Show vehicle status",
 		Long:  `Show comprehensive vehicle status including battery, fuel, location, tires, and doors.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "all", refresh, refreshWait)
+			return runStatus(cmd, jsonOutput, StatusAll, refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	}
@@ -35,7 +50,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "battery",
 		Short: "Show battery status",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "battery", refresh, refreshWait)
+			return runStatus(cmd, jsonOutput, StatusBattery, refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -44,7 +59,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "fuel",
 		Short: "Show fuel status",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "fuel", refresh, refreshWait)
+			return runStatus(cmd, jsonOutput, StatusFuel, refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -53,7 +68,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "location",
 		Short: "Show vehicle location",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "location", refresh, refreshWait)
+			return runStatus(cmd, jsonOutput, StatusLocation, refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -62,7 +77,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "tires",
 		Short: "Show tire pressure",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "tires", refresh, refreshWait)
+			return runStatus(cmd, jsonOutput, StatusTires, refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -71,7 +86,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "doors",
 		Short: "Show door lock status",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runStatus(cmd, jsonOutput, "doors", refresh, refreshWait)
+			return runStatus(cmd, jsonOutput, StatusDoors, refresh, refreshWait)
 		},
 		SilenceUsage: true,
 	})
@@ -80,7 +95,7 @@ func NewStatusCmd() *cobra.Command {
 }
 
 // runStatus executes the status command
-func runStatus(cmd *cobra.Command, jsonOutput bool, statusType string, refresh bool, refreshWait int) error {
+func runStatus(cmd *cobra.Command, jsonOutput bool, statusType StatusType, refresh bool, refreshWait int) error {
 	return withVehicleClientEx(cmd.Context(), func(ctx context.Context, client *api.Client, vehicleInfo VehicleInfo) error {
 		// Get initial EV status (needed for refresh comparison and final display)
 		evStatus, err := client.GetEVVehicleStatus(ctx, vehicleInfo.InternalVIN)
@@ -167,22 +182,22 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 }
 
 // displayStatusWithVehicle outputs the status based on type, including vehicle info for "all"
-func displayStatusWithVehicle(cmd *cobra.Command, statusType string, vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) error {
+func displayStatusWithVehicle(cmd *cobra.Command, statusType StatusType, vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) error {
 	var output string
 	var err error
 
 	switch statusType {
-	case "battery":
+	case StatusBattery:
 		output, err = displayBatteryStatus(evStatus, jsonOutput)
-	case "fuel":
+	case StatusFuel:
 		output, err = displayFuelStatus(vehicleStatus, jsonOutput)
-	case "location":
+	case StatusLocation:
 		output, err = displayLocationStatus(vehicleStatus, jsonOutput)
-	case "tires":
+	case StatusTires:
 		output, err = displayTiresStatus(vehicleStatus, jsonOutput)
-	case "doors":
+	case StatusDoors:
 		output, err = displayDoorsStatus(vehicleStatus, jsonOutput)
-	case "all":
+	case StatusAll:
 		output, err = displayAllStatus(vehicleStatus, evStatus, vehicleInfo, jsonOutput)
 	}
 
