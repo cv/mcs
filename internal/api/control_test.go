@@ -2,33 +2,12 @@ package api
 
 import (
 	"context"
-	"net/http/httptest"
 	"testing"
 )
 
-// createControlTestServer creates a test server for control endpoints
-// Uses shared test helpers from test_helpers_test.go
-func createControlTestServer(t *testing.T, expectedPath string, expectedBody map[string]interface{}) *httptest.Server {
-	t.Helper()
-	successResponse := map[string]interface{}{
-		"resultCode": "200S00",
-		"message":    "Success",
-	}
-
-	// All control endpoints expect POST requests with non-empty bodies
-	return createTestServer(t, successResponse,
-		WithPath(expectedPath),
-		WithMethod("POST"),
-		WithBodyValidation(),
-	)
-}
-
 // TestDoorLock tests locking doors
 func TestDoorLock(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/doorLock/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/doorLock/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -41,10 +20,7 @@ func TestDoorLock(t *testing.T) {
 
 // TestDoorUnlock tests unlocking doors
 func TestDoorUnlock(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/doorUnlock/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/doorUnlock/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -57,10 +33,7 @@ func TestDoorUnlock(t *testing.T) {
 
 // TestLightsOn tests turning lights on
 func TestLightsOn(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/lightOn/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/lightOn/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -73,10 +46,7 @@ func TestLightsOn(t *testing.T) {
 
 // TestLightsOff tests turning lights off
 func TestLightsOff(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/lightOff/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/lightOff/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -89,10 +59,7 @@ func TestLightsOff(t *testing.T) {
 
 // TestEngineStart tests starting the engine
 func TestEngineStart(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/engineStart/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/engineStart/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -105,10 +72,7 @@ func TestEngineStart(t *testing.T) {
 
 // TestEngineStop tests stopping the engine
 func TestEngineStop(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/engineStop/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/engineStop/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -121,10 +85,7 @@ func TestEngineStop(t *testing.T) {
 
 // TestChargeStart tests starting charging
 func TestChargeStart(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/chargeStart/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/chargeStart/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -137,10 +98,7 @@ func TestChargeStart(t *testing.T) {
 
 // TestChargeStop tests stopping charging
 func TestChargeStop(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/chargeStop/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/chargeStop/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -153,10 +111,7 @@ func TestChargeStop(t *testing.T) {
 
 // TestHVACOn tests turning HVAC on
 func TestHVACOn(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/hvacOn/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/hvacOn/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -169,10 +124,7 @@ func TestHVACOn(t *testing.T) {
 
 // TestHVACOff tests turning HVAC off
 func TestHVACOff(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/hvacOff/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/hvacOff/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -185,10 +137,7 @@ func TestHVACOff(t *testing.T) {
 
 // TestRefreshVehicleStatus tests refreshing vehicle status
 func TestRefreshVehicleStatus(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/activeRealTimeVehicleStatus/v4", map[string]interface{}{
-		"internaluserid": "__INTERNAL_ID__",
-		"internalvin":    "INTERNAL123",
-	})
+	server := createControlTestServer(t, "/remoteServices/activeRealTimeVehicleStatus/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -201,14 +150,7 @@ func TestRefreshVehicleStatus(t *testing.T) {
 
 // TestSetHVACSetting tests setting HVAC settings
 func TestSetHVACSetting(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4", map[string]interface{}{
-		"internaluserid":  "__INTERNAL_ID__",
-		"internalvin":     "INTERNAL123",
-		"Temperature":     22.0,
-		"TemperatureType": 1,
-		"FrontDefroster":  1,
-		"RearDefogger":    0,
-	})
+	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)
@@ -221,14 +163,7 @@ func TestSetHVACSetting(t *testing.T) {
 
 // TestSetHVACSetting_Fahrenheit tests setting HVAC with Fahrenheit
 func TestSetHVACSetting_Fahrenheit(t *testing.T) {
-	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4", map[string]interface{}{
-		"internaluserid":  "__INTERNAL_ID__",
-		"internalvin":     "INTERNAL123",
-		"Temperature":     72.0,
-		"TemperatureType": 2,
-		"FrontDefroster":  0,
-		"RearDefogger":    1,
-	})
+	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4")
 	defer server.Close()
 
 	client := createTestClient(t, server.URL)

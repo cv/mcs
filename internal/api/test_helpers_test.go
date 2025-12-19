@@ -105,18 +105,58 @@ func createTestServer(t *testing.T, responseData map[string]interface{}, options
 	}))
 }
 
-// createSuccessServer creates a test server that returns an encrypted success response
+// createSuccessServer creates a test server that returns an encrypted success response with path validation
+// This is a convenience wrapper around createTestServer for simple GET/retrieve endpoints
+// For control endpoints (POST with body validation), use createControlTestServer instead
 func createSuccessServer(t *testing.T, expectedPath string, responseData map[string]interface{}) *httptest.Server {
 	t.Helper()
 	return createTestServer(t, responseData, WithPath(expectedPath))
 }
 
 // createErrorServer creates a test server that returns an encrypted error response
-func createErrorServer(t *testing.T, resultCode, message string) *httptest.Server {
+// Optionally accepts HTTP status code as third parameter (defaults to 200)
+func createErrorServer(t *testing.T, resultCode, message string, httpStatusCode ...int) *httptest.Server {
 	t.Helper()
 	errorResponse := map[string]interface{}{
 		"resultCode": resultCode,
 		"message":    message,
 	}
-	return createTestServer(t, errorResponse)
+
+	statusCode := 200
+	if len(httpStatusCode) > 0 {
+		statusCode = httpStatusCode[0]
+	}
+
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Encrypt and wrap the response
+		responseJSON, _ := json.Marshal(errorResponse)
+		encrypted, _ := EncryptAES128CBC(responseJSON, testEncKey, IV)
+
+		response := map[string]interface{}{
+			"state":   "S",
+			"payload": encrypted,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Errorf("Failed to encode response: %v", err)
+		}
+	}))
+}
+
+// createControlTestServer creates a test server for control endpoints
+// All control endpoints expect POST requests with non-empty bodies and return standard success responses
+func createControlTestServer(t *testing.T, expectedPath string) *httptest.Server {
+	t.Helper()
+	successResponse := map[string]interface{}{
+		"resultCode": "200S00",
+		"message":    "Success",
+	}
+
+	return createTestServer(t, successResponse,
+		WithPath(expectedPath),
+		WithMethod("POST"),
+		WithBodyValidation(),
+	)
 }
