@@ -208,11 +208,15 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	// Extract hazard info
 	hazardsOn, _ := vehicleStatus.GetHazardInfo()
 
+	// Extract battery and fuel info
+	batteryLevel, evRange, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, heaterOn, heaterAuto, _ := evStatus.GetBatteryInfo()
+	fuelLevel, fuelRange, _ := vehicleStatus.GetFuelInfo()
+
 	// Build vehicle header
 	output := "\n" + formatVehicleHeader(vehicleInfo) + "\n"
 	output += fmt.Sprintf("Status as of %s\n\n", timestamp)
-	output += displayBatteryStatus(evStatus, false) + "\n"
-	output += displayFuelStatus(vehicleStatus, false) + "\n"
+	output += formatBatteryStatusCompact(batteryLevel, chargeTimeACMin, chargeTimeQBCMin, pluggedIn, charging, heaterOn, heaterAuto) + "\n"
+	output += formatFuelStatusWithRange(fuelLevel, fuelRange, evRange) + "\n"
 	output += formatHvacStatus(hvacOn, frontDefroster, rearDefroster, interiorTempC, targetTempC, false) + "\n"
 	output += displayDoorsStatus(vehicleStatus, false) + "\n"
 	output += formatWindowsStatus(driver, passenger, rearLeft, rearRight, false) + "\n"
@@ -421,7 +425,7 @@ func formatBatteryStatus(batteryLevel, range_, chargeTimeACMin, chargeTimeQBCMin
 		return toJSON(data)
 	}
 
-	status := fmt.Sprintf("BATTERY: %.0f%% (%.1f km EV range)", batteryLevel, range_)
+	status := fmt.Sprintf("BATTERY: %.0f%% (%.1f km range)", batteryLevel, range_)
 
 	// Build status flags
 	var flags []string
@@ -467,7 +471,56 @@ func formatFuelStatus(fuelLevel, range_ float64, jsonOutput bool) string {
 		})
 	}
 
-	return fmt.Sprintf("FUEL: %.0f%% (%.1f km total range)", fuelLevel, range_)
+	return fmt.Sprintf("FUEL: %.0f%% (%.1f km range)", fuelLevel, range_)
+}
+
+// formatBatteryStatusCompact formats battery status without range (for combined view)
+func formatBatteryStatusCompact(batteryLevel, chargeTimeACMin, chargeTimeQBCMin float64, pluggedIn, charging, heaterOn, heaterAuto bool) string {
+	status := fmt.Sprintf("BATTERY: %.0f%%", batteryLevel)
+
+	// Build status flags
+	var flags []string
+
+	if pluggedIn {
+		if charging {
+			// Show charging time estimates
+			timeStr := formatChargeTime(chargeTimeACMin, chargeTimeQBCMin)
+			if timeStr != "" {
+				flags = append(flags, fmt.Sprintf("charging, %s", timeStr))
+			} else {
+				flags = append(flags, "charging")
+			}
+		} else {
+			flags = append(flags, "plugged in, not charging")
+		}
+	}
+
+	// Add heater status
+	if heaterOn {
+		if heaterAuto {
+			flags = append(flags, "battery heater on, auto enabled")
+		} else {
+			flags = append(flags, "battery heater on")
+		}
+	} else if heaterAuto {
+		flags = append(flags, "battery heater auto enabled")
+	}
+
+	if len(flags) > 0 {
+		status += fmt.Sprintf(" [%s]", strings.Join(flags, ", "))
+	}
+
+	return status
+}
+
+// formatFuelStatusWithRange formats fuel status with combined range display for PHEVs
+func formatFuelStatusWithRange(fuelLevel, fuelRange, evRange float64) string {
+	// If both ranges are the same (common for PHEVs), show as total range
+	if fuelRange == evRange {
+		return fmt.Sprintf("FUEL: %.0f%% (%.1f km total range)", fuelLevel, fuelRange)
+	}
+	// If different, show both EV and total (fuelRange is usually total for PHEVs)
+	return fmt.Sprintf("FUEL: %.0f%% (%.1f km EV / %.1f km total range)", fuelLevel, evRange, fuelRange)
 }
 
 // formatLocationStatus formats location status for display
