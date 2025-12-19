@@ -34,6 +34,32 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "status",
 		Short: "Show vehicle status",
 		Long:  `Show comprehensive vehicle status including battery, fuel, location, tires, and doors.`,
+		Example: `  # Show all vehicle status information
+  mcs status
+
+  # Example output:
+  # CX-90 PHEV (2024)
+  # VIN: JM3XXXXXXXXXX1234
+  # Status as of 2024-03-15 14:30:45 (2 min ago)
+  #
+  # BATTERY: 85% [plugged in, not charging]
+  # FUEL: 75% (45 km EV + 450 km fuel = 495 km total)
+  # CLIMATE: Off, 18°C
+  # DOORS: All locked
+  # WINDOWS: All closed
+  # TIRES: FL:35.0 FR:35.0 RL:33.0 RR:33.0 PSI
+  # ODOMETER: 12,345.6 km
+
+  # Show status in JSON format
+  mcs status --json
+
+  # Request fresh status from vehicle (PHEV/EV only, waits up to 90 seconds)
+  mcs status --refresh
+
+  # Show specific status category
+  mcs status battery
+  mcs status fuel
+  mcs status location`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runStatus(cmd, jsonOutput, StatusAll, refresh, refreshWait)
 		},
@@ -45,31 +71,151 @@ func NewStatusCmd() *cobra.Command {
 	statusCmd.PersistentFlags().BoolVar(&refresh, "refresh", false, "request fresh status from vehicle (PHEV/EV only)")
 	statusCmd.PersistentFlags().IntVar(&refreshWait, "refresh-wait", 90, "max seconds to wait for vehicle response")
 
-	// Add subcommands using configuration slice
-	subcommands := []struct {
-		use        string
-		short      string
-		statusType StatusType
-	}{
-		{"battery", "Show battery status", StatusBattery},
-		{"fuel", "Show fuel status", StatusFuel},
-		{"location", "Show vehicle location", StatusLocation},
-		{"tires", "Show tire pressure", StatusTires},
-		{"doors", "Show door lock status", StatusDoors},
-	}
+	// Add battery subcommand
+	statusCmd.AddCommand(&cobra.Command{
+		Use:   "battery",
+		Short: "Show battery status",
+		Example: `  # Show battery status
+  mcs status battery
 
-	for _, sc := range subcommands {
-		// Capture loop variable for closure
-		statusType := sc.statusType
-		statusCmd.AddCommand(&cobra.Command{
-			Use:   sc.use,
-			Short: sc.short,
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return runStatus(cmd, jsonOutput, statusType, refresh, refreshWait)
-			},
-			SilenceUsage: true,
-		})
-	}
+  # Example output:
+  # BATTERY: 85% (42.5 km range) [plugged in, not charging]
+
+  # Show battery charging with time estimates
+  # BATTERY: 65% (32.5 km range) [charging, ~2h 30m quick / ~4h AC]
+
+  # Show battery status in JSON format
+  mcs status battery --json
+
+  # Example JSON output:
+  # {
+  #   "battery_level": 85,
+  #   "range_km": 42.5,
+  #   "charge_time_ac_min": 0,
+  #   "charge_time_qbc_min": 0,
+  #   "plugged_in": true,
+  #   "charging": false,
+  #   "heater_on": false,
+  #   "heater_auto": true
+  # }`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runStatus(cmd, jsonOutput, StatusBattery, refresh, refreshWait)
+		},
+		SilenceUsage: true,
+	})
+
+	// Add fuel subcommand
+	statusCmd.AddCommand(&cobra.Command{
+		Use:   "fuel",
+		Short: "Show fuel status",
+		Example: `  # Show fuel status
+  mcs status fuel
+
+  # Example output:
+  # FUEL: 75% (450.5 km range)
+
+  # Show fuel status in JSON format
+  mcs status fuel --json
+
+  # Example JSON output:
+  # {
+  #   "fuel_level": 75,
+  #   "range_km": 450.5
+  # }`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runStatus(cmd, jsonOutput, StatusFuel, refresh, refreshWait)
+		},
+		SilenceUsage: true,
+	})
+
+	// Add location subcommand
+	statusCmd.AddCommand(&cobra.Command{
+		Use:   "location",
+		Short: "Show vehicle location",
+		Example: `  # Show vehicle location
+  mcs status location
+
+  # Example output:
+  # LOCATION: 37.774929, -122.419418
+  #   https://maps.google.com/?q=37.774929,-122.419418
+
+  # Show location in JSON format
+  mcs status location --json
+
+  # Example JSON output:
+  # {
+  #   "latitude": 37.774929,
+  #   "longitude": -122.419418,
+  #   "timestamp": "20240315143045"
+  # }`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runStatus(cmd, jsonOutput, StatusLocation, refresh, refreshWait)
+		},
+		SilenceUsage: true,
+	})
+
+	// Add tires subcommand
+	statusCmd.AddCommand(&cobra.Command{
+		Use:   "tires",
+		Short: "Show tire pressure",
+		Example: `  # Show tire pressure
+  mcs status tires
+
+  # Example output:
+  # TIRES: FL:35.0 FR:35.0 RL:33.0 RR:33.0 PSI
+
+  # Show tire pressure in JSON format
+  mcs status tires --json
+
+  # Example JSON output:
+  # {
+  #   "front_left_psi": 35.0,
+  #   "front_right_psi": 35.0,
+  #   "rear_left_psi": 33.0,
+  #   "rear_right_psi": 33.0
+  # }`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runStatus(cmd, jsonOutput, StatusTires, refresh, refreshWait)
+		},
+		SilenceUsage: true,
+	})
+
+	// Add doors subcommand
+	statusCmd.AddCommand(&cobra.Command{
+		Use:   "doors",
+		Short: "Show door lock status",
+		Example: `  # Show door lock status
+  mcs status doors
+
+  # Example output when all locked:
+  # DOORS: All locked
+
+  # Example output with issues:
+  # DOORS: Driver unlocked, Trunk open
+
+  # Show door status in JSON format
+  mcs status doors --json
+
+  # Example JSON output:
+  # {
+  #   "driver_open": false,
+  #   "driver_locked": true,
+  #   "passenger_open": false,
+  #   "passenger_locked": true,
+  #   "rear_left_open": false,
+  #   "rear_left_locked": true,
+  #   "rear_right_open": false,
+  #   "rear_right_locked": true,
+  #   "trunk_open": false,
+  #   "hood_open": false,
+  #   "fuel_lid_open": false,
+  #   "all_locked": true
+  # }`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runStatus(cmd, jsonOutput, StatusDoors, refresh, refreshWait)
+		},
+		SilenceUsage: true,
+	})
 
 	return statusCmd
 }
