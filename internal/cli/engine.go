@@ -13,6 +13,11 @@ func NewStartCmd() *cobra.Command {
 		Use:   "start",
 		Short: "Start vehicle engine",
 		Long:  `Start the vehicle engine remotely.`,
+		Example: `  # Start the vehicle engine remotely
+  mcs start
+
+  # Expected output on success:
+  # Engine started successfully`,
 		APICall: func(ctx context.Context, client *api.Client, vin string) error {
 			return client.EngineStart(ctx, vin)
 		},
@@ -27,6 +32,11 @@ func NewStopCmd() *cobra.Command {
 		Use:   "stop",
 		Short: "Stop vehicle engine",
 		Long:  `Stop the vehicle engine remotely.`,
+		Example: `  # Stop the vehicle engine remotely
+  mcs stop
+
+  # Expected output on success:
+  # Engine stopped successfully`,
 		APICall: func(ctx context.Context, client *api.Client, vin string) error {
 			return client.EngineStop(ctx, vin)
 		},
