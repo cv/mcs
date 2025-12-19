@@ -29,11 +29,17 @@ func boolToInt(b bool) int {
 	return 0
 }
 
-// executeControl sends a control command to the vehicle and validates the response.
-func (c *Client) executeControl(ctx context.Context, endpoint, actionDesc, internalVIN string) error {
+// controlEndpoint sends a control command to the vehicle with optional additional parameters.
+// This is the generic method that all control endpoints use internally.
+func (c *Client) controlEndpoint(ctx context.Context, endpoint, actionDesc, internalVIN string, additionalParams map[string]interface{}) error {
 	bodyParams := map[string]interface{}{
 		"internaluserid": InternalUserID,
 		"internalvin":    internalVIN,
+	}
+
+	// Merge additional parameters if provided
+	for k, v := range additionalParams {
+		bodyParams[k] = v
 	}
 
 	response, err := c.APIRequest(ctx, "POST", endpoint, nil, bodyParams, true, true)
@@ -47,6 +53,11 @@ func (c *Client) executeControl(ctx context.Context, endpoint, actionDesc, inter
 	}
 
 	return checkResultCode(resultCode, actionDesc)
+}
+
+// executeControl sends a simple control command to the vehicle (no additional parameters).
+func (c *Client) executeControl(ctx context.Context, endpoint, actionDesc, internalVIN string) error {
+	return c.controlEndpoint(ctx, endpoint, actionDesc, internalVIN, nil)
 }
 
 // DoorLock locks the vehicle doors
@@ -106,24 +117,12 @@ func (c *Client) RefreshVehicleStatus(ctx context.Context, internalVIN string) e
 
 // SetHVACSetting sets HVAC temperature and defroster settings
 func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, temperature float64, tempUnit TemperatureUnit, frontDefroster, rearDefroster bool) error {
-	bodyParams := map[string]interface{}{
-		"internaluserid":  InternalUserID,
-		"internalvin":     internalVIN,
+	additionalParams := map[string]interface{}{
 		"Temperature":     temperature,
 		"TemperatureType": int(tempUnit),
 		"FrontDefroster":  boolToInt(frontDefroster),
 		"RearDefogger":    boolToInt(rearDefroster),
 	}
 
-	response, err := c.APIRequest(ctx, "POST", EndpointUpdateHVACSetting, nil, bodyParams, true, true)
-	if err != nil {
-		return err
-	}
-
-	resultCode, ok := getString(response, "resultCode")
-	if !ok {
-		return fmt.Errorf("failed to set HVAC settings: missing result code")
-	}
-
-	return checkResultCode(resultCode, "set HVAC settings")
+	return c.controlEndpoint(ctx, EndpointUpdateHVACSetting, "set HVAC settings", internalVIN, additionalParams)
 }
