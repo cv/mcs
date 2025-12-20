@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 )
 
@@ -396,17 +397,17 @@ func (c *Client) logRequest(method, url string, headers map[string]string, body 
 		return
 	}
 
-	fmt.Printf("DEBUG: %s %s\n", method, url)
-	fmt.Printf("DEBUG: Headers:\n")
+	fmt.Fprintf(os.Stderr, "DEBUG: %s %s\n", method, url)
+	fmt.Fprintf(os.Stderr, "DEBUG: Headers:\n")
 	for k, v := range headers {
 		if k == "access-token" && v != "" {
-			fmt.Printf("  %s: [REDACTED]\n", k)
+			fmt.Fprintf(os.Stderr, "  %s: [REDACTED]\n", k)
 		} else {
-			fmt.Printf("  %s: %s\n", k, v)
+			fmt.Fprintf(os.Stderr, "  %s: %s\n", k, v)
 		}
 	}
 	if body != "" {
-		fmt.Printf("DEBUG: Original body: %s\n", body)
+		fmt.Fprintf(os.Stderr, "DEBUG: Original body: %s\n", body)
 	}
 }
 
@@ -416,6 +417,6 @@ func (c *Client) logResponse(statusCode int, body []byte) {
 		return
 	}
 
-	fmt.Printf("DEBUG: Response status: %d\n", statusCode)
-	fmt.Printf("DEBUG: Response body: %s\n", string(body))
+	fmt.Fprintf(os.Stderr, "DEBUG: Response status: %d\n", statusCode)
+	fmt.Fprintf(os.Stderr, "DEBUG: Response body: %s\n", string(body))
 }
