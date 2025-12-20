@@ -131,6 +131,7 @@ type Client struct {
 	httpClient        *http.Client
 	debug             bool
 	sensorDataBuilder *sensordata.SensorDataBuilder
+	rotateTicker      *time.Ticker
 }
 
 // NewClient creates a new API client
@@ -141,7 +142,7 @@ func NewClient(email, password string, region Region) (*Client, error) {
 
 	config := RegionConfigs[string(region)]
 
-	return &Client{
+	client := &Client{
 		email:             email,
 		password:          password,
 		region:            region,
@@ -153,7 +154,15 @@ func NewClient(email, password string, region Region) (*Client, error) {
 		httpClient:        &http.Client{Timeout: 30 * time.Second},
 		debug:             false,
 		sensorDataBuilder: sensordata.NewSensorDataBuilder(),
-	}, nil
+		rotateTicker:      time.NewTicker(24 * time.Hour),
+	}
+	// Start background goroutine to periodically refresh encryption keys
+	go func() {
+		for range client.rotateTicker.C {
+			_ = client.GetEncryptionKeys(context.Background())
+		}
+	}()
+	return client, nil
 }
 
 // SetDebug enables or disables debug logging
