@@ -186,3 +186,33 @@ func TestConfig_Validate(t *testing.T) {
 		})
 	}
 }
+func TestLoad_propagatesReadError(t *testing.T) {
+	// Create a temporary directory for the test
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.toml")
+
+	// Write a valid TOML file
+	err := os.WriteFile(configPath, []byte(`email = "test@example.com"`), 0600)
+	if err != nil {
+		t.Fatalf("Failed to create config file: %v", err)
+	}
+
+	// Make the file unreadable to force a read error
+	if err := os.Chmod(configPath, 0o000); err != nil {
+		t.Fatalf("Failed to chmod config file: %v", err)
+	}
+
+	// Clear environment variables so file values are used
+	t.Setenv("MCS_EMAIL", "")
+	t.Setenv("MCS_PASSWORD", "")
+	t.Setenv("MCS_REGION", "")
+
+	// Load should return an error because reading the unreadable file failed
+	cfg, err := Load(configPath)
+	if cfg != nil {
+		t.Errorf("expected nil config, got %v", cfg)
+	}
+	if err == nil {
+		t.Errorf("expected error when reading unreadable config file, got nil")
+	}
+}
