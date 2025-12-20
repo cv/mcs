@@ -43,7 +43,11 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	// Try to read config file (don't fail if it doesn't exist)
-	_ = v.ReadInConfig()
+	if err := v.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, fmt.Errorf("failed to read config file: %w", err)
+		}
+	}
 
 	// Bind environment variables
 	v.SetEnvPrefix("MCS")
