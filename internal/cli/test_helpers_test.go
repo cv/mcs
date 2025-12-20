@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/cv/mcs/internal/api"
@@ -256,4 +257,27 @@ func (b *MockEVVehicleStatusBuilder) WithCharging(charging bool) *MockEVVehicleS
 // Build returns the constructed EVVehicleStatusResponse.
 func (b *MockEVVehicleStatusBuilder) Build() *api.EVVehicleStatusResponse {
 	return b.response
+}
+
+// parseJSONToMap is a test helper that parses a JSON string into a map.
+func parseJSONToMap(t *testing.T, jsonStr string) map[string]interface{} {
+	t.Helper()
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
+		t.Fatalf("Expected valid JSON, got error: %v", err)
+	}
+	return data
+}
+
+// assertMapValue is a test helper that asserts a map value equals expected.
+func assertMapValue(t *testing.T, data map[string]interface{}, key string, expected interface{}) {
+	t.Helper()
+	actual, ok := data[key]
+	if !ok {
+		t.Errorf("Expected key %q to exist in map", key)
+		return
+	}
+	if actual != expected {
+		t.Errorf("Expected %s to be %v, got %v", key, expected, actual)
+	}
 }

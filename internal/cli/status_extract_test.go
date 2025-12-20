@@ -96,12 +96,8 @@ func TestFuelInfoToMap(t *testing.T) {
 
 	data := fuelInfoToMap(fuelInfo)
 
-	if data["fuel_level"] != float64(92) {
-		t.Errorf("Expected fuel_level 92, got %v", data["fuel_level"])
-	}
-	if data["range_km"] != 630.0 {
-		t.Errorf("Expected range_km 630.0, got %v", data["range_km"])
-	}
+	assertMapValue(t, data, "fuel_level", float64(92))
+	assertMapValue(t, data, "range_km", 630.0)
 }
 
 // TestLocationInfoToMap tests locationInfoToMap conversion
@@ -114,15 +110,9 @@ func TestLocationInfoToMap(t *testing.T) {
 
 	data := locationInfoToMap(locationInfo)
 
-	if data["latitude"] != 37.7749 {
-		t.Errorf("Expected latitude 37.7749, got %v", data["latitude"])
-	}
-	if data["longitude"] != -122.4194 {
-		t.Errorf("Expected longitude -122.4194, got %v", data["longitude"])
-	}
-	if data["timestamp"] != "20231201120000" {
-		t.Errorf("Expected timestamp 20231201120000, got %v", data["timestamp"])
-	}
+	assertMapValue(t, data, "latitude", 37.7749)
+	assertMapValue(t, data, "longitude", -122.4194)
+	assertMapValue(t, data, "timestamp", "20231201120000")
 
 	mapsURL, ok := data["maps_url"].(string)
 	if !ok {
@@ -145,18 +135,10 @@ func TestTireInfoToMap(t *testing.T) {
 
 	data := tireInfoToMap(tireInfo)
 
-	if data["front_left_psi"] != 32.5 {
-		t.Errorf("Expected front_left_psi 32.5, got %v", data["front_left_psi"])
-	}
-	if data["front_right_psi"] != 32.0 {
-		t.Errorf("Expected front_right_psi 32.0, got %v", data["front_right_psi"])
-	}
-	if data["rear_left_psi"] != 31.5 {
-		t.Errorf("Expected rear_left_psi 31.5, got %v", data["rear_left_psi"])
-	}
-	if data["rear_right_psi"] != 31.8 {
-		t.Errorf("Expected rear_right_psi 31.8, got %v", data["rear_right_psi"])
-	}
+	assertMapValue(t, data, "front_left_psi", 32.5)
+	assertMapValue(t, data, "front_right_psi", 32.0)
+	assertMapValue(t, data, "rear_left_psi", 31.5)
+	assertMapValue(t, data, "rear_right_psi", 31.8)
 }
 
 // TestDoorStatusToMap tests doorStatusToMap conversion
@@ -178,15 +160,9 @@ func TestDoorStatusToMap(t *testing.T) {
 
 	data := doorStatusToMap(doorStatus)
 
-	if data["all_locked"] != true {
-		t.Errorf("Expected all_locked true, got %v", data["all_locked"])
-	}
-	if data["driver_open"] != false {
-		t.Errorf("Expected driver_open false, got %v", data["driver_open"])
-	}
-	if data["driver_locked"] != true {
-		t.Errorf("Expected driver_locked true, got %v", data["driver_locked"])
-	}
+	assertMapValue(t, data, "all_locked", true)
+	assertMapValue(t, data, "driver_open", false)
+	assertMapValue(t, data, "driver_locked", true)
 }
 
 // TestOdometerInfoToMap tests odometerInfoToMap conversion
@@ -195,9 +171,7 @@ func TestOdometerInfoToMap(t *testing.T) {
 
 	data := odometerInfoToMap(odometerInfo)
 
-	if data["odometer_km"] != 12345.6 {
-		t.Errorf("Expected odometer_km 12345.6, got %v", data["odometer_km"])
-	}
+	assertMapValue(t, data, "odometer_km", 12345.6)
 }
 
 // TestHvacInfoToMap tests hvacInfoToMap conversion
@@ -212,21 +186,11 @@ func TestHvacInfoToMap(t *testing.T) {
 
 	data := hvacInfoToMap(hvacInfo)
 
-	if data["hvac_on"] != true {
-		t.Errorf("Expected hvac_on true, got %v", data["hvac_on"])
-	}
-	if data["front_defroster"] != true {
-		t.Errorf("Expected front_defroster true, got %v", data["front_defroster"])
-	}
-	if data["rear_defroster"] != false {
-		t.Errorf("Expected rear_defroster false, got %v", data["rear_defroster"])
-	}
-	if data["interior_temperature_c"] != float64(21) {
-		t.Errorf("Expected interior_temperature_c 21, got %v", data["interior_temperature_c"])
-	}
-	if data["target_temperature_c"] != float64(22) {
-		t.Errorf("Expected target_temperature_c 22, got %v", data["target_temperature_c"])
-	}
+	assertMapValue(t, data, "hvac_on", true)
+	assertMapValue(t, data, "front_defroster", true)
+	assertMapValue(t, data, "rear_defroster", false)
+	assertMapValue(t, data, "interior_temperature_c", float64(21))
+	assertMapValue(t, data, "target_temperature_c", float64(22))
 }
 
 // TestWindowStatusToMap tests windowStatusToMap conversion
@@ -240,18 +204,10 @@ func TestWindowStatusToMap(t *testing.T) {
 
 	data := windowStatusToMap(windowStatus)
 
-	if data["driver_position"] != float64(25) {
-		t.Errorf("Expected driver_position 25, got %v", data["driver_position"])
-	}
-	if data["passenger_position"] != float64(50) {
-		t.Errorf("Expected passenger_position 50, got %v", data["passenger_position"])
-	}
-	if data["rear_left_position"] != float64(75) {
-		t.Errorf("Expected rear_left_position 75, got %v", data["rear_left_position"])
-	}
-	if data["rear_right_position"] != float64(100) {
-		t.Errorf("Expected rear_right_position 100, got %v", data["rear_right_position"])
-	}
+	assertMapValue(t, data, "driver_position", float64(25))
+	assertMapValue(t, data, "passenger_position", float64(50))
+	assertMapValue(t, data, "rear_left_position", float64(75))
+	assertMapValue(t, data, "rear_right_position", float64(100))
 }
 
 // TestExtractVehicleInfoDataHelper tests vehicle info extraction
@@ -265,18 +221,10 @@ func TestExtractVehicleInfoDataHelper(t *testing.T) {
 
 	data := extractVehicleInfoData(info)
 
-	if data["vin"] != "JM3KKEHC1R0123456" {
-		t.Errorf("Expected vin JM3KKEHC1R0123456, got %v", data["vin"])
-	}
-	if data["nickname"] != "My CX-90" {
-		t.Errorf("Expected nickname My CX-90, got %v", data["nickname"])
-	}
-	if data["model_name"] != "CX-90 PHEV" {
-		t.Errorf("Expected model_name CX-90 PHEV, got %v", data["model_name"])
-	}
-	if data["model_year"] != "2024" {
-		t.Errorf("Expected model_year 2024, got %v", data["model_year"])
-	}
+	assertMapValue(t, data, "vin", "JM3KKEHC1R0123456")
+	assertMapValue(t, data, "nickname", "My CX-90")
+	assertMapValue(t, data, "model_name", "CX-90 PHEV")
+	assertMapValue(t, data, "model_year", "2024")
 }
 
 // TestExtractWithGetter tests the generic extraction helper
@@ -299,12 +247,8 @@ func TestExtractWithGetter(t *testing.T) {
 		fuelInfoToMap,
 	)
 
-	if data["fuel_level"] != float64(92) {
-		t.Errorf("Expected fuel_level 92, got %v", data["fuel_level"])
-	}
-	if data["range_km"] != 630.0 {
-		t.Errorf("Expected range_km 630.0, got %v", data["range_km"])
-	}
+	assertMapValue(t, data, "fuel_level", float64(92))
+	assertMapValue(t, data, "range_km", 630.0)
 }
 
 // TestExtractWithGetterError tests the generic extraction helper with an error case
