@@ -39,14 +39,35 @@ func assertMapValue(t *testing.T, data map[string]interface{}, key string, expec
 
 // TestStatusCommand tests the status command
 func TestStatusCommand(t *testing.T) {
-	cmd := NewStatusCmd()
-
-	if cmd.Use != "status" {
-		t.Errorf("Expected Use to be 'status', got '%s'", cmd.Use)
+	tests := []struct {
+		name          string
+		expectedUse   string
+		checkShortSet bool
+	}{
+		{
+			name:          "command has correct use",
+			expectedUse:   "status",
+			checkShortSet: false,
+		},
+		{
+			name:          "command has short description",
+			expectedUse:   "status",
+			checkShortSet: true,
+		},
 	}
 
-	if cmd.Short == "" {
-		t.Error("Expected Short description to be set")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := NewStatusCmd()
+
+			if cmd.Use != tt.expectedUse {
+				t.Errorf("Expected Use to be '%s', got '%s'", tt.expectedUse, cmd.Use)
+			}
+
+			if tt.checkShortSet && cmd.Short == "" {
+				t.Error("Expected Short description to be set")
+			}
+		})
 	}
 }
 
@@ -85,16 +106,33 @@ func TestStatusCommand_Subcommands(t *testing.T) {
 
 // TestStatusCommand_JSONFlag tests the JSON output flag
 func TestStatusCommand_JSONFlag(t *testing.T) {
-	cmd := NewStatusCmd()
-
-	// Check if json flag exists
-	jsonFlag := cmd.PersistentFlags().Lookup("json")
-	if jsonFlag == nil {
-		t.Fatal("Expected --json flag to exist")
+	tests := []struct {
+		name         string
+		flagName     string
+		expectedType string
+		shouldExist  bool
+	}{
+		{
+			name:         "json flag exists",
+			flagName:     "json",
+			expectedType: "bool",
+			shouldExist:  true,
+		},
 	}
 
-	if jsonFlag.Value.Type() != "bool" {
-		t.Errorf("Expected --json flag to be bool, got %s", jsonFlag.Value.Type())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := NewStatusCmd()
+			flag := cmd.PersistentFlags().Lookup(tt.flagName)
+
+			if tt.shouldExist && flag == nil {
+				t.Fatalf("Expected --%s flag to exist", tt.flagName)
+			}
+
+			if flag != nil && flag.Value.Type() != tt.expectedType {
+				t.Errorf("Expected --%s flag to be %s, got %s", tt.flagName, tt.expectedType, flag.Value.Type())
+			}
+		})
 	}
 }
 
@@ -187,28 +225,47 @@ func TestFormatBatteryStatus(t *testing.T) {
 
 // TestFormatBatteryStatus_JSON tests battery status JSON formatting
 func TestFormatBatteryStatus_JSON(t *testing.T) {
-	batteryInfo := api.BatteryInfo{
-		BatteryLevel:     66,
-		RangeKm:          245.5,
-		ChargeTimeACMin:  180,
-		ChargeTimeQBCMin: 45,
-		PluggedIn:        true,
-		Charging:         true,
-		HeaterOn:         false,
-		HeaterAuto:       false,
-	}
-	result, err := formatBatteryStatus(batteryInfo, true)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
+	tests := []struct {
+		name         string
+		batteryInfo  api.BatteryInfo
+		expectedJSON map[string]interface{}
+	}{
+		{
+			name: "battery status JSON format",
+			batteryInfo: api.BatteryInfo{
+				BatteryLevel:     66,
+				RangeKm:          245.5,
+				ChargeTimeACMin:  180,
+				ChargeTimeQBCMin: 45,
+				PluggedIn:        true,
+				Charging:         true,
+				HeaterOn:         false,
+				HeaterAuto:       false,
+			},
+			expectedJSON: map[string]interface{}{
+				"battery_level":           float64(66),
+				"range_km":                245.5,
+				"plugged_in":              true,
+				"charging":                true,
+				"charge_time_ac_minutes":  float64(180),
+				"charge_time_qbc_minutes": float64(45),
+			},
+		},
 	}
 
-	data := parseJSONToMap(t, result)
-	assertMapValue(t, data, "battery_level", float64(66))
-	assertMapValue(t, data, "range_km", 245.5)
-	assertMapValue(t, data, "plugged_in", true)
-	assertMapValue(t, data, "charging", true)
-	assertMapValue(t, data, "charge_time_ac_minutes", float64(180))
-	assertMapValue(t, data, "charge_time_qbc_minutes", float64(45))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := formatBatteryStatus(tt.batteryInfo, true)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			data := parseJSONToMap(t, result)
+			for key, expected := range tt.expectedJSON {
+				assertMapValue(t, data, key, expected)
+			}
+		})
+	}
 }
 
 // TestFormatBatteryStatus_WithHeater tests battery heater display
@@ -291,35 +348,56 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 
 // TestFormatFuelStatus tests fuel status formatting
 func TestFormatFuelStatus(t *testing.T) {
-	fuelInfo := api.FuelInfo{
-		FuelLevel: 92,
-		RangeKm:   630.0,
+	tests := []struct {
+		name           string
+		fuelLevel      float64
+		rangeKm        float64
+		asJSON         bool
+		expectedOutput string
+		expectedJSON   map[string]interface{}
+	}{
+		{
+			name:           "fuel status text format",
+			fuelLevel:      92,
+			rangeKm:        630.0,
+			asJSON:         false,
+			expectedOutput: "FUEL: [█████████░] 92% (630.0 km range)",
+		},
+		{
+			name:      "fuel status JSON format",
+			fuelLevel: 92,
+			rangeKm:   630.0,
+			asJSON:    true,
+			expectedJSON: map[string]interface{}{
+				"fuel_level": float64(92),
+				"range_km":   630.0,
+			},
+		},
 	}
-	result, err := formatFuelStatus(fuelInfo, false)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-	expected := "FUEL: [█████████░] 92% (630.0 km range)"
 
-	if result != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, result)
-	}
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fuelInfo := api.FuelInfo{
+				FuelLevel: tt.fuelLevel,
+				RangeKm:   tt.rangeKm,
+			}
+			result, err := formatFuelStatus(fuelInfo, tt.asJSON)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 
-// TestFormatFuelStatus_JSON tests fuel status JSON formatting
-func TestFormatFuelStatus_JSON(t *testing.T) {
-	fuelInfo := api.FuelInfo{
-		FuelLevel: 92,
-		RangeKm:   630.0,
+			if tt.asJSON {
+				data := parseJSONToMap(t, result)
+				for key, expected := range tt.expectedJSON {
+					assertMapValue(t, data, key, expected)
+				}
+			} else {
+				if result != tt.expectedOutput {
+					t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
+				}
+			}
+		})
 	}
-	result, err := formatFuelStatus(fuelInfo, true)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	data := parseJSONToMap(t, result)
-	assertMapValue(t, data, "fuel_level", float64(92))
-	assertMapValue(t, data, "range_km", 630.0)
 }
 
 // TestFormatDoorsStatus tests doors status formatting
@@ -414,83 +492,139 @@ func TestFormatDoorsStatus(t *testing.T) {
 
 // TestFormatTiresStatus tests tire status formatting
 func TestFormatTiresStatus(t *testing.T) {
-	tireInfo := api.TireInfo{
-		FrontLeftPsi:  32.5,
-		FrontRightPsi: 32.0,
-		RearLeftPsi:   31.5,
-		RearRightPsi:  31.8,
+	tests := []struct {
+		name          string
+		frontLeftPsi  float64
+		frontRightPsi float64
+		rearLeftPsi   float64
+		rearRightPsi  float64
+		expectedPart  string
+	}{
+		{
+			name:          "typical tire pressures",
+			frontLeftPsi:  32.5,
+			frontRightPsi: 32.0,
+			rearLeftPsi:   31.5,
+			rearRightPsi:  31.8,
+			expectedPart:  "TIRES: FL:32.5 FR:32.0 RL:31.5 RR:31.8 PSI",
+		},
 	}
-	result, err := formatTiresStatus(tireInfo, false)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-	expected := "TIRES: FL:32.5 FR:32.0 RL:31.5 RR:31.8 PSI"
 
-	if !strings.Contains(result, expected) {
-		t.Errorf("Expected output to contain '%s', got '%s'", expected, result)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tireInfo := api.TireInfo{
+				FrontLeftPsi:  tt.frontLeftPsi,
+				FrontRightPsi: tt.frontRightPsi,
+				RearLeftPsi:   tt.rearLeftPsi,
+				RearRightPsi:  tt.rearRightPsi,
+			}
+			result, err := formatTiresStatus(tireInfo, false)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			if !strings.Contains(result, tt.expectedPart) {
+				t.Errorf("Expected output to contain '%s', got '%s'", tt.expectedPart, result)
+			}
+		})
 	}
 }
 
 // TestFormatLocationStatus tests location status formatting
 func TestFormatLocationStatus(t *testing.T) {
-	locationInfo := api.LocationInfo{
-		Latitude:  37.7749,
-		Longitude: 122.4194,
-		Timestamp: "20231201120000",
-	}
-	result, err := formatLocationStatus(locationInfo, false)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
+	tests := []struct {
+		name             string
+		latitude         float64
+		longitude        float64
+		timestamp        string
+		expectedContains []string
+	}{
+		{
+			name:      "location with coordinates",
+			latitude:  37.7749,
+			longitude: 122.4194,
+			timestamp: "20231201120000",
+			expectedContains: []string{
+				"LOCATION:",
+				"37.7749",
+				"122.4194",
+			},
+		},
 	}
 
-	if !strings.Contains(result, "LOCATION:") {
-		t.Error("Expected output to contain 'LOCATION:'")
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			locationInfo := api.LocationInfo{
+				Latitude:  tt.latitude,
+				Longitude: tt.longitude,
+				Timestamp: tt.timestamp,
+			}
+			result, err := formatLocationStatus(locationInfo, false)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 
-	if !strings.Contains(result, "37.7749") {
-		t.Error("Expected output to contain latitude")
-	}
-
-	if !strings.Contains(result, "122.4194") {
-		t.Error("Expected output to contain longitude")
+			for _, expected := range tt.expectedContains {
+				if !strings.Contains(result, expected) {
+					t.Errorf("Expected output to contain '%s', got '%s'", expected, result)
+				}
+			}
+		})
 	}
 }
 
 // TestGetInternalVIN tests getting internal VIN from vehicle base info
 func TestGetInternalVIN(t *testing.T) {
-	vecBaseInfos := &api.VecBaseInfosResponse{
-		ResultCode: api.ResultCodeSuccess,
-		VecBaseInfos: []api.VecBaseInfo{
-			{
-				Vehicle: api.Vehicle{
-					CvInformation: api.CvInformation{
-						InternalVIN: "INTERNAL123",
+	tests := []struct {
+		name        string
+		response    *api.VecBaseInfosResponse
+		expectedVIN string
+		expectError bool
+	}{
+		{
+			name: "successful VIN retrieval",
+			response: &api.VecBaseInfosResponse{
+				ResultCode: api.ResultCodeSuccess,
+				VecBaseInfos: []api.VecBaseInfo{
+					{
+						Vehicle: api.Vehicle{
+							CvInformation: api.CvInformation{
+								InternalVIN: "INTERNAL123",
+							},
+						},
 					},
 				},
 			},
+			expectedVIN: "INTERNAL123",
+			expectError: false,
+		},
+		{
+			name: "no vehicles found",
+			response: &api.VecBaseInfosResponse{
+				ResultCode:   "ResultCodeSuccess",
+				VecBaseInfos: []api.VecBaseInfo{},
+			},
+			expectError: true,
 		},
 	}
 
-	vin, err := vecBaseInfos.GetInternalVIN()
-	if err != nil {
-		t.Fatalf("Expected no error, got: %v", err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			vin, err := tt.response.GetInternalVIN()
 
-	if vin != "INTERNAL123" {
-		t.Errorf("Expected VIN 'INTERNAL123', got '%s'", vin)
-	}
-}
-
-// TestGetInternalVIN_NoVehicles tests error when no vehicles found
-func TestGetInternalVIN_NoVehicles(t *testing.T) {
-	vecBaseInfos := &api.VecBaseInfosResponse{
-		ResultCode:   "ResultCodeSuccess",
-		VecBaseInfos: []api.VecBaseInfo{},
-	}
-
-	_, err := vecBaseInfos.GetInternalVIN()
-	if err == nil {
-		t.Fatal("Expected error for no vehicles, got nil")
+			if tt.expectError {
+				if err == nil {
+					t.Fatal("Expected error, got nil")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("Expected no error, got: %v", err)
+				}
+				if vin != tt.expectedVIN {
+					t.Errorf("Expected VIN '%s', got '%s'", tt.expectedVIN, vin)
+				}
+			}
+		})
 	}
 }
 
@@ -598,124 +732,186 @@ func TestFormatHvacStatus(t *testing.T) {
 
 // TestFormatHvacStatus_JSON tests HVAC status JSON formatting
 func TestFormatHvacStatus_JSON(t *testing.T) {
-	hvacInfo := api.HVACInfo{
-		HVACOn:         true,
-		FrontDefroster: true,
-		RearDefroster:  false,
-		InteriorTempC:  21,
-		TargetTempC:    22,
-	}
-	result, err := formatHvacStatus(hvacInfo, true)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
+	tests := []struct {
+		name         string
+		hvacInfo     api.HVACInfo
+		expectedJSON map[string]interface{}
+	}{
+		{
+			name: "HVAC status JSON format",
+			hvacInfo: api.HVACInfo{
+				HVACOn:         true,
+				FrontDefroster: true,
+				RearDefroster:  false,
+				InteriorTempC:  21,
+				TargetTempC:    22,
+			},
+			expectedJSON: map[string]interface{}{
+				"hvac_on":                true,
+				"front_defroster":        true,
+				"rear_defroster":         false,
+				"interior_temperature_c": float64(21),
+				"target_temperature_c":   float64(22),
+			},
+		},
 	}
 
-	data := parseJSONToMap(t, result)
-	assertMapValue(t, data, "hvac_on", true)
-	assertMapValue(t, data, "front_defroster", true)
-	assertMapValue(t, data, "rear_defroster", false)
-	assertMapValue(t, data, "interior_temperature_c", float64(21))
-	assertMapValue(t, data, "target_temperature_c", float64(22))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := formatHvacStatus(tt.hvacInfo, true)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			data := parseJSONToMap(t, result)
+			for key, expected := range tt.expectedJSON {
+				assertMapValue(t, data, key, expected)
+			}
+		})
+	}
 }
 
 // TestGetHvacInfo tests extracting HVAC info from EV status
 func TestGetHvacInfo(t *testing.T) {
-	evStatus := &api.EVVehicleStatusResponse{
-		ResultCode: api.ResultCodeSuccess,
-		ResultData: []api.EVResultData{
-			{
-				OccurrenceDate: "20231201120000",
-				PlusBInformation: api.PlusBInformation{
-					VehicleInfo: api.EVVehicleInfo{
-						ChargeInfo: api.ChargeInfo{},
-						RemoteHvacInfo: &api.RemoteHvacInfo{
-							HVAC:           1,
-							FrontDefroster: 1,
-							RearDefogger:   0,
-							InCarTeDC:      21.5,
-							TargetTemp:     22.0,
+	tests := []struct {
+		name              string
+		response          *api.EVVehicleStatusResponse
+		expectError       bool
+		expectedHVACOn    bool
+		expectedFrontDefr bool
+		expectedRearDefr  bool
+		expectedInteriorC float64
+		expectedTargetC   float64
+	}{
+		{
+			name: "successful HVAC info extraction",
+			response: &api.EVVehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				ResultData: []api.EVResultData{
+					{
+						OccurrenceDate: "20231201120000",
+						PlusBInformation: api.PlusBInformation{
+							VehicleInfo: api.EVVehicleInfo{
+								ChargeInfo: api.ChargeInfo{},
+								RemoteHvacInfo: &api.RemoteHvacInfo{
+									HVAC:           1,
+									FrontDefroster: 1,
+									RearDefogger:   0,
+									InCarTeDC:      21.5,
+									TargetTemp:     22.0,
+								},
+							},
 						},
 					},
 				},
 			},
+			expectError:       false,
+			expectedHVACOn:    true,
+			expectedFrontDefr: true,
+			expectedRearDefr:  false,
+			expectedInteriorC: 21.5,
+			expectedTargetC:   22.0,
 		},
-	}
-
-	hvacInfo, err := evStatus.GetHvacInfo()
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	if !hvacInfo.HVACOn {
-		t.Error("Expected HVACOn to be true")
-	}
-	if !hvacInfo.FrontDefroster {
-		t.Error("Expected FrontDefroster to be true")
-	}
-	if hvacInfo.RearDefroster {
-		t.Error("Expected RearDefroster to be false")
-	}
-	if hvacInfo.InteriorTempC != 21.5 {
-		t.Errorf("Expected InteriorTempC 21.5, got %v", hvacInfo.InteriorTempC)
-	}
-	if hvacInfo.TargetTempC != 22.0 {
-		t.Errorf("Expected TargetTempC 22.0, got %v", hvacInfo.TargetTempC)
-	}
-}
-
-// TestGetHvacInfo_MissingData tests extracting HVAC info when data is missing
-func TestGetHvacInfo_MissingData(t *testing.T) {
-	evStatus := &api.EVVehicleStatusResponse{
-		ResultCode: api.ResultCodeSuccess,
-		ResultData: []api.EVResultData{
-			{
-				OccurrenceDate: "20231201120000",
-				PlusBInformation: api.PlusBInformation{
-					VehicleInfo: api.EVVehicleInfo{
-						ChargeInfo:     api.ChargeInfo{},
-						RemoteHvacInfo: nil, // No HVAC info
+		{
+			name: "missing HVAC data",
+			response: &api.EVVehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				ResultData: []api.EVResultData{
+					{
+						OccurrenceDate: "20231201120000",
+						PlusBInformation: api.PlusBInformation{
+							VehicleInfo: api.EVVehicleInfo{
+								ChargeInfo:     api.ChargeInfo{},
+								RemoteHvacInfo: nil,
+							},
+						},
 					},
 				},
 			},
+			expectError: true,
 		},
 	}
 
-	_, err := evStatus.GetHvacInfo()
-	if err == nil {
-		t.Fatal("Expected error when HVAC info is missing, got nil")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hvacInfo, err := tt.response.GetHvacInfo()
+
+			if tt.expectError {
+				if err == nil {
+					t.Fatal("Expected error, got nil")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+				if hvacInfo.HVACOn != tt.expectedHVACOn {
+					t.Errorf("Expected HVACOn to be %v, got %v", tt.expectedHVACOn, hvacInfo.HVACOn)
+				}
+				if hvacInfo.FrontDefroster != tt.expectedFrontDefr {
+					t.Errorf("Expected FrontDefroster to be %v, got %v", tt.expectedFrontDefr, hvacInfo.FrontDefroster)
+				}
+				if hvacInfo.RearDefroster != tt.expectedRearDefr {
+					t.Errorf("Expected RearDefroster to be %v, got %v", tt.expectedRearDefr, hvacInfo.RearDefroster)
+				}
+				if hvacInfo.InteriorTempC != tt.expectedInteriorC {
+					t.Errorf("Expected InteriorTempC %v, got %v", tt.expectedInteriorC, hvacInfo.InteriorTempC)
+				}
+				if hvacInfo.TargetTempC != tt.expectedTargetC {
+					t.Errorf("Expected TargetTempC %v, got %v", tt.expectedTargetC, hvacInfo.TargetTempC)
+				}
+			}
+		})
 	}
 }
 
 // TestExtractHvacData tests extracting HVAC data for JSON output
 func TestExtractHvacData(t *testing.T) {
-	evStatus := &api.EVVehicleStatusResponse{
-		ResultCode: api.ResultCodeSuccess,
-		ResultData: []api.EVResultData{
-			{
-				OccurrenceDate: "20231201120000",
-				PlusBInformation: api.PlusBInformation{
-					VehicleInfo: api.EVVehicleInfo{
-						ChargeInfo: api.ChargeInfo{},
-						RemoteHvacInfo: &api.RemoteHvacInfo{
-							HVAC:           1,
-							FrontDefroster: 0,
-							RearDefogger:   1,
-							InCarTeDC:      18,
-							TargetTemp:     22,
+	tests := []struct {
+		name         string
+		response     *api.EVVehicleStatusResponse
+		expectedData map[string]interface{}
+	}{
+		{
+			name: "HVAC data extraction",
+			response: &api.EVVehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				ResultData: []api.EVResultData{
+					{
+						OccurrenceDate: "20231201120000",
+						PlusBInformation: api.PlusBInformation{
+							VehicleInfo: api.EVVehicleInfo{
+								ChargeInfo: api.ChargeInfo{},
+								RemoteHvacInfo: &api.RemoteHvacInfo{
+									HVAC:           1,
+									FrontDefroster: 0,
+									RearDefogger:   1,
+									InCarTeDC:      18,
+									TargetTemp:     22,
+								},
+							},
 						},
 					},
 				},
 			},
+			expectedData: map[string]interface{}{
+				"hvac_on":                true,
+				"front_defroster":        false,
+				"rear_defroster":         true,
+				"interior_temperature_c": float64(18),
+				"target_temperature_c":   float64(22),
+			},
 		},
 	}
 
-	data := extractHvacData(evStatus)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data := extractHvacData(tt.response)
 
-	assertMapValue(t, data, "hvac_on", true)
-	assertMapValue(t, data, "front_defroster", false)
-	assertMapValue(t, data, "rear_defroster", true)
-	assertMapValue(t, data, "interior_temperature_c", float64(18))
-	assertMapValue(t, data, "target_temperature_c", float64(22))
+			for key, expected := range tt.expectedData {
+				assertMapValue(t, data, key, expected)
+			}
+		})
+	}
 }
 
 // TestFormatOdometerStatus tests odometer status formatting
@@ -763,55 +959,107 @@ func TestFormatOdometerStatus(t *testing.T) {
 
 // TestFormatOdometerStatus_JSON tests odometer status JSON formatting
 func TestFormatOdometerStatus_JSON(t *testing.T) {
-	odometerInfo := api.OdometerInfo{OdometerKm: 12345.6}
-	result, err := formatOdometerStatus(odometerInfo, true)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	data := parseJSONToMap(t, result)
-	assertMapValue(t, data, "odometer_km", 12345.6)
-}
-
-// TestGetOdometerInfo tests extracting odometer info from vehicle status
-func TestGetOdometerInfo(t *testing.T) {
-	vehicleStatus := &api.VehicleStatusResponse{
-		ResultCode: api.ResultCodeSuccess,
-		RemoteInfos: []api.RemoteInfo{
-			{
-				DriveInformation: api.DriveInformation{
-					OdoDispValue: 12345.6,
-				},
+	tests := []struct {
+		name         string
+		odometerKm   float64
+		expectedJSON map[string]interface{}
+	}{
+		{
+			name:       "odometer JSON format",
+			odometerKm: 12345.6,
+			expectedJSON: map[string]interface{}{
+				"odometer_km": 12345.6,
 			},
 		},
 	}
 
-	odometerInfo, err := vehicleStatus.GetOdometerInfo()
-	if err != nil {
-		t.Fatalf("Expected no error, got: %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			odometerInfo := api.OdometerInfo{OdometerKm: tt.odometerKm}
+			result, err := formatOdometerStatus(odometerInfo, true)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			data := parseJSONToMap(t, result)
+			for key, expected := range tt.expectedJSON {
+				assertMapValue(t, data, key, expected)
+			}
+		})
+	}
+}
+
+// TestGetOdometerInfo tests extracting odometer info from vehicle status
+func TestGetOdometerInfo(t *testing.T) {
+	tests := []struct {
+		name             string
+		response         *api.VehicleStatusResponse
+		expectedOdometer float64
+	}{
+		{
+			name: "successful odometer extraction",
+			response: &api.VehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				RemoteInfos: []api.RemoteInfo{
+					{
+						DriveInformation: api.DriveInformation{
+							OdoDispValue: 12345.6,
+						},
+					},
+				},
+			},
+			expectedOdometer: 12345.6,
+		},
 	}
 
-	if odometerInfo.OdometerKm != 12345.6 {
-		t.Errorf("Expected odometer 12345.6, got %v", odometerInfo.OdometerKm)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			odometerInfo, err := tt.response.GetOdometerInfo()
+			if err != nil {
+				t.Fatalf("Expected no error, got: %v", err)
+			}
+
+			if odometerInfo.OdometerKm != tt.expectedOdometer {
+				t.Errorf("Expected odometer %v, got %v", tt.expectedOdometer, odometerInfo.OdometerKm)
+			}
+		})
 	}
 }
 
 // TestExtractOdometerData tests extracting odometer data for JSON output
 func TestExtractOdometerData(t *testing.T) {
-	vehicleStatus := &api.VehicleStatusResponse{
-		ResultCode: api.ResultCodeSuccess,
-		RemoteInfos: []api.RemoteInfo{
-			{
-				DriveInformation: api.DriveInformation{
-					OdoDispValue: 12345.6,
+	tests := []struct {
+		name         string
+		response     *api.VehicleStatusResponse
+		expectedData map[string]interface{}
+	}{
+		{
+			name: "odometer data extraction",
+			response: &api.VehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				RemoteInfos: []api.RemoteInfo{
+					{
+						DriveInformation: api.DriveInformation{
+							OdoDispValue: 12345.6,
+						},
+					},
 				},
+			},
+			expectedData: map[string]interface{}{
+				"odometer_km": 12345.6,
 			},
 		},
 	}
 
-	data := extractOdometerData(vehicleStatus)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data := extractOdometerData(tt.response)
 
-	assertMapValue(t, data, "odometer_km", 12345.6)
+			for key, expected := range tt.expectedData {
+				assertMapValue(t, data, key, expected)
+			}
+		})
+	}
 }
 
 // TestFormatChargeTime tests charge time formatting
@@ -944,17 +1192,35 @@ func TestFormatVehicleHeader(t *testing.T) {
 
 // TestExtractVehicleInfoData tests vehicle info extraction for JSON
 func TestExtractVehicleInfoData(t *testing.T) {
-	info := VehicleInfo{
-		VIN:       "JM3KKEHC1R0123456",
-		Nickname:  "My CX-90",
-		ModelName: "CX-90 PHEV",
-		ModelYear: "2024",
+	tests := []struct {
+		name         string
+		vehicleInfo  VehicleInfo
+		expectedData map[string]interface{}
+	}{
+		{
+			name: "complete vehicle info extraction",
+			vehicleInfo: VehicleInfo{
+				VIN:       "JM3KKEHC1R0123456",
+				Nickname:  "My CX-90",
+				ModelName: "CX-90 PHEV",
+				ModelYear: "2024",
+			},
+			expectedData: map[string]interface{}{
+				"vin":        "JM3KKEHC1R0123456",
+				"nickname":   "My CX-90",
+				"model_name": "CX-90 PHEV",
+				"model_year": "2024",
+			},
+		},
 	}
 
-	data := extractVehicleInfoData(info)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data := extractVehicleInfoData(tt.vehicleInfo)
 
-	assertMapValue(t, data, "vin", "JM3KKEHC1R0123456")
-	assertMapValue(t, data, "nickname", "My CX-90")
-	assertMapValue(t, data, "model_name", "CX-90 PHEV")
-	assertMapValue(t, data, "model_year", "2024")
+			for key, expected := range tt.expectedData {
+				assertMapValue(t, data, key, expected)
+			}
+		})
+	}
 }
