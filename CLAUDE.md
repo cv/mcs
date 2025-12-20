@@ -79,12 +79,12 @@ Getter methods return strongly-typed structs instead of tuples:
 |--------|---------|--------|
 | `GetBatteryInfo()` | `BatteryInfo` | BatteryLevel, RangeKm, ChargeTimeACMin, ChargeTimeQBCMin, PluggedIn, Charging, HeaterOn, HeaterAuto |
 | `GetFuelInfo()` | `FuelInfo` | FuelLevel, RangeKm |
-| `GetTiresInfo()` | `TireInfo` | FrontLeft, FrontRight, RearLeft, RearRight |
+| `GetTiresInfo()` | `TireInfo` | FrontLeftPsi, FrontRightPsi, RearLeftPsi, RearRightPsi |
 | `GetLocationInfo()` | `LocationInfo` | Latitude, Longitude, Timestamp |
-| `GetDoorsInfo()` | `DoorStatus` | Driver, Passenger, RearLeft, RearRight, Hood, Trunk + lock status |
-| `GetWindowsInfo()` | `WindowStatus` | FrontLeft, FrontRight, RearLeft, RearRight |
-| `GetHvacInfo()` | `HVACInfo` | On, FrontDefroster, RearDefroster, Temperature, TemperatureUnit |
-| `GetOdometerInfo()` | `OdometerInfo` | Kilometers |
+| `GetDoorsInfo()` | `DoorStatus` | DriverOpen, PassengerOpen, RearLeftOpen, RearRightOpen, TrunkOpen, HoodOpen, FuelLidOpen, DriverLocked, PassengerLocked, RearLeftLocked, RearRightLocked, AllLocked |
+| `GetWindowsInfo()` | `WindowStatus` | DriverPosition, PassengerPosition, RearLeftPosition, RearRightPosition |
+| `GetHvacInfo()` | `HVACInfo` | HVACOn, FrontDefroster, RearDefroster, InteriorTempC, TargetTempC |
+| `GetOdometerInfo()` | `OdometerInfo` | OdometerKm |
 
 All getters return `(T, error)` for proper error handling.
 
