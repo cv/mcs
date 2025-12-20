@@ -176,6 +176,9 @@ func (c *Client) GetCredentials() (accessToken string, accessTokenExpirationTs i
 
 // GetEncryptionKeys retrieves the encryption and signing keys from the API
 func (c *Client) GetEncryptionKeys(ctx context.Context) error {
+	// Ensure we have a timeout for the request
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
 	timestamp := getTimestampStrMs()
 
 	headers := map[string]string{
@@ -238,6 +241,9 @@ func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 
 // GetUsherEncryptionKey retrieves the RSA public key from Usher API
 func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, error) {
+	// Ensure we have a timeout for the request
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
 	params := url.Values{
 		"appId":      []string{"MazdaApp"},
 		"locale":     []string{"en-US"},
@@ -277,6 +283,9 @@ func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, err
 
 // Login authenticates with the API and retrieves an access token
 func (c *Client) Login(ctx context.Context) error {
+	// Ensure we have a timeout for the request
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
 	// Get RSA public key for password encryption
 	publicKey, versionPrefix, err := c.GetUsherEncryptionKey(ctx)
 	if err != nil {
