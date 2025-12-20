@@ -84,4 +84,5 @@ Note: Tire pressures are color-coded based on deviation from target (36 PSI):
 - Uses vehicle manufacturer's API (reverse-engineered from mobile app)
 - Tokens cached in `~/.cache/mcs/token.json`
 - Remote start limited to 2 consecutive starts without driving
-- If the manufacturer updates the app, constants in `internal/api/auth.go` may need updating
+
+For developer documentation, see [CLAUDE.md](CLAUDE.md)

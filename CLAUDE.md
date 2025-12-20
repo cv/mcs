@@ -1,5 +1,7 @@
 # mcs Developer Guide
 
+This document contains developer-focused documentation for the mcs CLI tool. For user-facing documentation (installation, usage, configuration), see [README.md](README.md).
+
 ## Project Structure
 
 ```
