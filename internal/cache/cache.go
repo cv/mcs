@@ -19,10 +19,16 @@ type TokenCache struct {
 // IsTokenValid checks if a token is present and not expired.
 // This is a shared validation function used by both TokenCache and API Client.
 func IsTokenValid(accessToken string, accessTokenExpirationTs int64) bool {
-	if accessToken == "" || accessTokenExpirationTs == 0 {
+	if accessToken == "" {
 		return false
 	}
-	return accessTokenExpirationTs > time.Now().Unix()
+	if accessTokenExpirationTs == 0 {
+		return false
+	}
+	if accessTokenExpirationTs <= time.Now().Unix() {
+		return false
+	}
+	return true
 }
 
 // IsValid checks if the cached token is still valid
