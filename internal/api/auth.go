@@ -124,9 +124,7 @@ type Client struct {
 	baseAPIDeviceID  string
 	usherAPIDeviceID string
 
-	encKey  string
-	signKey string
-
+	Keys                    Keys
 	accessToken             string
 	accessTokenExpirationTs int64
 
@@ -167,13 +165,13 @@ func (c *Client) SetDebug(debug bool) {
 func (c *Client) SetCachedCredentials(accessToken string, accessTokenExpirationTs int64, encKey, signKey string) {
 	c.accessToken = accessToken
 	c.accessTokenExpirationTs = accessTokenExpirationTs
-	c.encKey = encKey
-	c.signKey = signKey
+	c.Keys.EncKey = encKey
+	c.Keys.SignKey = signKey
 }
 
 // GetCredentials returns the current authentication credentials for caching
 func (c *Client) GetCredentials() (accessToken string, accessTokenExpirationTs int64, encKey, signKey string) {
-	return c.accessToken, c.accessTokenExpirationTs, c.encKey, c.signKey
+	return c.accessToken, c.accessTokenExpirationTs, c.Keys.EncKey, c.Keys.SignKey
 }
 
 // GetEncryptionKeys retrieves the encryption and signing keys from the API
@@ -232,8 +230,8 @@ func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 		return fmt.Errorf("failed to decrypt payload: %w", err)
 	}
 
-	c.encKey = decrypted.EncKey
-	c.signKey = decrypted.SignKey
+	c.Keys.EncKey = decrypted.EncKey
+	c.Keys.SignKey = decrypted.SignKey
 
 	return nil
 }

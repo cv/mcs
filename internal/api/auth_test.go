@@ -68,11 +68,11 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 		t.Fatalf("GetEncryptionKeys() error = %v", err)
 	}
 
-	if client.encKey != "test-enc-key-123" {
-		t.Errorf("Expected encKey='test-enc-key-123', got '%s'", client.encKey)
+	if client.Keys.EncKey != "test-enc-key-123" {
+		t.Errorf("Expected encKey='test-enc-key-123', got '%s'", client.Keys.EncKey)
 	}
-	if client.signKey != "test-sign-key-456" {
-		t.Errorf("Expected signKey='test-sign-key-456', got '%s'", client.signKey)
+	if client.Keys.SignKey != "test-sign-key-456" {
+		t.Errorf("Expected signKey='test-sign-key-456', got '%s'", client.Keys.SignKey)
 	}
 }
 

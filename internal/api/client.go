@@ -316,7 +316,7 @@ func (c *Client) sendAPIRequestJSON(ctx context.Context, method, uri string, que
 
 // ensureKeysPresent ensures encryption keys are available
 func (c *Client) ensureKeysPresent(ctx context.Context) error {
-	if c.encKey == "" || c.signKey == "" {
+	if c.Keys.EncKey == "" || c.Keys.SignKey == "" {
 		return c.GetEncryptionKeys(ctx)
 	}
 	return nil
@@ -332,22 +332,22 @@ func (c *Client) ensureTokenValid(ctx context.Context) error {
 
 // encryptPayloadUsingKey encrypts a payload using the client's encryption key
 func (c *Client) encryptPayloadUsingKey(payload string) (string, error) {
-	if c.encKey == "" {
+	if c.Keys.EncKey == "" {
 		return "", NewAPIError("Missing encryption key")
 	}
 	if payload == "" {
 		return "", nil
 	}
-	return EncryptAES128CBC([]byte(payload), c.encKey, IV)
+	return EncryptAES128CBC([]byte(payload), c.Keys.EncKey, IV)
 }
 
 // decryptPayloadUsingKey decrypts a payload using the client's encryption key
 func (c *Client) decryptPayloadUsingKey(payload string) (map[string]interface{}, error) {
-	if c.encKey == "" {
+	if c.Keys.EncKey == "" {
 		return nil, NewAPIError("Missing encryption key")
 	}
 
-	decrypted, err := DecryptAES128CBC(payload, c.encKey, IV)
+	decrypted, err := DecryptAES128CBC(payload, c.Keys.EncKey, IV)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt payload: %w", err)
 	}
@@ -362,11 +362,11 @@ func (c *Client) decryptPayloadUsingKey(payload string) (map[string]interface{},
 
 // decryptPayloadBytes decrypts a payload and returns raw JSON bytes
 func (c *Client) decryptPayloadBytes(payload string) ([]byte, error) {
-	if c.encKey == "" {
+	if c.Keys.EncKey == "" {
 		return nil, NewAPIError("Missing encryption key")
 	}
 
-	decrypted, err := DecryptAES128CBC(payload, c.encKey, IV)
+	decrypted, err := DecryptAES128CBC(payload, c.Keys.EncKey, IV)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt payload: %w", err)
 	}
@@ -379,13 +379,13 @@ func (c *Client) getSignFromPayloadAndTimestamp(payload, timestamp string) strin
 	if timestamp == "" {
 		return ""
 	}
-	if c.signKey == "" {
+	if c.Keys.SignKey == "" {
 		return ""
 	}
 
 	encryptedPayload, _ := c.encryptPayloadUsingKey(payload)
 	timestampExtended := timestamp + timestamp[6:] + timestamp[3:]
-	dataToSign := encryptedPayload + timestampExtended + c.signKey
+	dataToSign := encryptedPayload + timestampExtended + c.Keys.SignKey
 
 	return SignWithSHA256(dataToSign)
 }

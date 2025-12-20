@@ -65,8 +65,8 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "oldtestenckey123"
-	client.signKey = "oldtestsignkey12"
+	client.Keys.EncKey = "oldtestenckey123"
+	client.Keys.SignKey = "oldtestsignkey12"
 
 	// Make API request - should retry after encryption error
 	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
@@ -126,8 +126,8 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request - should fail after max retries
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
@@ -162,8 +162,8 @@ func TestAPIRequest_EngineStartLimitError(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
 	if err == nil {
@@ -207,8 +207,8 @@ func TestAPIRequest_WithQueryParams(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	result, err := client.APIRequest(context.Background(), "GET", "test/endpoint", map[string]string{"foo": "bar", "baz": "qux"}, nil, true, false)
 	if err != nil {
@@ -227,7 +227,7 @@ func TestEncryptPayloadUsingKey_EmptyPayload(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	client.encKey = "testenckey123456"
+	client.Keys.EncKey = "testenckey123456"
 
 	encrypted, err := client.encryptPayloadUsingKey("")
 	if err != nil {
@@ -303,8 +303,8 @@ func TestAPIRequest_ContextCancellation(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	// Create cancelled context
 	ctx, cancel := context.WithCancel(context.Background())
@@ -355,8 +355,8 @@ func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request
 	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
@@ -420,8 +420,8 @@ func TestAPIRequest_RequestInProgressRetry(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request - should fail immediately without retry
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
@@ -461,8 +461,8 @@ func TestAPIRequestJSON_FullFlow(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request using APIRequestJSON
 	rawJSON, err := client.APIRequestJSON(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)

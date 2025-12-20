@@ -22,8 +22,8 @@ func createTestClient(t *testing.T, serverURL string) *Client {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = serverURL + "/"
-	client.encKey = testEncKey
-	client.signKey = testSignKey
+	client.Keys.EncKey = testEncKey
+	client.Keys.SignKey = testSignKey
 	client.accessToken = "test-token"
 	client.accessTokenExpirationTs = 9999999999
 	return client

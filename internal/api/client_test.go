@@ -59,8 +59,8 @@ func TestAPIRequest_Success(t *testing.T) {
 	client.baseURL = server.URL + "/"
 
 	// Set encryption keys (must be exactly 16 bytes for AES-128)
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request
 	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
@@ -96,8 +96,8 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	if err == nil {
@@ -132,8 +132,8 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	if err == nil {
@@ -169,8 +169,8 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	if err == nil {
@@ -190,7 +190,7 @@ func TestEncryptPayloadUsingKey(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	client.encKey = "testenckey123456"
+	client.Keys.EncKey = "testenckey123456"
 
 	testData := map[string]interface{}{
 		"test": "data",
@@ -224,7 +224,7 @@ func TestDecryptPayloadUsingKey(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	client.encKey = "testenckey123456"
+	client.Keys.EncKey = "testenckey123456"
 
 	testData := map[string]interface{}{
 		"test": "data",
@@ -264,8 +264,8 @@ func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	payload := `{"test":"data"}`
 	timestamp := "1234567890123"
@@ -350,8 +350,8 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	if err != nil {
@@ -407,8 +407,8 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	result, err := client.APIRequest(context.Background(), "GET", "test/endpoint", map[string]string{"key": "value"}, nil, false, false)
 	if err != nil {
@@ -563,8 +563,8 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	client.baseURL = server.URL + "/"
-	client.encKey = "testenckey123456"
-	client.signKey = "testsignkey12345"
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
 
 	ctx, cancel := context.WithCancel(context.Background())
 
