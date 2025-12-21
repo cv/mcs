@@ -72,6 +72,20 @@ SignatureMD5 = "C383D8C4..."   // For key derivation
 
 If the manufacturer updates the app, `AppVersion` and related user-agent strings may need updating.
 
+### Confirmation Polling
+
+Control commands (lock, start, climate, etc.) support confirmation polling to wait for the vehicle to report the new state:
+- 20s initial delay before first poll (allows vehicle time to process)
+- 5s poll interval thereafter
+- Configurable timeout via `--confirm-wait` flag (default: 2 minutes)
+- Disable with `--confirm=false`
+
+Constants in `command_factory.go`:
+```go
+ConfirmationInitialDelay = 20 * time.Second
+DefaultPollInterval      = 5 * time.Second
+```
+
 ## Data Structures
 
 ### Response Structs
