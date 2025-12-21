@@ -32,7 +32,7 @@ func TestConfirmationFlow_Integration(t *testing.T) {
 				{AllLocked: true, DriverLocked: true, PassengerLocked: true, RearLeftLocked: true, RearRightLocked: true},
 			},
 			confirm:           true,
-			confirmWait:       5,
+			confirmWait:       1,
 			expectError:       false,
 			expectedOutput:    "Command sent, waiting for confirmation...\nCommand executed successfully\n",
 			verifyStatusCalls: true,
@@ -46,9 +46,9 @@ func TestConfirmationFlow_Integration(t *testing.T) {
 				{AllLocked: true, DriverLocked: true, PassengerLocked: true, RearLeftLocked: true, RearRightLocked: true},
 			},
 			confirm:           true,
-			confirmWait:       5,
+			confirmWait:       2,
 			expectError:       false,
-			expectedOutput:    "Command sent, waiting for confirmation...\nWaiting for confirmation... (5s/5s)\nCommand executed successfully\n",
+			expectedOutput:    "Command sent, waiting for confirmation...\nWaiting for confirmation... (1s/2s)\nCommand executed successfully\n",
 			verifyStatusCalls: true,
 			minStatusCalls:    2,
 		},
@@ -62,7 +62,7 @@ func TestConfirmationFlow_Integration(t *testing.T) {
 			confirm:        true,
 			confirmWait:    1,
 			expectError:    false,
-			expectedOutput: "Command sent, waiting for confirmation...\nWarning: test not confirmed within timeout period\nCommand sent (confirmation timeout)\n",
+			expectedOutput: "Command sent, waiting for confirmation...\nWaiting for confirmation... (1s/1s)\nWarning: test not confirmed within timeout period\nCommand sent (confirmation timeout)\n",
 		},
 		{
 			name:           "no confirmation",
@@ -184,7 +184,7 @@ func TestConfirmationFlow_EVStatus(t *testing.T) {
 			name:           "HVAC turns on immediately",
 			hvacSequence:   []bool{true},
 			confirm:        true,
-			confirmWait:    5,
+			confirmWait:    1,
 			expectSuccess:  true,
 			expectedOutput: "HVAC command sent, waiting for confirmation...\nHVAC turned on successfully\n",
 		},
@@ -192,9 +192,9 @@ func TestConfirmationFlow_EVStatus(t *testing.T) {
 			name:           "HVAC turns on after check",
 			hvacSequence:   []bool{false, true},
 			confirm:        true,
-			confirmWait:    5,
+			confirmWait:    2,
 			expectSuccess:  true,
-			expectedOutput: "HVAC command sent, waiting for confirmation...\nWaiting for confirmation... (5s/5s)\nHVAC turned on successfully\n",
+			expectedOutput: "HVAC command sent, waiting for confirmation...\nWaiting for confirmation... (1s/2s)\nHVAC turned on successfully\n",
 		},
 		{
 			name:           "timeout",
@@ -202,7 +202,7 @@ func TestConfirmationFlow_EVStatus(t *testing.T) {
 			confirm:        true,
 			confirmWait:    1,
 			expectSuccess:  true,
-			expectedOutput: "HVAC command sent, waiting for confirmation...\nWarning: HVAC not confirmed within timeout period\nHVAC command sent (confirmation timeout)\n",
+			expectedOutput: "HVAC command sent, waiting for confirmation...\nWaiting for confirmation... (1s/1s)\nWarning: HVAC not confirmed within timeout period\nHVAC command sent (confirmation timeout)\n",
 		},
 		{
 			name:           "no confirmation",
@@ -315,7 +315,7 @@ func TestConfirmationFlow_StatusError(t *testing.T) {
 			return doorStatus.AllLocked, nil
 		}
 
-		return waitForCondition(ctx, out, mockClient, internalVIN, false, conditionChecker, 5*time.Second, 1*time.Second, "lock")
+		return waitForCondition(ctx, out, mockClient, internalVIN, false, conditionChecker, 1*time.Second, 200*time.Millisecond, "lock")
 	}
 
 	// Create config
@@ -382,7 +382,7 @@ func TestConfirmationFlow_ContextCancellation(t *testing.T) {
 			return doorStatus.AllLocked, nil
 		}
 
-		return waitForCondition(ctx, out, mockClient, internalVIN, false, conditionChecker, 5*time.Second, 1*time.Second, "lock")
+		return waitForCondition(ctx, out, mockClient, internalVIN, false, conditionChecker, 1*time.Second, 200*time.Millisecond, "lock")
 	}
 
 	// Create config
@@ -397,7 +397,7 @@ func TestConfirmationFlow_ContextCancellation(t *testing.T) {
 	}
 
 	// Execute confirmable command
-	err := executeConfirmableCommand(ctx, &buf, nil, api.InternalVIN("TEST-VIN"), config, true, 5)
+	err := executeConfirmableCommand(ctx, &buf, nil, api.InternalVIN("TEST-VIN"), config, true, 1)
 
 	// Verify: Error should be returned
 	if err == nil {
@@ -462,7 +462,7 @@ func TestConfirmationFlow_MultipleConditions(t *testing.T) {
 	}
 
 	// Execute confirmable command
-	err := executeConfirmableCommand(ctx, &buf, nil, api.InternalVIN("TEST-VIN"), config, true, 5)
+	err := executeConfirmableCommand(ctx, &buf, nil, api.InternalVIN("TEST-VIN"), config, true, 2)
 
 	// Verify: No error
 	if err != nil {
@@ -476,7 +476,7 @@ func TestConfirmationFlow_MultipleConditions(t *testing.T) {
 
 	// Verify: Success message in output
 	output := buf.String()
-	if output != "HVAC settings command sent, waiting for confirmation...\nWaiting for confirmation... (5s/5s)\nHVAC settings updated successfully\n" {
+	if output != "HVAC settings command sent, waiting for confirmation...\nWaiting for confirmation... (1s/2s)\nHVAC settings updated successfully\n" {
 		t.Errorf("Unexpected output: %q", output)
 	}
 }

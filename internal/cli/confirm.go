@@ -396,7 +396,7 @@ func executeConfirmableCommand(
 		client,
 		internalVIN,
 		time.Duration(confirmWait)*time.Second,
-		5*time.Second, // poll every 5 seconds
+		1*time.Second, // poll every 1 second
 	)
 
 	if result.err != nil {

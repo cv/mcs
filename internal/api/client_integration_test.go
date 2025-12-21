@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 // TestAPIRequest_RetryOnEncryptionError tests that encryption errors trigger retry with new keys
@@ -67,6 +68,8 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 	client.baseURL = server.URL + "/"
 	client.Keys.EncKey = "oldtestenckey123"
 	client.Keys.SignKey = "oldtestsignkey12"
+	// Use no-op sleep function to speed up tests
+	client.sleepFunc = func(ctx context.Context, d time.Duration) error { return nil }
 
 	// Make API request - should retry after encryption error
 	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
@@ -128,6 +131,8 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 	client.baseURL = server.URL + "/"
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
+	// Use no-op sleep function to speed up tests
+	client.sleepFunc = func(ctx context.Context, d time.Duration) error { return nil }
 
 	// Make API request - should fail after max retries
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)

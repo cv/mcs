@@ -134,6 +134,7 @@ type Client struct {
 	httpClient        *http.Client
 	debug             bool
 	sensorDataBuilder *sensordata.SensorDataBuilder
+	sleepFunc         func(context.Context, time.Duration) error
 }
 
 // NewClient creates a new API client
@@ -156,6 +157,7 @@ func NewClient(email, password string, region Region) (*Client, error) {
 		httpClient:        &http.Client{Timeout: 30 * time.Second},
 		debug:             false,
 		sensorDataBuilder: sensordata.NewSensorDataBuilder(),
+		sleepFunc:         sleepWithContext,
 	}, nil
 }
 

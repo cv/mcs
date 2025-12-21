@@ -407,7 +407,13 @@ func TestWaitForDoorsLocked(t *testing.T) {
 				},
 			}
 
-			result := waitForDoorsLocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
+			// Use shorter timeout for "never" cases to speed up tests
+			timeout := 5 * time.Second
+			if !tt.expectMet {
+				timeout = 200 * time.Millisecond
+			}
+
+			result := waitForDoorsLocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -474,7 +480,13 @@ func TestWaitForEngineRunning(t *testing.T) {
 				},
 			}
 
-			result := waitForEngineRunning(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
+			// Use shorter timeout for "never" cases to speed up tests
+			timeout := 5 * time.Second
+			if !tt.expectMet {
+				timeout = 200 * time.Millisecond
+			}
+
+			result := waitForEngineRunning(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -541,7 +553,13 @@ func TestWaitForEngineStopped(t *testing.T) {
 				},
 			}
 
-			result := waitForEngineStopped(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
+			// Use shorter timeout for "never" cases to speed up tests
+			timeout := 5 * time.Second
+			if !tt.expectMet {
+				timeout = 200 * time.Millisecond
+			}
+
+			result := waitForEngineStopped(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -638,7 +656,13 @@ func TestWaitForCharging(t *testing.T) {
 				},
 			}
 
-			result := waitForCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
+			// Use shorter timeout for "never" cases to speed up tests
+			timeout := 5 * time.Second
+			if !tt.expectMet {
+				timeout = 200 * time.Millisecond
+			}
+
+			result := waitForCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -705,7 +729,13 @@ func TestWaitForNotCharging(t *testing.T) {
 				},
 			}
 
-			result := waitForNotCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
+			// Use shorter timeout for "never" cases to speed up tests
+			timeout := 5 * time.Second
+			if !tt.expectMet {
+				timeout = 200 * time.Millisecond
+			}
+
+			result := waitForNotCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -810,9 +840,9 @@ func TestWaitForHvacOn(t *testing.T) {
 				},
 			}
 
+			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
-			if tt.expectMet == false && len(tt.hvacNil) > 0 {
-				// Use shorter timeout for nil cases to speed up test
+			if !tt.expectMet {
 				timeout = 200 * time.Millisecond
 			}
 
@@ -887,7 +917,13 @@ func TestWaitForHvacOff(t *testing.T) {
 				},
 			}
 
-			result := waitForHvacOff(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
+			// Use shorter timeout for "never" cases to speed up tests
+			timeout := 5 * time.Second
+			if !tt.expectMet {
+				timeout = 200 * time.Millisecond
+			}
+
+			result := waitForHvacOff(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -990,6 +1026,12 @@ func TestWaitForHvacSettings(t *testing.T) {
 				},
 			}
 
+			// Use shorter timeout for "never" cases to speed up tests
+			timeout := 5 * time.Second
+			if !tt.expectMet {
+				timeout = 200 * time.Millisecond
+			}
+
 			result := waitForHvacSettings(
 				ctx,
 				&buf,
@@ -998,7 +1040,7 @@ func TestWaitForHvacSettings(t *testing.T) {
 				tt.targetTemp,
 				tt.frontDefroster,
 				tt.rearDefroster,
-				5*time.Second,
+				timeout,
 				50*time.Millisecond,
 			)
 

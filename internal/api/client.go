@@ -106,7 +106,7 @@ func genericRetry[T any](
 			}
 			// Apply backoff delay before retry
 			backoff := calculateBackoff(retryCount + 1)
-			if err := sleepWithContext(ctx, backoff); err != nil {
+			if err := c.sleepFunc(ctx, backoff); err != nil {
 				return zero, err
 			}
 			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
@@ -117,7 +117,7 @@ func genericRetry[T any](
 			}
 			// Apply backoff delay before retry
 			backoff := calculateBackoff(retryCount + 1)
-			if err := sleepWithContext(ctx, backoff); err != nil {
+			if err := c.sleepFunc(ctx, backoff); err != nil {
 				return zero, err
 			}
 			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
