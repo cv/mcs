@@ -42,12 +42,21 @@ func pollUntilCondition(
 		return confirmationResult{success: true, err: nil}
 	}
 
+	lastPrintedSecond := -1
+
 	for {
 		select {
 		case <-ticker.C:
 			elapsed := time.Since(startTime)
-			_, _ = fmt.Fprintf(out, "Waiting for confirmation... (%ds/%ds)\n",
-				int(elapsed.Seconds()), int(timeout.Seconds()))
+			elapsedSec := int(elapsed.Seconds())
+
+			// Only update output once per second to avoid spam
+			if elapsedSec > lastPrintedSecond {
+				lastPrintedSecond = elapsedSec
+				// Use \r to update in place, then clear to end of line
+				_, _ = fmt.Fprintf(out, "\rWaiting for confirmation... (%ds/%ds)   ",
+					elapsedSec, int(timeout.Seconds()))
+			}
 
 			met, err := checkFunc()
 			if err != nil {
@@ -56,10 +65,14 @@ func pollUntilCondition(
 				continue
 			}
 			if met {
+				// Clear the progress line and move to new line
+				_, _ = fmt.Fprint(out, "\r                                        \r")
 				return confirmationResult{success: true, err: nil}
 			}
 
 		case <-timeoutCtx.Done():
+			// Clear the progress line and move to new line
+			_, _ = fmt.Fprint(out, "\r                                        \r")
 			if timeoutCtx.Err() == context.DeadlineExceeded {
 				_, _ = fmt.Fprintf(out, "Warning: %s not confirmed within timeout period\n", actionName)
 				return confirmationResult{success: false, err: nil}
@@ -274,6 +287,10 @@ func waitForNotCharging(
 	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "charging stop")
 }
 
+// HvacInitialDelay is the time to wait before polling for HVAC confirmation.
+// HVAC commands take longer to propagate to the server than other commands.
+const HvacInitialDelay = 20 * time.Second
+
 // waitForHvacOn polls the vehicle status until HVAC is on or timeout occurs
 func waitForHvacOn(
 	ctx context.Context,
@@ -350,6 +367,9 @@ func waitForHvacSettings(
 	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "HVAC settings")
 }
 
+// DefaultPollInterval is the default time between status checks during confirmation polling.
+const DefaultPollInterval = 5 * time.Second
+
 // ConfirmableCommandConfig holds the configuration for a confirmable command
 type ConfirmableCommandConfig struct {
 	// ActionFunc performs the API action (e.g., lock doors, start engine)
@@ -358,6 +378,13 @@ type ConfirmableCommandConfig struct {
 	// WaitFunc waits for confirmation that the action completed
 	// If nil, confirmation is skipped
 	WaitFunc func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult
+
+	// InitialDelay is the time to wait before starting confirmation polling.
+	// Some commands (like HVAC) need time to propagate before status is updated.
+	InitialDelay time.Duration
+
+	// PollInterval is the time between status checks. If zero, DefaultPollInterval is used.
+	PollInterval time.Duration
 
 	// Messages
 	SuccessMsg    string // Message to show on success (e.g., "Doors locked successfully")
@@ -390,13 +417,31 @@ func executeConfirmableCommand(
 
 	// Wait for confirmation
 	_, _ = fmt.Fprintln(out, config.WaitingMsg)
+
+	timeout := time.Duration(confirmWait) * time.Second
+
+	// Apply initial delay if configured (for commands that need time to propagate)
+	if config.InitialDelay > 0 {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("failed to %s: %w", config.ActionName, ctx.Err())
+		case <-time.After(config.InitialDelay):
+		}
+		timeout -= config.InitialDelay
+	}
+
+	pollInterval := config.PollInterval
+	if pollInterval == 0 {
+		pollInterval = DefaultPollInterval
+	}
+
 	result := config.WaitFunc(
 		ctx,
 		out,
 		client,
 		internalVIN,
-		time.Duration(confirmWait)*time.Second,
-		1*time.Second, // poll every 1 second
+		timeout,
+		pollInterval,
 	)
 
 	if result.err != nil {
