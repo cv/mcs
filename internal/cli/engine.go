@@ -2,8 +2,6 @@ package cli
 
 import (
 	"context"
-	"io"
-	"time"
 
 	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
@@ -35,10 +33,10 @@ func NewStartCmd() *cobra.Command {
 					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 						return client.EngineStart(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForEngineRunning(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
-					},
-					SuccessMsg:    "Engine started successfully",
+					// WaitFunc: nil - No reliable API field for engine status
+					// Previously used HVAC status as proxy, which was incorrect
+					WaitFunc:      nil,
+					SuccessMsg:    "Engine start command sent",
 					WaitingMsg:    "Start command sent, waiting for confirmation...",
 					ActionName:    "start engine",
 					ConfirmName:   "engine status",
@@ -82,10 +80,10 @@ func NewStopCmd() *cobra.Command {
 					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 						return client.EngineStop(ctx, string(internalVIN))
 					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForEngineStopped(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
-					},
-					SuccessMsg:    "Engine stopped successfully",
+					// WaitFunc: nil - No reliable API field for engine status
+					// Previously used HVAC status as proxy, which was incorrect
+					WaitFunc:      nil,
+					SuccessMsg:    "Engine stop command sent",
 					WaitingMsg:    "Stop command sent, waiting for confirmation...",
 					ActionName:    "stop engine",
 					ConfirmName:   "engine status",
