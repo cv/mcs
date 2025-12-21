@@ -18,6 +18,9 @@ import (
 )
 
 const (
+	// AuthRequestTimeout is the timeout for authentication-related API requests
+	AuthRequestTimeout = 15 * time.Second
+
 	// IV is the initialization vector for AES encryption
 	IV = "0102030405060708"
 
@@ -177,7 +180,7 @@ func (c *Client) GetCredentials() (accessToken string, accessTokenExpirationTs i
 // GetEncryptionKeys retrieves the encryption and signing keys from the API
 func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 	// Ensure we have a timeout for the request
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, AuthRequestTimeout)
 	defer cancel()
 	timestamp := getTimestampStrMs()
 
@@ -242,7 +245,7 @@ func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 // GetUsherEncryptionKey retrieves the RSA public key from Usher API
 func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, error) {
 	// Ensure we have a timeout for the request
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, AuthRequestTimeout)
 	defer cancel()
 	params := url.Values{
 		"appId":      []string{"MazdaApp"},
@@ -284,7 +287,7 @@ func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, err
 // Login authenticates with the API and retrieves an access token
 func (c *Client) Login(ctx context.Context) error {
 	// Ensure we have a timeout for the request
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, AuthRequestTimeout)
 	defer cancel()
 	// Get RSA public key for password encryption
 	publicKey, versionPrefix, err := c.GetUsherEncryptionKey(ctx)
