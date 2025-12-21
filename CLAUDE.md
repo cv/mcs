@@ -11,7 +11,7 @@ internal/
     auth.go                  Authentication, encryption keys, login
     client.go                API request handling with retry logic
     control.go               Vehicle control endpoints (lock, start, etc.)
-    crypto.go                AES-128-CBC, RSA encryption
+    crypto.go                API wrappers (base64, RSA, uses fixed IV)
     errors.go                Custom error types
     keys.go                  Encryption key storage struct
     maphelpers.go            Type-safe map accessor functions
@@ -33,9 +33,9 @@ internal/
   config/
     config.go                Config loading (TOML + env vars)
   crypto/
-    crypto.go                AES and PKCS7 padding utilities
+    crypto.go                Low-level AES-128-CBC and PKCS7 primitives
   sensordata/
-    sensor_data.go           Anti-bot fingerprinting (Feistel cipher)
+    sensor_data.go           Anti-bot fingerprinting (16-round Feistel cipher, see line 255)
 ```
 
 ## How the API Works
@@ -182,7 +182,7 @@ Always use `alertInfos` for location data.
 The `internalVin` field comes as either `string` or `float64` from JSON. This is handled automatically by the custom `InternalVIN` type which implements `UnmarshalJSON`.
 
 ### Token Caching
-Credentials are cached in `~/.cache/mcs/token.json`. The cache stores:
+Credentials are cached in `~/.cache/mcs/token.json` (see `cache/cache.go`). The cache stores:
 - `accessToken` + expiration timestamp
 - `encKey` and `signKey`
 
