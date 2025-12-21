@@ -13,6 +13,7 @@ internal/
     control.go               Vehicle control endpoints (lock, start, etc.)
     crypto.go                AES-128-CBC, RSA encryption
     errors.go                Custom error types
+    keys.go                  Encryption key storage struct
     maphelpers.go            Type-safe map accessor functions
     types.go                 Response types and data structures
     vehicle.go               Vehicle data retrieval endpoints
@@ -41,10 +42,12 @@ internal/
 
 ### Authentication Flow
 
-1. `checkVersion` → Get `encKey` and `signKey` (AES keys for payload encryption)
-2. `usher/system/encryptionKey` → Get RSA public key
-3. `usher/user/login` → Encrypt password with RSA, get `accessToken`
+1. `service/checkVersion` (baseURL) → Get `encKey` and `signKey` (AES keys)
+2. `system/encryptionKey` (usherURL) → Get RSA public key
+3. `user/login` (usherURL) → Encrypt password with RSA, get `accessToken`
 4. All subsequent requests use `accessToken` + encrypted payloads
+
+Note: The API uses two base URLs - `baseURL` for vehicle operations and `usherURL` for authentication.
 
 ### Request Methods
 
@@ -93,11 +96,17 @@ All getters return `(T, error)` for proper error handling.
 Named constants for API status values (in `types.go`):
 
 ```go
+// Temperature units
+Celsius, Fahrenheit = 1, 2
+
+// Result codes
+ResultCodeSuccess = "200S00"
+
 // Charger status
 ChargerConnected, ChargerDisconnected = 1, 0
 
 // Charging status
-ChargeStatusCharging = 6
+ChargeStatusCharging, ChargeStatusNotCharging = 6, 0
 
 // Battery heater
 BatteryHeaterOn, BatteryHeaterOff = 1, 0
@@ -106,9 +115,15 @@ BatteryHeaterAutoEnabled, BatteryHeaterAutoDisabled = 1, 0
 // HVAC
 HVACStatusOn, HVACStatusOff = 1, 0
 
+// Defrosters
+DefrosterOn, DefrosterOff = 1, 0
+
 // Doors
 DoorOpen, DoorClosed = 1, 0
 DoorLocked, DoorUnlocked = 0, 1  // Note: inverted!
+
+// Hazard lights
+HazardLightsOn, HazardLightsOff = 1, 0
 
 // Windows
 WindowClosed, WindowFullyOpen = 0, 100
@@ -119,15 +134,40 @@ WindowClosed, WindowFullyOpen = 0, 100
 For working with `map[string]interface{}` responses safely (in `maphelpers.go`):
 
 ```go
-getString(m, "key")      // (string, bool)
-getInt(m, "key")         // (int, bool) - handles float64 from JSON
-getFloat64(m, "key")     // (float64, bool)
-getBool(m, "key")        // (bool, bool)
-getMap(m, "key")         // (map[string]interface{}, bool)
-getSlice(m, "key")       // ([]interface{}, bool)
+getString(m, "key")       // (string, bool)
+getInt(m, "key")          // (int, bool) - handles float64 from JSON
+getFloat64(m, "key")      // (float64, bool)
+getBool(m, "key")         // (bool, bool)
+getMap(m, "key")          // (map[string]interface{}, bool)
+getSlice(m, "key")        // ([]interface{}, bool)
+getMapSlice(m, "key")     // ([]map[string]interface{}, bool)
+getMapFromSlice(s, idx)   // (map[string]interface{}, bool)
 ```
 
 These prevent runtime panics from unsafe type assertions.
+
+### Error Types
+
+Custom error types in `errors.go` for specific error handling:
+
+```go
+// Error codes from API
+ErrorCodeEncryption   = 600001  // Server rejected encrypted request
+ErrorCodeTokenExpired = 600002  // Access token expired
+ErrorCodeRequestIssue = 920000  // Check ExtraCode for details
+
+// Extra codes (used with ErrorCodeRequestIssue)
+ExtraCodeRequestInProgress = "400S01"  // Request already in progress
+ExtraCodeEngineStartLimit  = "400S11"  // Engine start limit reached
+
+// Error types (use errors.Is/errors.As for checking)
+*APIError              // General API error
+*EncryptionError       // Triggers key refresh and retry
+*TokenExpiredError     // Triggers re-login and retry
+*RequestInProgressError // Vehicle is processing another request
+*EngineStartLimitError  // Remote start limit (2x) reached
+*ResultCodeError        // Unexpected result code from API
+```
 
 ## Common Gotchas
 
