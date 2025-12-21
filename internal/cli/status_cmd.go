@@ -68,7 +68,7 @@ func NewStatusCmd() *cobra.Command {
 
 	// Add persistent JSON flag
 	statusCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "output in JSON format")
-	statusCmd.PersistentFlags().BoolVar(&refresh, "refresh", false, "request fresh status from vehicle (PHEV/EV only)")
+	statusCmd.PersistentFlags().BoolVarP(&refresh, "refresh", "r", false, "request fresh status from vehicle (PHEV/EV only)")
 	statusCmd.PersistentFlags().IntVar(&refreshWait, "refresh-wait", 90, "max seconds to wait for vehicle response")
 
 	// Add battery subcommand
