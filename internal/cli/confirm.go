@@ -287,9 +287,9 @@ func waitForNotCharging(
 	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "charging stop")
 }
 
-// HvacInitialDelay is the time to wait before polling for HVAC confirmation.
-// HVAC commands take longer to propagate to the server than other commands.
-const HvacInitialDelay = 20 * time.Second
+// ConfirmationInitialDelay is the time to wait before polling for command confirmation.
+// Commands take time to propagate to the server before status is updated.
+const ConfirmationInitialDelay = 20 * time.Second
 
 // waitForHvacOn polls the vehicle status until HVAC is on or timeout occurs
 func waitForHvacOn(

@@ -57,6 +57,7 @@ func NewChargeStartCmd() *cobra.Command {
 					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 						return waitForCharging(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
+					InitialDelay:  ConfirmationInitialDelay,
 					SuccessMsg:    "Charging started successfully",
 					WaitingMsg:    "Charge start command sent, waiting for confirmation...",
 					ActionName:    "start charging",
@@ -104,6 +105,7 @@ func NewChargeStopCmd() *cobra.Command {
 					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 						return waitForNotCharging(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
+					InitialDelay:  ConfirmationInitialDelay,
 					SuccessMsg:    "Charging stopped successfully",
 					WaitingMsg:    "Charge stop command sent, waiting for confirmation...",
 					ActionName:    "stop charging",

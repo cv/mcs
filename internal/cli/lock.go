@@ -38,6 +38,7 @@ func NewLockCmd() *cobra.Command {
 					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 						return waitForDoorsLocked(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
+					InitialDelay:  ConfirmationInitialDelay,
 					SuccessMsg:    "Doors locked successfully",
 					WaitingMsg:    "Lock command sent, waiting for confirmation...",
 					ActionName:    "lock doors",
@@ -85,6 +86,7 @@ func NewUnlockCmd() *cobra.Command {
 					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 						return waitForDoorsUnlocked(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
+					InitialDelay:  ConfirmationInitialDelay,
 					SuccessMsg:    "Doors unlocked successfully",
 					WaitingMsg:    "Unlock command sent, waiting for confirmation...",
 					ActionName:    "unlock doors",

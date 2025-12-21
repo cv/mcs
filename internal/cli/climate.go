@@ -62,7 +62,7 @@ func newClimateOnCmd() *cobra.Command {
 					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 						return waitForHvacOn(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
-					InitialDelay:  HvacInitialDelay,
+					InitialDelay:  ConfirmationInitialDelay,
 					SuccessMsg:    "Climate turned on successfully",
 					WaitingMsg:    "Climate on command sent, waiting for confirmation...",
 					ActionName:    "turn HVAC on",
@@ -110,7 +110,7 @@ func newClimateOffCmd() *cobra.Command {
 					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 						return waitForHvacOff(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
 					},
-					InitialDelay:  HvacInitialDelay,
+					InitialDelay:  ConfirmationInitialDelay,
 					SuccessMsg:    "Climate turned off successfully",
 					WaitingMsg:    "Climate off command sent, waiting for confirmation...",
 					ActionName:    "turn HVAC off",
@@ -195,7 +195,7 @@ func newClimateSetCmd() *cobra.Command {
 					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
 						return waitForHvacSettings(ctx, out, &clientAdapter{Client: client}, internalVIN, targetTempC, frontDefroster, rearDefroster, timeout, pollInterval)
 					},
-					InitialDelay:  HvacInitialDelay,
+					InitialDelay:  ConfirmationInitialDelay,
 					SuccessMsg:    msg,
 					WaitingMsg:    "Climate set command sent, waiting for confirmation...",
 					ActionName:    "set HVAC settings",
