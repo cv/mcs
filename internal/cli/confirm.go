@@ -74,6 +74,7 @@ func pollUntilCondition(
 type vehicleStatusGetter interface {
 	GetVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error)
 	GetEVVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error)
+	RefreshVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) error
 }
 
 // clientAdapter adapts api.Client to vehicleStatusGetter by converting InternalVIN to string
@@ -87,6 +88,10 @@ func (c *clientAdapter) GetVehicleStatus(ctx context.Context, internalVIN api.In
 
 func (c *clientAdapter) GetEVVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
 	return c.Client.GetEVVehicleStatus(ctx, string(internalVIN))
+}
+
+func (c *clientAdapter) RefreshVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) error {
+	return c.Client.RefreshVehicleStatus(ctx, string(internalVIN))
 }
 
 // waitForCondition is a generic function that waits for a vehicle status condition to be met.
@@ -115,6 +120,13 @@ func waitForCondition(
 	pollInterval time.Duration,
 	actionName string,
 ) confirmationResult {
+	// Request fresh status from vehicle before polling
+	if err := client.RefreshVehicleStatus(ctx, internalVIN); err != nil {
+		// Don't fail on refresh error - just continue with potentially stale data
+		// The status command handles this the same way
+		_, _ = fmt.Fprintf(out, "Warning: failed to refresh vehicle status: %v\n", err)
+	}
+
 	checkFunc := func() (bool, error) {
 		var status interface{}
 		var err error

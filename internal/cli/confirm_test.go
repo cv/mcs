@@ -564,8 +564,10 @@ func TestWaitForEngineStopped(t *testing.T) {
 
 // mockClientForConfirm is a mock API client for testing confirmation logic
 type mockClientForConfirm struct {
-	getVehicleStatusFunc   func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error)
-	getEVVehicleStatusFunc func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error)
+	getVehicleStatusFunc      func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error)
+	getEVVehicleStatusFunc    func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error)
+	refreshVehicleStatusFunc  func(ctx context.Context, internalVIN api.InternalVIN) error
+	refreshVehicleStatusCalls int
 }
 
 func (m *mockClientForConfirm) GetVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
@@ -580,6 +582,14 @@ func (m *mockClientForConfirm) GetEVVehicleStatus(ctx context.Context, internalV
 		return m.getEVVehicleStatusFunc(ctx, internalVIN)
 	}
 	return nil, errors.New("not implemented")
+}
+
+func (m *mockClientForConfirm) RefreshVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) error {
+	m.refreshVehicleStatusCalls++
+	if m.refreshVehicleStatusFunc != nil {
+		return m.refreshVehicleStatusFunc(ctx, internalVIN)
+	}
+	return nil
 }
 
 // TestWaitForCharging tests the charging started confirmation logic
@@ -1162,5 +1172,55 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 				t.Errorf("Expected output %q but got %q", tt.expectedOutput, output)
 			}
 		})
+	}
+}
+
+// TestWaitForConditionRefreshesStatus tests that confirmation polling calls RefreshVehicleStatus
+// before starting to poll. This ensures we get fresh data from the vehicle, not stale cached data.
+func TestWaitForConditionRefreshesStatus(t *testing.T) {
+	ctx := context.Background()
+	var buf bytes.Buffer
+
+	mockClient := &mockClientForConfirm{
+		getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
+			return NewMockEVVehicleStatus().WithHVAC(true).Build(), nil
+		},
+		refreshVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) error {
+			return nil
+		},
+	}
+
+	conditionChecker := func(status interface{}) (bool, error) {
+		evStatus := status.(*api.EVVehicleStatusResponse)
+		hvacInfo, err := evStatus.GetHvacInfo()
+		if err != nil {
+			return false, err
+		}
+		return hvacInfo.HVACOn, nil
+	}
+
+	result := waitForCondition(
+		ctx,
+		&buf,
+		mockClient,
+		api.InternalVIN("test-vin"),
+		true, // useEVStatus
+		conditionChecker,
+		200*time.Millisecond,
+		50*time.Millisecond,
+		"test action",
+	)
+
+	if result.err != nil {
+		t.Errorf("Expected no error but got: %v", result.err)
+	}
+
+	if !result.success {
+		t.Error("Expected condition to be met")
+	}
+
+	// The critical assertion: RefreshVehicleStatus should be called exactly once before polling
+	if mockClient.refreshVehicleStatusCalls != 1 {
+		t.Errorf("Expected RefreshVehicleStatus to be called exactly once, but was called %d times", mockClient.refreshVehicleStatusCalls)
 	}
 }
