@@ -254,6 +254,12 @@ func (b *MockEVVehicleStatusBuilder) WithCharging(charging bool) *MockEVVehicleS
 	return b
 }
 
+// WithoutHVAC sets the RemoteHvacInfo to nil (simulates vehicle without HVAC data).
+func (b *MockEVVehicleStatusBuilder) WithoutHVAC() *MockEVVehicleStatusBuilder {
+	b.response.ResultData[0].PlusBInformation.VehicleInfo.RemoteHvacInfo = nil
+	return b
+}
+
 // Build returns the constructed EVVehicleStatusResponse.
 func (b *MockEVVehicleStatusBuilder) Build() *api.EVVehicleStatusResponse {
 	return b.response

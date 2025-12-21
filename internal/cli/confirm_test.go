@@ -719,10 +719,12 @@ func TestWaitForNotCharging(t *testing.T) {
 // TestWaitForHvacOn tests the HVAC on confirmation logic
 func TestWaitForHvacOn(t *testing.T) {
 	tests := []struct {
-		name        string
-		hvacStatus  []bool
-		expectError bool
-		expectMet   bool
+		name         string
+		hvacStatus   []bool
+		hvacNil      []bool // indicates if HVAC info should be nil for each call
+		expectError  bool
+		expectMet    bool
+		expectCalled int // minimum number of calls expected
 	}{
 		{
 			name:        "hvac on immediately",
@@ -742,6 +744,29 @@ func TestWaitForHvacOn(t *testing.T) {
 			expectError: false,
 			expectMet:   false,
 		},
+		{
+			name:         "nil hvac info then valid - should retry and succeed",
+			hvacStatus:   []bool{false, true}, // second call has HVAC on
+			hvacNil:      []bool{true, false}, // first call has nil HVAC
+			expectError:  false,
+			expectMet:    true,
+			expectCalled: 2,
+		},
+		{
+			name:         "multiple nil hvac info then valid",
+			hvacStatus:   []bool{false, false, true},
+			hvacNil:      []bool{true, true, false}, // first two calls have nil HVAC
+			expectError:  false,
+			expectMet:    true,
+			expectCalled: 3,
+		},
+		{
+			name:        "persistent nil hvac info - should timeout",
+			hvacStatus:  []bool{false},
+			hvacNil:     []bool{true, true, true}, // always nil
+			expectError: false,
+			expectMet:   false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -753,16 +778,35 @@ func TestWaitForHvacOn(t *testing.T) {
 			calls := 0
 			mockClient := &mockClientForConfirm{
 				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
-					if calls >= len(tt.hvacStatus) {
-						calls = len(tt.hvacStatus) - 1
+					callIdx := calls
+					if callIdx >= len(tt.hvacStatus) {
+						callIdx = len(tt.hvacStatus) - 1
 					}
-					hvacOn := tt.hvacStatus[calls]
+
+					// Check if this call should return nil HVAC info
+					shouldBeNil := false
+					if len(tt.hvacNil) > calls {
+						shouldBeNil = tt.hvacNil[calls]
+					}
+
 					calls++
+
+					if shouldBeNil {
+						return NewMockEVVehicleStatus().WithoutHVAC().Build(), nil
+					}
+
+					hvacOn := tt.hvacStatus[callIdx]
 					return NewMockEVVehicleStatus().WithHVACSettings(hvacOn, 22.0, false, false).Build(), nil
 				},
 			}
 
-			result := waitForHvacOn(ctx, &buf, mockClient, api.InternalVIN("test-vin"), 5*time.Second, 50*time.Millisecond)
+			timeout := 5 * time.Second
+			if tt.expectMet == false && len(tt.hvacNil) > 0 {
+				// Use shorter timeout for nil cases to speed up test
+				timeout = 200 * time.Millisecond
+			}
+
+			result := waitForHvacOn(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError && result.err == nil {
 				t.Error("Expected error but got nil")
@@ -778,6 +822,10 @@ func TestWaitForHvacOn(t *testing.T) {
 
 			if !tt.expectMet && result.success {
 				t.Error("Expected HVAC to not be on but it was")
+			}
+
+			if tt.expectCalled > 0 && calls < tt.expectCalled {
+				t.Errorf("Expected at least %d calls but got %d", tt.expectCalled, calls)
 			}
 		})
 	}
