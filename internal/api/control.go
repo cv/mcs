@@ -117,11 +117,14 @@ func (c *Client) RefreshVehicleStatus(ctx context.Context, internalVIN string) e
 
 // SetHVACSetting sets HVAC temperature and defroster settings
 func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, temperature float64, tempUnit TemperatureUnit, frontDefroster, rearDefroster bool) error {
+	// The API expects HVAC settings to be nested under "hvacsettings"
 	additionalParams := map[string]interface{}{
-		"Temperature":     temperature,
-		"TemperatureType": int(tempUnit),
-		"FrontDefroster":  boolToInt(frontDefroster),
-		"RearDefogger":    boolToInt(rearDefroster),
+		"hvacsettings": map[string]interface{}{
+			"Temperature":     temperature,
+			"TemperatureType": int(tempUnit),
+			"FrontDefroster":  boolToInt(frontDefroster),
+			"RearDefogger":    boolToInt(rearDefroster),
+		},
 	}
 
 	return c.controlEndpoint(ctx, EndpointUpdateHVACSetting, "set HVAC settings", internalVIN, additionalParams)
