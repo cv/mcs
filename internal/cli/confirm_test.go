@@ -237,13 +237,56 @@ func TestPollUntilCondition(t *testing.T) {
 			expectTimeout: true,
 		},
 		{
-			name: "error during check",
+			name: "error during check - should timeout not fail",
 			checkFunc: func() (bool, error) {
 				return false, errors.New("check failed")
 			},
+			timeout:       200 * time.Millisecond,
+			pollInterval:  50 * time.Millisecond,
+			expectError:   false, // errors are treated as "not ready yet", will timeout
+			expectTimeout: true,
+		},
+		{
+			name: "transient error then success - should retry and succeed",
+			checkFunc: func() func() (bool, error) {
+				calls := 0
+				return func() (bool, error) {
+					calls++
+					if calls == 1 {
+						return false, errors.New("transient error")
+					}
+					return true, nil
+				}
+			}(),
 			timeout:      10 * time.Second,
-			pollInterval: 100 * time.Millisecond,
-			expectError:  true,
+			pollInterval: 50 * time.Millisecond,
+			expectError:  false, // should succeed after retry
+		},
+		{
+			name: "multiple transient errors then success",
+			checkFunc: func() func() (bool, error) {
+				calls := 0
+				return func() (bool, error) {
+					calls++
+					if calls <= 3 {
+						return false, errors.New("transient error")
+					}
+					return true, nil
+				}
+			}(),
+			timeout:      10 * time.Second,
+			pollInterval: 50 * time.Millisecond,
+			expectError:  false, // should succeed after retries
+		},
+		{
+			name: "persistent errors until timeout",
+			checkFunc: func() (bool, error) {
+				return false, errors.New("persistent error")
+			},
+			timeout:       200 * time.Millisecond,
+			pollInterval:  50 * time.Millisecond,
+			expectError:   false, // should timeout, not error
+			expectTimeout: true,
 		},
 	}
 

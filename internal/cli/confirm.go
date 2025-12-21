@@ -36,7 +36,8 @@ func pollUntilCondition(
 
 	// Check immediately first
 	if met, err := checkFunc(); err != nil {
-		return confirmationResult{success: false, err: err}
+		// Treat errors as "condition not yet met" - retry instead of failing immediately
+		// This handles transient errors like nil HVAC info or temporary API issues
 	} else if met {
 		return confirmationResult{success: true, err: nil}
 	}
@@ -50,7 +51,9 @@ func pollUntilCondition(
 
 			met, err := checkFunc()
 			if err != nil {
-				return confirmationResult{success: false, err: err}
+				// Treat errors as "condition not yet met" - continue polling
+				// This allows recovery from transient errors
+				continue
 			}
 			if met {
 				return confirmationResult{success: true, err: nil}
