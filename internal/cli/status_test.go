@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cv/mcs/internal/api"
 )
@@ -1196,6 +1197,638 @@ func TestExtractVehicleInfoData(t *testing.T) {
 
 			for key, expected := range tt.expectedData {
 				assertMapValue(t, data, key, expected)
+			}
+		})
+	}
+}
+
+// TestFormatRelativeTime tests the formatRelativeTime function
+func TestFormatRelativeTime(t *testing.T) {
+	now := time.Now()
+
+	tests := []struct {
+		name     string
+		time     time.Time
+		expected string
+	}{
+		{
+			name:     "just now for future times",
+			time:     now.Add(5 * time.Minute),
+			expected: "just now",
+		},
+		{
+			name:     "seconds ago",
+			time:     now.Add(-30 * time.Second),
+			expected: "30 sec ago",
+		},
+		{
+			name:     "one minute ago",
+			time:     now.Add(-1 * time.Minute),
+			expected: "1 min ago",
+		},
+		{
+			name:     "multiple minutes ago",
+			time:     now.Add(-45 * time.Minute),
+			expected: "45 min ago",
+		},
+		{
+			name:     "one hour ago",
+			time:     now.Add(-1 * time.Hour),
+			expected: "1 hour ago",
+		},
+		{
+			name:     "multiple hours ago",
+			time:     now.Add(-5 * time.Hour),
+			expected: "5 hours ago",
+		},
+		{
+			name:     "one day ago",
+			time:     now.Add(-24 * time.Hour),
+			expected: "1 day ago",
+		},
+		{
+			name:     "multiple days ago",
+			time:     now.Add(-72 * time.Hour),
+			expected: "3 days ago",
+		},
+		{
+			name:     "less than one second",
+			time:     now.Add(-500 * time.Millisecond),
+			expected: "0 sec ago",
+		},
+		{
+			name:     "59 seconds",
+			time:     now.Add(-59 * time.Second),
+			expected: "59 sec ago",
+		},
+		{
+			name:     "59 minutes",
+			time:     now.Add(-59 * time.Minute),
+			expected: "59 min ago",
+		},
+		{
+			name:     "23 hours",
+			time:     now.Add(-23 * time.Hour),
+			expected: "23 hours ago",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatRelativeTime(tt.time)
+			if result != tt.expected {
+				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
+			}
+		})
+	}
+}
+
+// TestFormatTimestamp tests the formatTimestamp function
+func TestFormatTimestamp(t *testing.T) {
+	tests := []struct {
+		name             string
+		timestamp        string
+		expectedContains []string
+		expectedFormat   string
+	}{
+		{
+			name:           "valid timestamp format",
+			timestamp:      "20250115120000",
+			expectedFormat: "2025-01-15 12:00:00",
+		},
+		{
+			name:           "another valid timestamp",
+			timestamp:      "20241225093045",
+			expectedFormat: "2024-12-25 09:30:45",
+		},
+		{
+			name:      "invalid timestamp length",
+			timestamp: "2025011512",
+			expectedContains: []string{
+				"2025011512",
+			},
+		},
+		{
+			name:      "invalid timestamp format",
+			timestamp: "not-a-timestamp",
+			expectedContains: []string{
+				"not-a-timestamp",
+			},
+		},
+		{
+			name:      "empty timestamp",
+			timestamp: "",
+			expectedContains: []string{
+				"",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatTimestamp(tt.timestamp)
+
+			if tt.expectedFormat != "" {
+				if !strings.Contains(result, tt.expectedFormat) {
+					t.Errorf("Expected result to contain '%s', got '%s'", tt.expectedFormat, result)
+				}
+				// Should also contain relative time in parentheses
+				if !strings.Contains(result, "(") || !strings.Contains(result, ")") {
+					t.Errorf("Expected result to contain relative time in parentheses, got '%s'", result)
+				}
+			}
+
+			for _, expected := range tt.expectedContains {
+				if !strings.Contains(result, expected) {
+					t.Errorf("Expected result to contain '%s', got '%s'", expected, result)
+				}
+			}
+		})
+	}
+}
+
+// TestFormatWindowsStatus tests the formatWindowsStatus function
+func TestFormatWindowsStatus(t *testing.T) {
+	tests := []struct {
+		name           string
+		windowsInfo    api.WindowStatus
+		jsonOutput     bool
+		expectedOutput string
+		expectJSON     bool
+	}{
+		{
+			name: "all windows closed",
+			windowsInfo: api.WindowStatus{
+				DriverPosition:    api.WindowClosed,
+				PassengerPosition: api.WindowClosed,
+				RearLeftPosition:  api.WindowClosed,
+				RearRightPosition: api.WindowClosed,
+			},
+			jsonOutput:     false,
+			expectedOutput: "WINDOWS: All closed",
+		},
+		{
+			name: "driver window partially open",
+			windowsInfo: api.WindowStatus{
+				DriverPosition:    25,
+				PassengerPosition: api.WindowClosed,
+				RearLeftPosition:  api.WindowClosed,
+				RearRightPosition: api.WindowClosed,
+			},
+			jsonOutput:     false,
+			expectedOutput: "WINDOWS: Driver 25%",
+		},
+		{
+			name: "multiple windows open",
+			windowsInfo: api.WindowStatus{
+				DriverPosition:    50,
+				PassengerPosition: 75,
+				RearLeftPosition:  api.WindowClosed,
+				RearRightPosition: api.WindowClosed,
+			},
+			jsonOutput:     false,
+			expectedOutput: "WINDOWS: Driver 50%, Passenger 75%",
+		},
+		{
+			name: "all windows fully open",
+			windowsInfo: api.WindowStatus{
+				DriverPosition:    api.WindowFullyOpen,
+				PassengerPosition: api.WindowFullyOpen,
+				RearLeftPosition:  api.WindowFullyOpen,
+				RearRightPosition: api.WindowFullyOpen,
+			},
+			jsonOutput:     false,
+			expectedOutput: "WINDOWS: Driver 100%, Passenger 100%, Rear left 100%, Rear right 100%",
+		},
+		{
+			name: "rear windows open",
+			windowsInfo: api.WindowStatus{
+				DriverPosition:    api.WindowClosed,
+				PassengerPosition: api.WindowClosed,
+				RearLeftPosition:  30,
+				RearRightPosition: 40,
+			},
+			jsonOutput:     false,
+			expectedOutput: "WINDOWS: Rear left 30%, Rear right 40%",
+		},
+		{
+			name: "JSON output",
+			windowsInfo: api.WindowStatus{
+				DriverPosition:    25,
+				PassengerPosition: 50,
+				RearLeftPosition:  75,
+				RearRightPosition: 100,
+			},
+			jsonOutput: true,
+			expectJSON: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := formatWindowsStatus(tt.windowsInfo, tt.jsonOutput)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			if tt.expectJSON {
+				data := parseJSONToMap(t, result)
+				assertMapValue(t, data, "driver_position", float64(tt.windowsInfo.DriverPosition))
+				assertMapValue(t, data, "passenger_position", float64(tt.windowsInfo.PassengerPosition))
+				assertMapValue(t, data, "rear_left_position", float64(tt.windowsInfo.RearLeftPosition))
+				assertMapValue(t, data, "rear_right_position", float64(tt.windowsInfo.RearRightPosition))
+			} else if tt.expectedOutput != "" {
+				if result != tt.expectedOutput {
+					t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
+				}
+			}
+		})
+	}
+}
+
+// TestDisplayStatusWithVehicle tests the displayStatusWithVehicle function
+func TestDisplayStatusWithVehicle(t *testing.T) {
+	tests := []struct {
+		name           string
+		statusType     StatusType
+		vehicleStatus  *api.VehicleStatusResponse
+		evStatus       *api.EVVehicleStatusResponse
+		vehicleInfo    VehicleInfo
+		jsonOutput     bool
+		expectedOutput []string
+	}{
+		{
+			name:          "battery status",
+			statusType:    StatusBattery,
+			vehicleStatus: NewMockVehicleStatus().Build(),
+			evStatus:      NewMockEVVehicleStatus().Build(),
+			vehicleInfo: VehicleInfo{
+				VIN:       "JM3KKEHC1R0123456",
+				ModelName: "CX-90 PHEV",
+				ModelYear: "2024",
+			},
+			jsonOutput: false,
+			expectedOutput: []string{
+				"BATTERY:",
+				"80%",
+			},
+		},
+		{
+			name:       "fuel status",
+			statusType: StatusFuel,
+			vehicleStatus: &api.VehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				RemoteInfos: []api.RemoteInfo{
+					{
+						ResidualFuel: api.ResidualFuel{
+							FuelSegmentDActl:  92,
+							RemDrvDistDActlKm: 630.0,
+						},
+					},
+				},
+			},
+			evStatus: NewMockEVVehicleStatus().Build(),
+			vehicleInfo: VehicleInfo{
+				VIN: "JM3KKEHC1R0123456",
+			},
+			jsonOutput: false,
+			expectedOutput: []string{
+				"FUEL:",
+				"92%",
+			},
+		},
+		{
+			name:       "location status",
+			statusType: StatusLocation,
+			vehicleStatus: &api.VehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				AlertInfos: []api.AlertInfo{
+					{
+						PositionInfo: api.PositionInfo{
+							Latitude:  37.7749,
+							Longitude: -122.4194,
+						},
+					},
+				},
+			},
+			evStatus: NewMockEVVehicleStatus().Build(),
+			vehicleInfo: VehicleInfo{
+				VIN: "JM3KKEHC1R0123456",
+			},
+			jsonOutput: false,
+			expectedOutput: []string{
+				"LOCATION:",
+				"37.774900",
+				"-122.419400",
+			},
+		},
+		{
+			name:       "tires status",
+			statusType: StatusTires,
+			vehicleStatus: &api.VehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				RemoteInfos: []api.RemoteInfo{
+					{
+						TPMSInformation: api.TPMSInformation{
+							FLTPrsDispPsi: 32.0,
+							FRTPrsDispPsi: 32.0,
+							RLTPrsDispPsi: 31.0,
+							RRTPrsDispPsi: 31.0,
+						},
+					},
+				},
+			},
+			evStatus: NewMockEVVehicleStatus().Build(),
+			vehicleInfo: VehicleInfo{
+				VIN: "JM3KKEHC1R0123456",
+			},
+			jsonOutput: false,
+			expectedOutput: []string{
+				"TIRES:",
+				"FL:",
+				"FR:",
+				"RL:",
+				"RR:",
+				"PSI",
+			},
+		},
+		{
+			name:       "doors status",
+			statusType: StatusDoors,
+			vehicleStatus: NewMockVehicleStatus().WithDoorStatus(api.DoorStatus{
+				AllLocked:       true,
+				DriverOpen:      false,
+				PassengerOpen:   false,
+				RearLeftOpen:    false,
+				RearRightOpen:   false,
+				TrunkOpen:       false,
+				HoodOpen:        false,
+				FuelLidOpen:     false,
+				DriverLocked:    true,
+				PassengerLocked: true,
+				RearLeftLocked:  true,
+				RearRightLocked: true,
+			}).Build(),
+			evStatus: NewMockEVVehicleStatus().Build(),
+			vehicleInfo: VehicleInfo{
+				VIN: "JM3KKEHC1R0123456",
+			},
+			jsonOutput: false,
+			expectedOutput: []string{
+				"DOORS:",
+				"All locked",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a cobra command with a buffer for output
+			buf := new(bytes.Buffer)
+			cmd := NewStatusCmd()
+			cmd.SetOut(buf)
+			cmd.SetErr(buf)
+
+			err := displayStatusWithVehicle(cmd, tt.statusType, tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, tt.jsonOutput)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			output := buf.String()
+			for _, expected := range tt.expectedOutput {
+				if !strings.Contains(output, expected) {
+					t.Errorf("Expected output to contain '%s', got '%s'", expected, output)
+				}
+			}
+		})
+	}
+}
+
+// TestDisplayAllStatus tests the displayAllStatus function
+func TestDisplayAllStatus(t *testing.T) {
+	tests := []struct {
+		name           string
+		vehicleStatus  *api.VehicleStatusResponse
+		evStatus       *api.EVVehicleStatusResponse
+		vehicleInfo    VehicleInfo
+		jsonOutput     bool
+		expectedOutput []string
+		expectJSON     bool
+	}{
+		{
+			name: "full status display",
+			vehicleStatus: &api.VehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				AlertInfos: []api.AlertInfo{
+					{
+						Door: api.DoorInfo{
+							DrStatDrv:       float64(api.DoorClosed),
+							DrStatPsngr:     float64(api.DoorClosed),
+							DrStatRl:        float64(api.DoorClosed),
+							DrStatRr:        float64(api.DoorClosed),
+							DrStatTrnkLg:    float64(api.DoorClosed),
+							DrStatHood:      float64(api.DoorClosed),
+							LockLinkSwDrv:   float64(api.DoorLocked),
+							LockLinkSwPsngr: float64(api.DoorLocked),
+							LockLinkSwRl:    float64(api.DoorLocked),
+							LockLinkSwRr:    float64(api.DoorLocked),
+						},
+					},
+				},
+				RemoteInfos: []api.RemoteInfo{
+					{
+						ResidualFuel: api.ResidualFuel{
+							FuelSegmentDActl:  92,
+							RemDrvDistDActlKm: 630.0,
+						},
+						TPMSInformation: api.TPMSInformation{
+							FLTPrsDispPsi: 32.0,
+							FRTPrsDispPsi: 32.0,
+							RLTPrsDispPsi: 31.0,
+							RRTPrsDispPsi: 31.0,
+						},
+						DriveInformation: api.DriveInformation{
+							OdoDispValue: 12345.6,
+						},
+					},
+				},
+			},
+			evStatus: &api.EVVehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				ResultData: []api.EVResultData{
+					{
+						OccurrenceDate: "20250115120000",
+						PlusBInformation: api.PlusBInformation{
+							VehicleInfo: api.EVVehicleInfo{
+								ChargeInfo: api.ChargeInfo{
+									SmaphSOC:          80.0,
+									SmaphRemDrvDistKm: 200.0,
+								},
+								RemoteHvacInfo: &api.RemoteHvacInfo{
+									HVAC:           float64(api.HVACStatusOff),
+									FrontDefroster: float64(api.DefrosterOff),
+									RearDefogger:   float64(api.DefrosterOff),
+									InCarTeDC:      20.0,
+									TargetTemp:     22.0,
+								},
+							},
+						},
+					},
+				},
+			},
+			vehicleInfo: VehicleInfo{
+				VIN:       "JM3KKEHC1R0123456",
+				ModelName: "CX-90 PHEV",
+				ModelYear: "2024",
+			},
+			jsonOutput: false,
+			expectedOutput: []string{
+				"CX-90 PHEV (2024)",
+				"VIN: JM3KKEHC1R0123456",
+				"Status as of",
+				"BATTERY:",
+				"FUEL:",
+				"CLIMATE:",
+				"DOORS:",
+				"WINDOWS:",
+				"TIRES:",
+				"ODOMETER:",
+			},
+		},
+		{
+			name: "status with hazards on",
+			vehicleStatus: &api.VehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				AlertInfos: []api.AlertInfo{
+					{
+						Door: api.DoorInfo{
+							DrStatDrv:       float64(api.DoorClosed),
+							DrStatPsngr:     float64(api.DoorClosed),
+							DrStatRl:        float64(api.DoorClosed),
+							DrStatRr:        float64(api.DoorClosed),
+							DrStatTrnkLg:    float64(api.DoorClosed),
+							DrStatHood:      float64(api.DoorClosed),
+							LockLinkSwDrv:   float64(api.DoorLocked),
+							LockLinkSwPsngr: float64(api.DoorLocked),
+							LockLinkSwRl:    float64(api.DoorLocked),
+							LockLinkSwRr:    float64(api.DoorLocked),
+						},
+						HazardLamp: api.HazardLamp{
+							HazardSw: float64(api.HazardLightsOn),
+						},
+					},
+				},
+				RemoteInfos: []api.RemoteInfo{
+					{
+						ResidualFuel: api.ResidualFuel{
+							FuelSegmentDActl:  92,
+							RemDrvDistDActlKm: 630.0,
+						},
+						TPMSInformation: api.TPMSInformation{
+							FLTPrsDispPsi: 32.0,
+							FRTPrsDispPsi: 32.0,
+							RLTPrsDispPsi: 31.0,
+							RRTPrsDispPsi: 31.0,
+						},
+						DriveInformation: api.DriveInformation{
+							OdoDispValue: 12345.6,
+						},
+					},
+				},
+			},
+			evStatus: NewMockEVVehicleStatus().Build(),
+			vehicleInfo: VehicleInfo{
+				VIN: "JM3KKEHC1R0123456",
+			},
+			jsonOutput: false,
+			expectedOutput: []string{
+				"HAZARDS: On",
+			},
+		},
+		{
+			name:          "JSON output",
+			vehicleStatus: NewMockVehicleStatus().Build(),
+			evStatus:      NewMockEVVehicleStatus().Build(),
+			vehicleInfo: VehicleInfo{
+				VIN:       "JM3KKEHC1R0123456",
+				ModelName: "CX-90 PHEV",
+				ModelYear: "2024",
+			},
+			jsonOutput: true,
+			expectJSON: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := displayAllStatus(tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, tt.jsonOutput)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+
+			if tt.expectJSON {
+				data := parseJSONToMap(t, result)
+				// Verify JSON structure has expected top-level keys
+				expectedKeys := []string{"vehicle", "battery", "fuel", "location", "tires", "doors", "windows", "hazards", "climate", "odometer"}
+				for _, key := range expectedKeys {
+					if _, ok := data[key]; !ok {
+						t.Errorf("Expected JSON to contain key '%s'", key)
+					}
+				}
+			} else {
+				for _, expected := range tt.expectedOutput {
+					if !strings.Contains(result, expected) {
+						t.Errorf("Expected output to contain '%s', got '%s'", expected, result)
+					}
+				}
+			}
+		})
+	}
+}
+
+// TestDisplayAllStatus_ErrorHandling tests error cases in displayAllStatus
+func TestDisplayAllStatus_ErrorHandling(t *testing.T) {
+	tests := []struct {
+		name          string
+		vehicleStatus *api.VehicleStatusResponse
+		evStatus      *api.EVVehicleStatusResponse
+		vehicleInfo   VehicleInfo
+		expectError   bool
+	}{
+		{
+			name:          "missing occurrence date",
+			vehicleStatus: NewMockVehicleStatus().Build(),
+			evStatus: &api.EVVehicleStatusResponse{
+				ResultCode: api.ResultCodeSuccess,
+				ResultData: []api.EVResultData{},
+			},
+			vehicleInfo: VehicleInfo{
+				VIN: "JM3KKEHC1R0123456",
+			},
+			expectError: true,
+		},
+		{
+			name:          "missing HVAC info",
+			vehicleStatus: NewMockVehicleStatus().Build(),
+			evStatus:      NewMockEVVehicleStatus().WithoutHVAC().Build(),
+			vehicleInfo: VehicleInfo{
+				VIN: "JM3KKEHC1R0123456",
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := displayAllStatus(tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, false)
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error, got nil")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Expected no error, got: %v", err)
+				}
 			}
 		})
 	}

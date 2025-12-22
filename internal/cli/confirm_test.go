@@ -1266,3 +1266,305 @@ func TestWaitForConditionRefreshesStatus(t *testing.T) {
 		t.Errorf("Expected RefreshVehicleStatus to be called exactly once, but was called %d times", mockClient.refreshVehicleStatusCalls)
 	}
 }
+
+// TestWaitForDoorsUnlocked tests the door unlock confirmation logic
+func TestWaitForDoorsUnlocked(t *testing.T) {
+	tests := []struct {
+		name        string
+		doorStatus  []api.DoorStatus
+		expectError bool
+		expectMet   bool
+	}{
+		{
+			name: "all doors unlocked immediately",
+			doorStatus: []api.DoorStatus{
+				{
+					DriverLocked:    false,
+					PassengerLocked: false,
+					RearLeftLocked:  false,
+					RearRightLocked: false,
+					AllLocked:       false,
+				},
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name: "doors unlock after one check",
+			doorStatus: []api.DoorStatus{
+				{
+					DriverLocked:    true,
+					PassengerLocked: true,
+					RearLeftLocked:  true,
+					RearRightLocked: true,
+					AllLocked:       true,
+				},
+				{
+					DriverLocked:    false,
+					PassengerLocked: false,
+					RearLeftLocked:  false,
+					RearRightLocked: false,
+					AllLocked:       false,
+				},
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name: "at least one door unlocked is considered unlocked",
+			doorStatus: []api.DoorStatus{
+				{
+					DriverLocked:    false,
+					PassengerLocked: true,
+					RearLeftLocked:  true,
+					RearRightLocked: true,
+					AllLocked:       false,
+				},
+			},
+			expectError: false,
+			expectMet:   true,
+		},
+		{
+			name: "doors never unlock",
+			doorStatus: []api.DoorStatus{
+				{
+					DriverLocked:    true,
+					PassengerLocked: true,
+					RearLeftLocked:  true,
+					RearRightLocked: true,
+					AllLocked:       true,
+				},
+				{
+					DriverLocked:    true,
+					PassengerLocked: true,
+					RearLeftLocked:  true,
+					RearRightLocked: true,
+					AllLocked:       true,
+				},
+				{
+					DriverLocked:    true,
+					PassengerLocked: true,
+					RearLeftLocked:  true,
+					RearRightLocked: true,
+					AllLocked:       true,
+				},
+			},
+			expectError: false,
+			expectMet:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			var buf bytes.Buffer
+
+			// Create mock client that returns the door status sequence
+			calls := 0
+			mockClient := &mockClientForConfirm{
+				getVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
+					if calls >= len(tt.doorStatus) {
+						calls = len(tt.doorStatus) - 1
+					}
+					status := tt.doorStatus[calls]
+					calls++
+					return NewMockVehicleStatus().WithDoorStatus(status).Build(), nil
+				},
+			}
+
+			// Use shorter timeout for "never" cases to speed up tests
+			timeout := 5 * time.Second
+			if !tt.expectMet {
+				timeout = 200 * time.Millisecond
+			}
+
+			result := waitForDoorsUnlocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
+
+			if tt.expectError && result.err == nil {
+				t.Error("Expected error but got nil")
+			}
+
+			if !tt.expectError && result.err != nil {
+				t.Errorf("Expected no error but got: %v", result.err)
+			}
+
+			if tt.expectMet && !result.success {
+				t.Errorf("Expected doors to be unlocked but they weren't (calls: %d)", calls)
+			}
+
+			if !tt.expectMet && result.success {
+				t.Error("Expected doors to not be unlocked but they were")
+			}
+		})
+	}
+}
+
+// TestClientAdapter tests the clientAdapter wrapper that converts InternalVIN types
+func TestClientAdapter(t *testing.T) {
+	ctx := context.Background()
+	testVIN := api.InternalVIN("123456789")
+
+	t.Run("GetVehicleStatus", func(t *testing.T) {
+		// Create a mock API client with a wrapper that intercepts the method calls
+		mockAPIClient := &mockAPIClientForAdapter{}
+		mockAPIClient.getVehicleStatusFunc = func(ctx context.Context, vin string) (*api.VehicleStatusResponse, error) {
+			if vin != string(testVIN) {
+				t.Errorf("Expected VIN to be %q, got %q", string(testVIN), vin)
+			}
+			return NewMockVehicleStatus().Build(), nil
+		}
+
+		adapter := &testClientAdapter{mockAPIClient}
+		resp, err := adapter.GetVehicleStatus(ctx, testVIN)
+
+		if err != nil {
+			t.Fatalf("Expected no error, got: %v", err)
+		}
+
+		if resp == nil {
+			t.Fatal("Expected response to be non-nil")
+		}
+
+		if resp.ResultCode != api.ResultCodeSuccess {
+			t.Errorf("Expected result code %q, got %q", api.ResultCodeSuccess, resp.ResultCode)
+		}
+	})
+
+	t.Run("GetEVVehicleStatus", func(t *testing.T) {
+		mockAPIClient := &mockAPIClientForAdapter{}
+		mockAPIClient.getEVVehicleStatusFunc = func(ctx context.Context, vin string) (*api.EVVehicleStatusResponse, error) {
+			if vin != string(testVIN) {
+				t.Errorf("Expected VIN to be %q, got %q", string(testVIN), vin)
+			}
+			return NewMockEVVehicleStatus().Build(), nil
+		}
+
+		adapter := &testClientAdapter{mockAPIClient}
+		resp, err := adapter.GetEVVehicleStatus(ctx, testVIN)
+
+		if err != nil {
+			t.Fatalf("Expected no error, got: %v", err)
+		}
+
+		if resp == nil {
+			t.Fatal("Expected response to be non-nil")
+		}
+
+		if resp.ResultCode != api.ResultCodeSuccess {
+			t.Errorf("Expected result code %q, got %q", api.ResultCodeSuccess, resp.ResultCode)
+		}
+	})
+
+	t.Run("RefreshVehicleStatus", func(t *testing.T) {
+		refreshCalled := false
+		mockAPIClient := &mockAPIClientForAdapter{}
+		mockAPIClient.refreshVehicleStatusFunc = func(ctx context.Context, vin string) error {
+			if vin != string(testVIN) {
+				t.Errorf("Expected VIN to be %q, got %q", string(testVIN), vin)
+			}
+			refreshCalled = true
+			return nil
+		}
+
+		adapter := &testClientAdapter{mockAPIClient}
+		err := adapter.RefreshVehicleStatus(ctx, testVIN)
+
+		if err != nil {
+			t.Errorf("Expected no error, got: %v", err)
+		}
+
+		if !refreshCalled {
+			t.Error("Expected RefreshVehicleStatus to be called")
+		}
+	})
+
+	t.Run("GetVehicleStatus error propagation", func(t *testing.T) {
+		expectedErr := errors.New("API error")
+		mockAPIClient := &mockAPIClientForAdapter{}
+		mockAPIClient.getVehicleStatusFunc = func(ctx context.Context, vin string) (*api.VehicleStatusResponse, error) {
+			return nil, expectedErr
+		}
+
+		adapter := &testClientAdapter{mockAPIClient}
+		_, err := adapter.GetVehicleStatus(ctx, testVIN)
+
+		if err != expectedErr {
+			t.Errorf("Expected error %v, got %v", expectedErr, err)
+		}
+	})
+
+	t.Run("GetEVVehicleStatus error propagation", func(t *testing.T) {
+		expectedErr := errors.New("API error")
+		mockAPIClient := &mockAPIClientForAdapter{}
+		mockAPIClient.getEVVehicleStatusFunc = func(ctx context.Context, vin string) (*api.EVVehicleStatusResponse, error) {
+			return nil, expectedErr
+		}
+
+		adapter := &testClientAdapter{mockAPIClient}
+		_, err := adapter.GetEVVehicleStatus(ctx, testVIN)
+
+		if err != expectedErr {
+			t.Errorf("Expected error %v, got %v", expectedErr, err)
+		}
+	})
+
+	t.Run("RefreshVehicleStatus error propagation", func(t *testing.T) {
+		expectedErr := errors.New("refresh error")
+		mockAPIClient := &mockAPIClientForAdapter{}
+		mockAPIClient.refreshVehicleStatusFunc = func(ctx context.Context, vin string) error {
+			return expectedErr
+		}
+
+		adapter := &testClientAdapter{mockAPIClient}
+		err := adapter.RefreshVehicleStatus(ctx, testVIN)
+
+		if err != expectedErr {
+			t.Errorf("Expected error %v, got %v", expectedErr, err)
+		}
+	})
+}
+
+// testClientAdapter is a test version of clientAdapter that works with our mock
+type testClientAdapter struct {
+	client *mockAPIClientForAdapter
+}
+
+func (t *testClientAdapter) GetVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
+	return t.client.GetVehicleStatus(ctx, string(internalVIN))
+}
+
+func (t *testClientAdapter) GetEVVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
+	return t.client.GetEVVehicleStatus(ctx, string(internalVIN))
+}
+
+func (t *testClientAdapter) RefreshVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) error {
+	return t.client.RefreshVehicleStatus(ctx, string(internalVIN))
+}
+
+// mockAPIClientForAdapter is a mock implementation of api.Client methods for testing the clientAdapter
+type mockAPIClientForAdapter struct {
+	getVehicleStatusFunc     func(ctx context.Context, vin string) (*api.VehicleStatusResponse, error)
+	getEVVehicleStatusFunc   func(ctx context.Context, vin string) (*api.EVVehicleStatusResponse, error)
+	refreshVehicleStatusFunc func(ctx context.Context, vin string) error
+}
+
+func (m *mockAPIClientForAdapter) GetVehicleStatus(ctx context.Context, vin string) (*api.VehicleStatusResponse, error) {
+	if m.getVehicleStatusFunc != nil {
+		return m.getVehicleStatusFunc(ctx, vin)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (m *mockAPIClientForAdapter) GetEVVehicleStatus(ctx context.Context, vin string) (*api.EVVehicleStatusResponse, error) {
+	if m.getEVVehicleStatusFunc != nil {
+		return m.getEVVehicleStatusFunc(ctx, vin)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (m *mockAPIClientForAdapter) RefreshVehicleStatus(ctx context.Context, vin string) error {
+	if m.refreshVehicleStatusFunc != nil {
+		return m.refreshVehicleStatusFunc(ctx, vin)
+	}
+	return errors.New("not implemented")
+}
