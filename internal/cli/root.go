@@ -111,6 +111,7 @@ func Execute() error {
 	rootCmd.AddCommand(NewChargeCmd())
 	rootCmd.AddCommand(NewClimateCmd())
 	rootCmd.AddCommand(NewRawCmd())
+	rootCmd.AddCommand(NewSkillCmd())
 
 	return rootCmd.ExecuteContext(ctx)
 }

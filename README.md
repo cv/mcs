@@ -81,7 +81,13 @@ Note: Tire pressures are color-coded based on deviation from target (36 PSI):
 
 ## Claude Code Integration
 
-This project includes a Claude Code skill for natural language vehicle control. Instead of remembering CLI syntax, just tell Claude what you want:
+mcs includes a Claude Code skill for natural language vehicle control. Install it once:
+
+```bash
+mcs skill install
+```
+
+Then in Claude Code, just tell Claude what you want:
 
 ```
 You: "warm up the car"
@@ -94,14 +100,19 @@ You: "lock the doors"
 Claude: runs `mcs lock`
 ```
 
-The skill is in `.claude/skills/mcs-control/` and is auto-discovered when using Claude Code in this directory.
-
 **Supported phrases:**
 - Climate: "warm up the car", "cool it down", "set to 22 degrees"
 - Locks: "lock the car", "unlock the doors"
 - Engine: "start the car", "stop the engine"
 - Charging: "start charging", "stop the charge"
 - Status: "check the battery", "where is my car", "tire pressure"
+
+**Skill management:**
+```bash
+mcs skill install    # Install to ~/.claude/skills/mcs-control/
+mcs skill uninstall  # Remove the skill
+mcs skill path       # Show installation path
+```
 
 ## Notes
 
