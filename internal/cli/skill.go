@@ -5,10 +5,14 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cv/mcs/internal/skill"
 	"github.com/spf13/cobra"
 )
+
+// skillVersionFile is the name of the file that stores the mcs version used to install the skill.
+const skillVersionFile = ".mcs-version"
 
 // getSkillPath returns the path where the skill should be installed.
 func getSkillPath() (string, error) {
@@ -129,6 +133,12 @@ For example, you can say "warm up the car" and Claude will run "mcs climate on".
 				return fmt.Errorf("failed to install skill files: %w", err)
 			}
 
+			// Write version file to track which mcs version installed the skill
+			versionPath := filepath.Join(skillPath, skillVersionFile)
+			if err := os.WriteFile(versionPath, []byte(Version), 0644); err != nil {
+				return fmt.Errorf("failed to write version file: %w", err)
+			}
+
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Skill installed to %s\n", skillPath)
 			return nil
 		},
@@ -136,6 +146,49 @@ For example, you can say "warm up the car" and Claude will run "mcs climate on".
 	}
 
 	return cmd
+}
+
+// SkillVersionStatus represents the result of checking skill version compatibility.
+type SkillVersionStatus int
+
+const (
+	// SkillNotInstalled means the skill directory does not exist.
+	SkillNotInstalled SkillVersionStatus = iota
+	// SkillVersionMatch means the installed skill version matches the current mcs version.
+	SkillVersionMatch
+	// SkillVersionMismatch means the installed skill version differs from the current mcs version.
+	SkillVersionMismatch
+	// SkillVersionUnknown means the skill is installed but has no version file (legacy install).
+	SkillVersionUnknown
+)
+
+// CheckSkillVersion checks if the installed skill version matches the current mcs version.
+// Returns the status and the installed version (empty string if not available).
+func CheckSkillVersion() (SkillVersionStatus, string) {
+	skillPath, err := getSkillPath()
+	if err != nil {
+		return SkillNotInstalled, ""
+	}
+
+	// Check if skill directory exists
+	if _, err := os.Stat(skillPath); os.IsNotExist(err) {
+		return SkillNotInstalled, ""
+	}
+
+	// Read version file
+	versionPath := filepath.Join(skillPath, skillVersionFile)
+	content, err := os.ReadFile(versionPath)
+	if err != nil {
+		// Skill exists but no version file - legacy install
+		return SkillVersionUnknown, ""
+	}
+
+	installedVersion := strings.TrimSpace(string(content))
+	if installedVersion == Version {
+		return SkillVersionMatch, installedVersion
+	}
+
+	return SkillVersionMismatch, installedVersion
 }
 
 // NewSkillUninstallCmd creates the skill uninstall subcommand

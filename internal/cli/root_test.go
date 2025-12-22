@@ -140,3 +140,51 @@ func TestExecute_WithRealSignal(t *testing.T) {
 		}
 	}
 }
+
+func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) {
+	// Create a skill command
+	skillCmd := &cobra.Command{Use: "skill"}
+
+	// Capture stderr
+	var errBuf bytes.Buffer
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	checkSkillVersionMismatch(skillCmd)
+
+	_ = w.Close()
+	os.Stderr = oldStderr
+
+	_, _ = errBuf.ReadFrom(r)
+
+	// Should not print anything for skill command
+	if errBuf.Len() > 0 {
+		t.Errorf("Expected no output for skill command, got: %s", errBuf.String())
+	}
+}
+
+func TestCheckSkillVersionMismatch_SkipsSkillSubcommands(t *testing.T) {
+	// Create a skill subcommand (e.g., skill install)
+	skillCmd := &cobra.Command{Use: "skill"}
+	installCmd := &cobra.Command{Use: "install"}
+	skillCmd.AddCommand(installCmd)
+
+	// Capture stderr
+	var errBuf bytes.Buffer
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	checkSkillVersionMismatch(installCmd)
+
+	_ = w.Close()
+	os.Stderr = oldStderr
+
+	_, _ = errBuf.ReadFrom(r)
+
+	// Should not print anything for skill subcommand
+	if errBuf.Len() > 0 {
+		t.Errorf("Expected no output for skill subcommand, got: %s", errBuf.String())
+	}
+}

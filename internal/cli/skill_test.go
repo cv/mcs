@@ -384,3 +384,151 @@ func TestSkillPathCommand_OutputFormat(t *testing.T) {
 		t.Errorf("Expected absolute path, got '%s'", pathStr)
 	}
 }
+
+// TestSkillInstallCommand_WritesVersionFile tests that install creates a version file
+func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
+	// Create temp directory for test
+	tempDir := t.TempDir()
+
+	// Temporarily override the home directory
+	originalHome := os.Getenv("HOME")
+	t.Cleanup(func() {
+		if originalHome != "" {
+			_ = os.Setenv("HOME", originalHome)
+		} else {
+			_ = os.Unsetenv("HOME")
+		}
+	})
+	_ = os.Setenv("HOME", tempDir)
+
+	// Execute install command
+	cmd := NewSkillInstallCmd()
+	cmd.SetOut(&bytes.Buffer{})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Expected install to succeed, got error: %v", err)
+	}
+
+	// Verify version file was created
+	skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+	versionPath := filepath.Join(skillPath, ".mcs-version")
+
+	content, err := os.ReadFile(versionPath)
+	if err != nil {
+		t.Fatalf("Expected version file to exist, got error: %v", err)
+	}
+
+	// Verify content matches current version
+	if string(content) != Version {
+		t.Errorf("Expected version file to contain '%s', got '%s'", Version, string(content))
+	}
+}
+
+// TestCheckSkillVersion tests the CheckSkillVersion function
+func TestCheckSkillVersion(t *testing.T) {
+	tests := []struct {
+		name            string
+		setupFunc       func(t *testing.T, tempDir string)
+		expectedStatus  SkillVersionStatus
+		expectedVersion string
+	}{
+		{
+			name: "returns SkillNotInstalled when skill directory does not exist",
+			setupFunc: func(t *testing.T, tempDir string) {
+				// Don't create anything
+			},
+			expectedStatus:  SkillNotInstalled,
+			expectedVersion: "",
+		},
+		{
+			name: "returns SkillVersionUnknown when skill exists without version file",
+			setupFunc: func(t *testing.T, tempDir string) {
+				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				if err := os.MkdirAll(skillPath, 0755); err != nil {
+					t.Fatalf("Failed to create skill directory: %v", err)
+				}
+				// Create SKILL.md but no version file (legacy install)
+				if err := os.WriteFile(filepath.Join(skillPath, "SKILL.md"), []byte("test"), 0644); err != nil {
+					t.Fatalf("Failed to create SKILL.md: %v", err)
+				}
+			},
+			expectedStatus:  SkillVersionUnknown,
+			expectedVersion: "",
+		},
+		{
+			name: "returns SkillVersionMatch when versions match",
+			setupFunc: func(t *testing.T, tempDir string) {
+				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				if err := os.MkdirAll(skillPath, 0755); err != nil {
+					t.Fatalf("Failed to create skill directory: %v", err)
+				}
+				versionPath := filepath.Join(skillPath, ".mcs-version")
+				if err := os.WriteFile(versionPath, []byte(Version), 0644); err != nil {
+					t.Fatalf("Failed to create version file: %v", err)
+				}
+			},
+			expectedStatus:  SkillVersionMatch,
+			expectedVersion: Version,
+		},
+		{
+			name: "returns SkillVersionMismatch when versions differ",
+			setupFunc: func(t *testing.T, tempDir string) {
+				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				if err := os.MkdirAll(skillPath, 0755); err != nil {
+					t.Fatalf("Failed to create skill directory: %v", err)
+				}
+				versionPath := filepath.Join(skillPath, ".mcs-version")
+				if err := os.WriteFile(versionPath, []byte("1.0.0"), 0644); err != nil {
+					t.Fatalf("Failed to create version file: %v", err)
+				}
+			},
+			expectedStatus:  SkillVersionMismatch,
+			expectedVersion: "1.0.0",
+		},
+		{
+			name: "handles version file with whitespace",
+			setupFunc: func(t *testing.T, tempDir string) {
+				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				if err := os.MkdirAll(skillPath, 0755); err != nil {
+					t.Fatalf("Failed to create skill directory: %v", err)
+				}
+				versionPath := filepath.Join(skillPath, ".mcs-version")
+				// Write version with trailing newline
+				if err := os.WriteFile(versionPath, []byte(Version+"\n"), 0644); err != nil {
+					t.Fatalf("Failed to create version file: %v", err)
+				}
+			},
+			expectedStatus:  SkillVersionMatch,
+			expectedVersion: Version,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create temp directory for test
+			tempDir := t.TempDir()
+			tt.setupFunc(t, tempDir)
+
+			// Temporarily override the home directory
+			originalHome := os.Getenv("HOME")
+			t.Cleanup(func() {
+				if originalHome != "" {
+					_ = os.Setenv("HOME", originalHome)
+				} else {
+					_ = os.Unsetenv("HOME")
+				}
+			})
+			_ = os.Setenv("HOME", tempDir)
+
+			status, version := CheckSkillVersion()
+
+			if status != tt.expectedStatus {
+				t.Errorf("Expected status %v, got %v", tt.expectedStatus, status)
+			}
+
+			if version != tt.expectedVersion {
+				t.Errorf("Expected version '%s', got '%s'", tt.expectedVersion, version)
+			}
+		})
+	}
+}

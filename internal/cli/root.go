@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,6 +21,26 @@ var (
 	NoColor bool
 )
 
+// checkSkillVersionMismatch checks if the installed skill version differs from the current
+// mcs version and prints a warning to stderr if so.
+func checkSkillVersionMismatch(cmd *cobra.Command) {
+	// Skip the check for skill commands themselves to avoid confusing output
+	if cmd.Name() == "skill" || (cmd.Parent() != nil && cmd.Parent().Name() == "skill") {
+		return
+	}
+
+	status, installedVersion := CheckSkillVersion()
+	switch status {
+	case SkillVersionMismatch:
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: Claude Code skill was installed with mcs %s (current: %s)\n", installedVersion, Version)
+		_, _ = fmt.Fprintf(os.Stderr, "Run 'mcs skill install' to update the skill.\n\n")
+	case SkillVersionUnknown:
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: Claude Code skill may be outdated (no version info)\n")
+		_, _ = fmt.Fprintf(os.Stderr, "Run 'mcs skill install' to update the skill.\n\n")
+	}
+	// SkillNotInstalled and SkillVersionMatch - no warning needed
+}
+
 // NewRootCmd creates the root command
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
@@ -30,6 +51,9 @@ func NewRootCmd() *cobra.Command {
 			if NoColor || !IsTTY(os.Stdout) {
 				SetColorEnabled(false)
 			}
+
+			// Check for skill version mismatch and warn user
+			checkSkillVersionMismatch(cmd)
 		},
 		Long: `mcs is a CLI tool for controlling your connected vehicle via manufacturer API.
 
