@@ -52,8 +52,9 @@ brews:
     license: MIT
     install: |
       bin.install "mcs"
-    post_install: |
-      system "#{bin}/mcs", "skill", "install"
+    caveats: |
+      To enable Claude Code integration, run:
+        mcs skill install
     test: |
       system "#{bin}/mcs", "--version"
 
