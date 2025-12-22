@@ -52,6 +52,8 @@ brews:
     license: MIT
     install: |
       bin.install "mcs"
+    post_install: |
+      system "#{bin}/mcs", "skill", "install"
     test: |
       system "#{bin}/mcs", "--version"
 
