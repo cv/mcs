@@ -3,15 +3,23 @@ version: "2"
 linters:
   enable:
     # Bug finders
+    - asciicheck         # Non-ASCII identifiers
+    - bidichk            # Dangerous unicode sequences
     - bodyclose          # HTTP response body closure
     - durationcheck      # Duration multiplication bugs
     - embeddedstructfieldcheck # Embedded struct field access issues
+    - errcheck           # Unchecked errors
     - errorlint          # Error wrapping issues
     - errchkjson         # JSON encoding error checks
+    - errname            # Error naming conventions
     - fatcontext         # Context misuse in loops
+    - forcetypeassert    # Unchecked type assertions
+    - ineffassign        # Ineffective assignments
     - nilerr             # Returns nil even when error set
     - noctx              # Missing context.Context usage
     - nosprintfhostport  # URL construction bugs
+    - staticcheck        # Comprehensive static analysis
+    - unused             # Unused code
 
     # Security
     - gosec              # Security issues
@@ -70,10 +78,11 @@ linters:
         linters:
           - gocritic
         text: appendAssign
-      # Test files can have repeated strings
+      # Test files can have repeated strings and controlled type assertions
       - path: _test\.go
         linters:
           - goconst
+          - forcetypeassert
       # Global variables - justified exclusions:
       # 1. Read-only lookup tables (RegionConfigs, screenSizes, androidVersionToSDK)
       - path: internal/api/auth\.go

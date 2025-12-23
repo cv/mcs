@@ -173,7 +173,11 @@ func waitForDoorsLocked(
 	pollInterval time.Duration,
 ) confirmationResult {
 	conditionChecker := func(status any) (bool, error) {
-		vStatus := status.(*api.VehicleStatusResponse)
+		vStatus, ok := status.(*api.VehicleStatusResponse)
+		if !ok {
+			return false, fmt.Errorf("unexpected status type: %T", status)
+		}
+
 		doorStatus, err := vStatus.GetDoorsInfo()
 		if err != nil {
 			return false, err
@@ -195,7 +199,11 @@ func waitForDoorsUnlocked(
 	pollInterval time.Duration,
 ) confirmationResult {
 	conditionChecker := func(status any) (bool, error) {
-		vStatus := status.(*api.VehicleStatusResponse)
+		vStatus, ok := status.(*api.VehicleStatusResponse)
+		if !ok {
+			return false, fmt.Errorf("unexpected status type: %T", status)
+		}
+
 		doorStatus, err := vStatus.GetDoorsInfo()
 		if err != nil {
 			return false, err
@@ -217,7 +225,11 @@ func waitForEngineRunning(
 	pollInterval time.Duration,
 ) confirmationResult {
 	conditionChecker := func(status any) (bool, error) {
-		evStatus := status.(*api.EVVehicleStatusResponse)
+		evStatus, ok := status.(*api.EVVehicleStatusResponse)
+		if !ok {
+			return false, fmt.Errorf("unexpected status type: %T", status)
+		}
+
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
@@ -239,7 +251,11 @@ func waitForEngineStopped(
 	pollInterval time.Duration,
 ) confirmationResult {
 	conditionChecker := func(status any) (bool, error) {
-		evStatus := status.(*api.EVVehicleStatusResponse)
+		evStatus, ok := status.(*api.EVVehicleStatusResponse)
+		if !ok {
+			return false, fmt.Errorf("unexpected status type: %T", status)
+		}
+
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
@@ -261,7 +277,11 @@ func waitForCharging(
 	pollInterval time.Duration,
 ) confirmationResult {
 	conditionChecker := func(status any) (bool, error) {
-		evStatus := status.(*api.EVVehicleStatusResponse)
+		evStatus, ok := status.(*api.EVVehicleStatusResponse)
+		if !ok {
+			return false, fmt.Errorf("unexpected status type: %T", status)
+		}
+
 		batteryInfo, err := evStatus.GetBatteryInfo()
 		if err != nil {
 			return false, err
@@ -283,7 +303,11 @@ func waitForNotCharging(
 	pollInterval time.Duration,
 ) confirmationResult {
 	conditionChecker := func(status any) (bool, error) {
-		evStatus := status.(*api.EVVehicleStatusResponse)
+		evStatus, ok := status.(*api.EVVehicleStatusResponse)
+		if !ok {
+			return false, fmt.Errorf("unexpected status type: %T", status)
+		}
+
 		batteryInfo, err := evStatus.GetBatteryInfo()
 		if err != nil {
 			return false, err
@@ -309,7 +333,11 @@ func waitForHvacOn(
 	pollInterval time.Duration,
 ) confirmationResult {
 	conditionChecker := func(status any) (bool, error) {
-		evStatus := status.(*api.EVVehicleStatusResponse)
+		evStatus, ok := status.(*api.EVVehicleStatusResponse)
+		if !ok {
+			return false, fmt.Errorf("unexpected status type: %T", status)
+		}
+
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
@@ -331,7 +359,11 @@ func waitForHvacOff(
 	pollInterval time.Duration,
 ) confirmationResult {
 	conditionChecker := func(status any) (bool, error) {
-		evStatus := status.(*api.EVVehicleStatusResponse)
+		evStatus, ok := status.(*api.EVVehicleStatusResponse)
+		if !ok {
+			return false, fmt.Errorf("unexpected status type: %T", status)
+		}
+
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
@@ -356,18 +388,22 @@ func waitForHvacSettings(
 	pollInterval time.Duration,
 ) confirmationResult {
 	conditionChecker := func(status any) (bool, error) {
-		evStatus := status.(*api.EVVehicleStatusResponse)
+		evStatus, ok := status.(*api.EVVehicleStatusResponse)
+		if !ok {
+			return false, fmt.Errorf("unexpected status type: %T", status)
+		}
+
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
 			return false, err
 		}
 
-		// Check temperature with tolerance of 0.5C
+		// Check temperature with tolerance of 0.5C.
 		const tempTolerance = 0.5
 		tempMatch := hvacInfo.TargetTempC >= targetTemp-tempTolerance &&
 			hvacInfo.TargetTempC <= targetTemp+tempTolerance
 
-		// Check defroster settings
+		// Check defroster settings.
 		defrostersMatch := hvacInfo.FrontDefroster == frontDefroster &&
 			hvacInfo.RearDefroster == rearDefroster
 
