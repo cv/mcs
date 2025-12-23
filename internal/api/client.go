@@ -59,6 +59,48 @@ func (c *Client) APIRequestJSON(ctx context.Context, method, uri string, queryPa
 // retryFunc is the type for functions that can be retried.
 type retryFunc[T any] func(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsKeys, needsAuth bool) (T, error)
 
+// handleRetryableError attempts to recover from an encryption or token error by refreshing credentials.
+// Returns true if the error was handled and a retry should be attempted.
+func handleRetryableError[T any](
+	ctx context.Context,
+	c *Client,
+	err error,
+	retryCount int,
+) (shouldRetry bool, retryErr error) {
+	var encErr *EncryptionError
+	var tokenErr *TokenExpiredError
+
+	if errors.As(err, &encErr) {
+		// Retrieve new encryption keys and retry
+		if err := c.GetEncryptionKeys(ctx); err != nil {
+			return false, fmt.Errorf("failed to retrieve encryption keys: %w", err)
+		}
+		// Apply backoff delay before retry
+		backoff := calculateBackoff(retryCount + 1)
+		if err := c.sleepFunc(ctx, backoff); err != nil {
+			return false, err
+		}
+
+		return true, nil
+	}
+
+	if errors.As(err, &tokenErr) {
+		// Login again and retry
+		if err := c.Login(ctx); err != nil {
+			return false, fmt.Errorf("failed to login: %w", err)
+		}
+		// Apply backoff delay before retry
+		backoff := calculateBackoff(retryCount + 1)
+		if err := c.sleepFunc(ctx, backoff); err != nil {
+			return false, err
+		}
+
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // genericRetry implements the retry logic with exponential backoff for API requests.
 // It handles encryption errors and token expiration by refreshing credentials and retrying.
 func genericRetry[T any](
@@ -97,31 +139,11 @@ func genericRetry[T any](
 	response, err := executeFunc(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
 	if err != nil {
 		// Handle retryable errors
-		var encErr *EncryptionError
-		var tokenErr *TokenExpiredError
-		if errors.As(err, &encErr) {
-			// Retrieve new encryption keys and retry
-			if err := c.GetEncryptionKeys(ctx); err != nil {
-				return zero, fmt.Errorf("failed to retrieve encryption keys: %w", err)
-			}
-			// Apply backoff delay before retry
-			backoff := calculateBackoff(retryCount + 1)
-			if err := c.sleepFunc(ctx, backoff); err != nil {
-				return zero, err
-			}
-
-			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
-		} else if errors.As(err, &tokenErr) {
-			// Login again and retry
-			if err := c.Login(ctx); err != nil {
-				return zero, fmt.Errorf("failed to login: %w", err)
-			}
-			// Apply backoff delay before retry
-			backoff := calculateBackoff(retryCount + 1)
-			if err := c.sleepFunc(ctx, backoff); err != nil {
-				return zero, err
-			}
-
+		shouldRetry, retryErr := handleRetryableError[T](ctx, c, err, retryCount)
+		if retryErr != nil {
+			return zero, retryErr
+		}
+		if shouldRetry {
 			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
 		}
 
@@ -178,70 +200,98 @@ func handleAPIResponse(response *APIBaseResponse) (string, error) {
 	return "", NewAPIError("Request failed for an unknown reason")
 }
 
-// executeAPIRequest handles the common logic for making API requests.
-// It returns the encrypted payload string on success, or an error.
-func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsAuth bool) (string, error) {
-	timestamp := getTimestampStrMs()
+// preparedParams holds the prepared and encrypted request parameters.
+type preparedParams struct {
+	originalQueryStr     string
+	encryptedQueryParams url.Values
+	originalBodyStr      string
+	encryptedBody        string
+}
+
+// prepareRequestParams encrypts query and body parameters for an API request.
+func (c *Client) prepareRequestParams(queryParams map[string]string, bodyParams map[string]any) (preparedParams, error) {
+	var params preparedParams
 
 	// Prepare query parameters (encrypted if provided)
-	originalQueryStr := ""
-	encryptedQueryParams := url.Values{}
 	if len(queryParams) > 0 {
 		queryValues := url.Values{}
 		for k, v := range queryParams {
 			queryValues.Add(k, v)
 		}
-		originalQueryStr = queryValues.Encode()
+		params.originalQueryStr = queryValues.Encode()
 
-		encrypted, err := c.encryptPayloadUsingKey(originalQueryStr)
+		encrypted, err := c.encryptPayloadUsingKey(params.originalQueryStr)
 		if err != nil {
-			return "", fmt.Errorf("failed to encrypt query params: %w", err)
+			return params, fmt.Errorf("failed to encrypt query params: %w", err)
 		}
-		encryptedQueryParams.Add("params", encrypted)
+		params.encryptedQueryParams = url.Values{}
+		params.encryptedQueryParams.Add("params", encrypted)
 	}
 
 	// Prepare body (encrypted if provided)
-	originalBodyStr := ""
-	encryptedBody := ""
 	if len(bodyParams) > 0 {
 		bodyJSON, err := json.Marshal(bodyParams)
 		if err != nil {
-			return "", fmt.Errorf("failed to marshal body params: %w", err)
+			return params, fmt.Errorf("failed to marshal body params: %w", err)
 		}
-		originalBodyStr = string(bodyJSON)
+		params.originalBodyStr = string(bodyJSON)
 
-		encrypted, err := c.encryptPayloadUsingKey(originalBodyStr)
+		encrypted, err := c.encryptPayloadUsingKey(params.originalBodyStr)
 		if err != nil {
-			return "", fmt.Errorf("failed to encrypt body: %w", err)
+			return params, fmt.Errorf("failed to encrypt body: %w", err)
 		}
-		encryptedBody = encrypted
+		params.encryptedBody = encrypted
 	}
 
+	return params, nil
+}
+
+// calculateSignature determines the appropriate signature for the request.
+func (c *Client) calculateSignature(method, uri, originalQueryStr, originalBodyStr, timestamp string) string {
+	switch {
+	case uri == EndpointCheckVersion:
+		return c.getSignFromTimestamp(timestamp)
+	case method == http.MethodGet:
+		return c.getSignFromPayloadAndTimestamp(originalQueryStr, timestamp)
+	case method == http.MethodPost:
+		return c.getSignFromPayloadAndTimestamp(originalBodyStr, timestamp)
+	default:
+		return ""
+	}
+}
+
+// buildHTTPRequest creates an HTTP request with all necessary headers.
+func (c *Client) buildHTTPRequest(ctx context.Context, method, uri, timestamp string, params preparedParams, needsAuth bool) (*http.Request, error) {
 	// Build URL
 	requestURL := c.baseURL + uri
-	if len(encryptedQueryParams) > 0 {
-		requestURL += "?" + encryptedQueryParams.Encode()
+	if len(params.encryptedQueryParams) > 0 {
+		requestURL += "?" + params.encryptedQueryParams.Encode()
 	}
 
 	// Create request with context
 	var req *http.Request
 	var err error
-	if encryptedBody != "" {
-		req, err = http.NewRequestWithContext(ctx, method, requestURL, bytes.NewBufferString(encryptedBody))
+	if params.encryptedBody != "" {
+		req, err = http.NewRequestWithContext(ctx, method, requestURL, bytes.NewBufferString(params.encryptedBody))
 	} else {
 		req, err = http.NewRequestWithContext(ctx, method, requestURL, nil)
 	}
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Generate sensor data
 	sensorData, err := c.sensorDataBuilder.GenerateSensorData()
 	if err != nil {
-		return "", fmt.Errorf("failed to generate sensor data: %w", err)
+		return nil, fmt.Errorf("failed to generate sensor data: %w", err)
 	}
 
 	// Set headers
+	accessToken := ""
+	if needsAuth {
+		accessToken = c.accessToken
+	}
+
 	headers := map[string]string{
 		"device-id":         c.baseAPIDeviceID,
 		"app-code":          c.appCode,
@@ -253,29 +303,35 @@ func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, quer
 		"timestamp":         timestamp,
 		"Content-Type":      "application/json",
 		"X-acf-sensor-data": sensorData,
-	}
-
-	if needsAuth {
-		headers["access-token"] = c.accessToken
-	} else {
-		headers["access-token"] = ""
-	}
-
-	// Calculate signature
-	switch {
-	case uri == EndpointCheckVersion:
-		headers["sign"] = c.getSignFromTimestamp(timestamp)
-	case method == http.MethodGet:
-		headers["sign"] = c.getSignFromPayloadAndTimestamp(originalQueryStr, timestamp)
-	case method == http.MethodPost:
-		headers["sign"] = c.getSignFromPayloadAndTimestamp(originalBodyStr, timestamp)
+		"access-token":      accessToken,
+		"sign":              c.calculateSignature(method, uri, params.originalQueryStr, params.originalBodyStr, timestamp),
 	}
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
-	c.logRequest(method, requestURL, headers, originalBodyStr)
+	c.logRequest(method, requestURL, headers, params.originalBodyStr)
+
+	return req, nil
+}
+
+// executeAPIRequest handles the common logic for making API requests.
+// It returns the encrypted payload string on success, or an error.
+func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsAuth bool) (string, error) {
+	timestamp := getTimestampStrMs()
+
+	// Prepare and encrypt parameters
+	params, err := c.prepareRequestParams(queryParams, bodyParams)
+	if err != nil {
+		return "", err
+	}
+
+	// Build HTTP request with headers
+	req, err := c.buildHTTPRequest(ctx, method, uri, timestamp, params, needsAuth)
+	if err != nil {
+		return "", err
+	}
 
 	// Send request
 	resp, err := c.httpClient.Do(req)

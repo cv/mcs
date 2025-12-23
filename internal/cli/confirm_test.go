@@ -16,17 +16,72 @@ import (
 // testTimeout is a short timeout for testing timeout behavior.
 const testTimeout = 100 * time.Millisecond
 
+// testWaitForConditionCase holds a test case for waitForCondition.
+type testWaitForConditionCase struct {
+	name          string
+	useEVStatus   bool
+	statusValues  []any // Either []api.DoorStatus or []bool
+	conditionFunc func(any) (bool, error)
+	expectError   bool
+	expectMet     bool
+}
+
+// setupMockForWaitCondition creates a mock client for the given test case.
+func setupMockForWaitCondition(tt testWaitForConditionCase, calls *int) *mockClientForConfirm {
+	if tt.useEVStatus {
+		return &mockClientForConfirm{
+			getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
+				idx := *calls
+				if idx >= len(tt.statusValues) {
+					idx = len(tt.statusValues) - 1
+				}
+				hvacOn := tt.statusValues[idx].(bool)
+				*calls++
+
+				return NewMockEVVehicleStatus().WithHVAC(hvacOn).Build(), nil
+			},
+		}
+	}
+
+	return &mockClientForConfirm{
+		getVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
+			idx := *calls
+			if idx >= len(tt.statusValues) {
+				idx = len(tt.statusValues) - 1
+			}
+			doorStatus := tt.statusValues[idx].(api.DoorStatus)
+			*calls++
+
+			return NewMockVehicleStatus().WithDoorStatus(doorStatus).Build(), nil
+		},
+	}
+}
+
+// verifyWaitConditionResult verifies the result of waitForCondition against expectations.
+func verifyWaitConditionResult(t *testing.T, result confirmationResult, tt testWaitForConditionCase, calls int) {
+	t.Helper()
+
+	if tt.expectError {
+		require.Error(t, result.err)
+
+		return
+	}
+
+	require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
+
+	if tt.expectMet {
+		assert.Truef(t, result.success, "Expected condition to be met but it wasn't (calls: %d)", calls)
+	}
+
+	if result.success {
+		assert.True(t, tt.expectMet)
+	}
+}
+
 // TestWaitForCondition tests the generic condition waiting logic.
 func TestWaitForCondition(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name          string
-		useEVStatus   bool
-		statusValues  []any // Either []api.DoorStatus or []bool
-		conditionFunc func(any) (bool, error)
-		expectError   bool
-		expectMet     bool
-	}{
+	tests := []testWaitForConditionCase{
 		{
 			name:        "regular status - condition met immediately",
 			useEVStatus: false,
@@ -148,33 +203,7 @@ func TestWaitForCondition(t *testing.T) {
 			var buf bytes.Buffer
 
 			calls := 0
-			var mockClient *mockClientForConfirm
-
-			if tt.useEVStatus {
-				mockClient = &mockClientForConfirm{
-					getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
-						if calls >= len(tt.statusValues) {
-							calls = len(tt.statusValues) - 1
-						}
-						hvacOn := tt.statusValues[calls].(bool)
-						calls++
-
-						return NewMockEVVehicleStatus().WithHVAC(hvacOn).Build(), nil
-					},
-				}
-			} else {
-				mockClient = &mockClientForConfirm{
-					getVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
-						if calls >= len(tt.statusValues) {
-							calls = len(tt.statusValues) - 1
-						}
-						doorStatus := tt.statusValues[calls].(api.DoorStatus)
-						calls++
-
-						return NewMockVehicleStatus().WithDoorStatus(doorStatus).Build(), nil
-					},
-				}
-			}
+			mockClient := setupMockForWaitCondition(tt, &calls)
 
 			result := waitForCondition(
 				ctx,
@@ -188,22 +217,7 @@ func TestWaitForCondition(t *testing.T) {
 				"test action",
 			)
 
-			if tt.expectError {
-				require.Error(t, result.err)
-			}
-
-			if !tt.expectError {
-				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
-			}
-
-			if tt.expectMet {
-				assert.Truef(t, result.success, "Expected condition to be met but it wasn't (calls: %d)", calls)
-			}
-
-			if result.success {
-				assert.True(t, tt.expectMet)
-			}
-
+			verifyWaitConditionResult(t, result, tt, calls)
 		})
 	}
 }
@@ -720,17 +734,70 @@ func TestWaitForNotCharging(t *testing.T) {
 	}
 }
 
+// testWaitForHvacOnCase holds a test case for waitForHvacOn.
+type testWaitForHvacOnCase struct {
+	name         string
+	hvacStatus   []bool
+	hvacNil      []bool // indicates if HVAC info should be nil for each call
+	expectError  bool
+	expectMet    bool
+	expectCalled int // minimum number of calls expected
+}
+
+// setupMockForHvacOn creates a mock client for the HVAC on test case.
+func setupMockForHvacOn(tt testWaitForHvacOnCase, calls *int) *mockClientForConfirm {
+	return &mockClientForConfirm{
+		getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
+			callIdx := *calls
+			if callIdx >= len(tt.hvacStatus) {
+				callIdx = len(tt.hvacStatus) - 1
+			}
+
+			// Check if this call should return nil HVAC info
+			shouldBeNil := len(tt.hvacNil) > *calls && tt.hvacNil[*calls]
+
+			*calls++
+
+			if shouldBeNil {
+				return NewMockEVVehicleStatus().WithoutHVAC().Build(), nil
+			}
+
+			hvacOn := tt.hvacStatus[callIdx]
+
+			return NewMockEVVehicleStatus().WithHVACSettings(hvacOn, 22.0, false, false).Build(), nil
+		},
+	}
+}
+
+// verifyHvacOnResult verifies the result of waitForHvacOn against expectations.
+func verifyHvacOnResult(t *testing.T, result confirmationResult, tt testWaitForHvacOnCase, calls int) {
+	t.Helper()
+
+	if tt.expectError {
+		require.Error(t, result.err)
+
+		return
+	}
+
+	require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
+
+	if tt.expectMet {
+		assert.Truef(t, result.success, "Expected HVAC to be on but it wasn't (calls: %d)", calls)
+	}
+
+	if result.success {
+		assert.True(t, tt.expectMet)
+	}
+
+	if tt.expectCalled > 0 {
+		assert.GreaterOrEqual(t, calls, tt.expectCalled)
+	}
+}
+
 // TestWaitForHvacOn tests the HVAC on confirmation logic.
 func TestWaitForHvacOn(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name         string
-		hvacStatus   []bool
-		hvacNil      []bool // indicates if HVAC info should be nil for each call
-		expectError  bool
-		expectMet    bool
-		expectCalled int // minimum number of calls expected
-	}{
+	tests := []testWaitForHvacOnCase{
 		{
 			name:        "hvac on immediately",
 			hvacStatus:  []bool{true},
@@ -780,32 +847,8 @@ func TestWaitForHvacOn(t *testing.T) {
 			ctx := context.Background()
 			var buf bytes.Buffer
 
-			// Create mock client that returns the HVAC status sequence
 			calls := 0
-			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
-					callIdx := calls
-					if callIdx >= len(tt.hvacStatus) {
-						callIdx = len(tt.hvacStatus) - 1
-					}
-
-					// Check if this call should return nil HVAC info
-					shouldBeNil := false
-					if len(tt.hvacNil) > calls {
-						shouldBeNil = tt.hvacNil[calls]
-					}
-
-					calls++
-
-					if shouldBeNil {
-						return NewMockEVVehicleStatus().WithoutHVAC().Build(), nil
-					}
-
-					hvacOn := tt.hvacStatus[callIdx]
-
-					return NewMockEVVehicleStatus().WithHVACSettings(hvacOn, 22.0, false, false).Build(), nil
-				},
-			}
+			mockClient := setupMockForHvacOn(tt, &calls)
 
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
@@ -815,26 +858,7 @@ func TestWaitForHvacOn(t *testing.T) {
 
 			result := waitForHvacOn(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
 
-			if tt.expectError {
-				require.Error(t, result.err)
-			}
-
-			if !tt.expectError {
-				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
-			}
-
-			if tt.expectMet {
-				assert.Truef(t, result.success, "Expected HVAC to be on but it wasn't (calls: %d)", calls)
-			}
-
-			if result.success {
-				assert.True(t, tt.expectMet)
-			}
-
-			if tt.expectCalled > 0 {
-				assert.GreaterOrEqual(t, calls, tt.expectCalled)
-			}
-
+			verifyHvacOnResult(t, result, tt, calls)
 		})
 	}
 }

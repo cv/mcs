@@ -404,6 +404,31 @@ type ConfirmableCommandConfig struct {
 	TimeoutSuffix string // Suffix for timeout message (e.g., "confirmation timeout")
 }
 
+// buildTimeoutMessage constructs the timeout message from waiting message and suffix.
+func buildTimeoutMessage(waitingMsg, timeoutSuffix string) string {
+	// Extract the command part from waiting message
+	commandMsg := waitingMsg
+	if idx := len(commandMsg) - len(", waiting for confirmation..."); idx > 0 {
+		commandMsg = commandMsg[:idx]
+	}
+
+	return fmt.Sprintf("%s (%s)", commandMsg, timeoutSuffix)
+}
+
+// applyInitialDelay waits for the configured initial delay, respecting context cancellation.
+func applyInitialDelay(ctx context.Context, delay time.Duration, actionName string) error {
+	if delay <= 0 {
+		return nil
+	}
+
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("failed to %s: %w", actionName, ctx.Err())
+	case <-time.After(delay):
+		return nil
+	}
+}
+
 // executeConfirmableCommand executes a confirmable command with the given configuration.
 func executeConfirmableCommand(
 	ctx context.Context,
@@ -431,29 +456,18 @@ func executeConfirmableCommand(
 
 	timeout := time.Duration(confirmWait) * time.Second
 
-	// Apply initial delay if configured (for commands that need time to propagate)
-	if config.InitialDelay > 0 {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("failed to %s: %w", config.ActionName, ctx.Err())
-		case <-time.After(config.InitialDelay):
-		}
-		timeout -= config.InitialDelay
+	// Apply initial delay if configured
+	if err := applyInitialDelay(ctx, config.InitialDelay, config.ActionName); err != nil {
+		return err
 	}
+	timeout -= config.InitialDelay
 
 	pollInterval := config.PollInterval
 	if pollInterval == 0 {
 		pollInterval = DefaultPollInterval
 	}
 
-	result := config.WaitFunc(
-		ctx,
-		out,
-		client,
-		internalVIN,
-		timeout,
-		pollInterval,
-	)
+	result := config.WaitFunc(ctx, out, client, internalVIN, timeout, pollInterval)
 
 	if result.err != nil {
 		return fmt.Errorf("failed to confirm %s: %w", config.ConfirmName, result.err)
@@ -462,13 +476,7 @@ func executeConfirmableCommand(
 	if result.success {
 		_, _ = fmt.Fprintln(out, config.SuccessMsg)
 	} else {
-		// Extract the command part from waiting message (e.g., "Lock command sent" from "Lock command sent, waiting for confirmation...")
-		// and append the timeout suffix
-		commandMsg := config.WaitingMsg
-		if idx := len(commandMsg) - len(", waiting for confirmation..."); idx > 0 {
-			commandMsg = commandMsg[:idx]
-		}
-		_, _ = fmt.Fprintf(out, "%s (%s)\n", commandMsg, config.TimeoutSuffix)
+		_, _ = fmt.Fprintln(out, buildTimeoutMessage(config.WaitingMsg, config.TimeoutSuffix))
 	}
 
 	return nil

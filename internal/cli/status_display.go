@@ -19,30 +19,31 @@ func appendFormattedSection(output *string, formatter func() (string, error)) er
 	return nil
 }
 
-// displayAllStatus displays all status information.
-func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) (string, error) {
-	if jsonOutput {
-		hazardsOn, _ := vehicleStatus.GetHazardInfo()
-		data := map[string]any{
-			"vehicle":  extractVehicleInfoData(vehicleInfo),
-			"battery":  extractBatteryData(evStatus),
-			"fuel":     extractFuelData(vehicleStatus),
-			"location": extractLocationData(vehicleStatus),
-			"tires":    extractTiresData(vehicleStatus),
-			"doors":    extractDoorsData(vehicleStatus),
-			"windows":  extractWindowsData(vehicleStatus),
-			"hazards":  hazardsOn,
-			"climate":  extractHvacData(evStatus),
-			"odometer": extractOdometerData(vehicleStatus),
-		}
-		jsonBytes, err := json.MarshalIndent(data, "", "  ")
-		if err != nil {
-			return "", fmt.Errorf("failed to marshal JSON: %w", err)
-		}
-
-		return string(jsonBytes), nil
+// displayAllStatusJSON formats all status as JSON.
+func displayAllStatusJSON(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo) (string, error) {
+	hazardsOn, _ := vehicleStatus.GetHazardInfo()
+	data := map[string]any{
+		"vehicle":  extractVehicleInfoData(vehicleInfo),
+		"battery":  extractBatteryData(evStatus),
+		"fuel":     extractFuelData(vehicleStatus),
+		"location": extractLocationData(vehicleStatus),
+		"tires":    extractTiresData(vehicleStatus),
+		"doors":    extractDoorsData(vehicleStatus),
+		"windows":  extractWindowsData(vehicleStatus),
+		"hazards":  hazardsOn,
+		"climate":  extractHvacData(evStatus),
+		"odometer": extractOdometerData(vehicleStatus),
+	}
+	jsonBytes, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
+	return string(jsonBytes), nil
+}
+
+// displayAllStatusText formats all status as human-readable text.
+func displayAllStatusText(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo) (string, error) {
 	// Get timestamp from EV status
 	occurrenceDate, err := evStatus.GetOccurrenceDate()
 	if err != nil {
@@ -56,18 +57,14 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 		return "", fmt.Errorf("failed to get HVAC info: %w", err)
 	}
 
-	// Extract odometer
+	// Extract all other info
 	odometerInfo, _ := vehicleStatus.GetOdometerInfo()
-
-	// Extract windows info
 	windowsInfo, _ := vehicleStatus.GetWindowsInfo()
-
-	// Extract hazard info
 	hazardsOn, _ := vehicleStatus.GetHazardInfo()
-
-	// Extract battery and fuel info
 	batteryInfo, _ := evStatus.GetBatteryInfo()
 	fuelInfo, _ := vehicleStatus.GetFuelInfo()
+	doorStatus, _ := vehicleStatus.GetDoorsInfo()
+	tireInfo, _ := vehicleStatus.GetTiresInfo()
 
 	// Build vehicle header
 	output := formatVehicleHeader(vehicleInfo) + "\n"
@@ -81,7 +78,6 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 		return "", err
 	}
 
-	doorStatus, _ := vehicleStatus.GetDoorsInfo()
 	if err := appendFormattedSection(&output, func() (string, error) {
 		return formatDoorsStatus(doorStatus, false)
 	}); err != nil {
@@ -99,7 +95,6 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 		output += "HAZARDS: On\n"
 	}
 
-	tireInfo, _ := vehicleStatus.GetTiresInfo()
 	if err := appendFormattedSection(&output, func() (string, error) {
 		return formatTiresStatus(tireInfo, false)
 	}); err != nil {
@@ -114,4 +109,13 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	output += odometerOutput
 
 	return output, nil
+}
+
+// displayAllStatus displays all status information.
+func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) (string, error) {
+	if jsonOutput {
+		return displayAllStatusJSON(vehicleStatus, evStatus, vehicleInfo)
+	}
+
+	return displayAllStatusText(vehicleStatus, evStatus, vehicleInfo)
 }

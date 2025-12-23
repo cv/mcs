@@ -410,6 +410,15 @@ type HVACInfo struct {
 	TargetTempC    float64
 }
 
+// allDoorsLocked returns true if all doors are closed and locked.
+func allDoorsLocked(status DoorStatus) bool {
+	return !status.DriverOpen && !status.PassengerOpen &&
+		!status.RearLeftOpen && !status.RearRightOpen &&
+		!status.TrunkOpen && !status.HoodOpen &&
+		status.DriverLocked && status.PassengerLocked &&
+		status.RearLeftLocked && status.RearRightLocked
+}
+
 // GetDoorsInfo extracts door lock status from the vehicle status response.
 func (r *VehicleStatusResponse) GetDoorsInfo() (status DoorStatus, err error) {
 	if len(r.AlertInfos) == 0 {
@@ -435,11 +444,7 @@ func (r *VehicleStatusResponse) GetDoorsInfo() (status DoorStatus, err error) {
 	status.RearRightLocked = int(door.LockLinkSwRr) == DoorLocked
 
 	// All locked if no doors are open and all are locked
-	status.AllLocked = !status.DriverOpen && !status.PassengerOpen &&
-		!status.RearLeftOpen && !status.RearRightOpen &&
-		!status.TrunkOpen && !status.HoodOpen &&
-		status.DriverLocked && status.PassengerLocked &&
-		status.RearLeftLocked && status.RearRightLocked
+	status.AllLocked = allDoorsLocked(status)
 
 	return
 }

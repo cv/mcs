@@ -289,6 +289,24 @@ func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, err
 	return response.Data.PublicKey, response.Data.VersionPrefix, nil
 }
 
+// validateLoginResponse checks the login response status and returns an error if invalid.
+func validateLoginResponse(response *LoginResponse) error {
+	switch response.Status {
+	case "INVALID_CREDENTIAL":
+		return errors.New("invalid email or password")
+	case "USER_LOCKED":
+		return errors.New("account is locked")
+	case "OK":
+		if response.Data.AccessToken == "" {
+			return errors.New("access token not found in response")
+		}
+
+		return nil
+	default:
+		return fmt.Errorf("login failed with status: %s", response.Status)
+	}
+}
+
 // Login authenticates with the API and retrieves an access token.
 func (c *Client) Login(ctx context.Context) error {
 	// Ensure we have a timeout for the request
@@ -346,18 +364,8 @@ func (c *Client) Login(ctx context.Context) error {
 		return fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	if response.Status == "INVALID_CREDENTIAL" {
-		return errors.New("invalid email or password")
-	}
-	if response.Status == "USER_LOCKED" {
-		return errors.New("account is locked")
-	}
-	if response.Status != "OK" {
-		return fmt.Errorf("login failed with status: %s", response.Status)
-	}
-
-	if response.Data.AccessToken == "" {
-		return errors.New("access token not found in response")
+	if err := validateLoginResponse(&response); err != nil {
+		return err
 	}
 
 	c.accessToken = response.Data.AccessToken

@@ -66,6 +66,46 @@ func NewSkillCmd() *cobra.Command {
 	return cmd
 }
 
+// copySkillFile handles copying a single embedded skill file to the destination.
+func copySkillFile(path string, d fs.DirEntry, skillPath string) error {
+	// Skip the root "files" directory
+	if path == "files" {
+		return nil
+	}
+
+	// Get the relative path (strip "files/" prefix)
+	relPath := path[len("files/"):]
+	destPath := filepath.Join(skillPath, relPath)
+
+	if d.IsDir() {
+		return os.MkdirAll(destPath, 0755)
+	}
+
+	// Read embedded file
+	content, err := skill.SkillFiles.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("failed to read embedded file %s: %w", path, err)
+	}
+
+	// Write to destination
+	if err := os.WriteFile(destPath, content, 0644); err != nil {
+		return fmt.Errorf("failed to write file %s: %w", destPath, err)
+	}
+
+	return nil
+}
+
+// installSkillFiles copies all embedded skill files to the skill directory.
+func installSkillFiles(skillPath string) error {
+	return fs.WalkDir(skill.SkillFiles, "files", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		return copySkillFile(path, d, skillPath)
+	})
+}
+
 // NewSkillInstallCmd creates the skill install subcommand.
 func NewSkillInstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -99,38 +139,7 @@ For example, you can say "warm up the car" and Claude will run "mcs climate on".
 			}
 
 			// Copy embedded files to skill directory
-			err = fs.WalkDir(skill.SkillFiles, "files", func(path string, d fs.DirEntry, err error) error {
-				if err != nil {
-					return err
-				}
-
-				// Skip the root "files" directory
-				if path == "files" {
-					return nil
-				}
-
-				// Get the relative path (strip "files/" prefix)
-				relPath := path[len("files/"):]
-				destPath := filepath.Join(skillPath, relPath)
-
-				if d.IsDir() {
-					return os.MkdirAll(destPath, 0755)
-				}
-
-				// Read embedded file
-				content, err := skill.SkillFiles.ReadFile(path)
-				if err != nil {
-					return fmt.Errorf("failed to read embedded file %s: %w", path, err)
-				}
-
-				// Write to destination
-				if err := os.WriteFile(destPath, content, 0644); err != nil {
-					return fmt.Errorf("failed to write file %s: %w", destPath, err)
-				}
-
-				return nil
-			})
-			if err != nil {
+			if err := installSkillFiles(skillPath); err != nil {
 				return fmt.Errorf("failed to install skill files: %w", err)
 			}
 

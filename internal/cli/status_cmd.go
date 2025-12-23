@@ -313,40 +313,64 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 	}
 }
 
-// displayStatusWithVehicle outputs the status based on type, including vehicle info for "all".
-func displayStatusWithVehicle(cmd *cobra.Command, statusType StatusType, vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) error {
-	var output string
-	var err error
+// statusFormatter is a function that formats a specific status type.
+type statusFormatter func() (string, error)
 
-	switch statusType {
-	case StatusBattery:
-		batteryInfo, _ := evStatus.GetBatteryInfo()
-		output, err = formatBatteryStatus(batteryInfo, jsonOutput)
-	case StatusFuel:
-		fuelInfo, _ := vehicleStatus.GetFuelInfo()
-		output, err = formatFuelStatus(fuelInfo, jsonOutput)
-	case StatusLocation:
-		locationInfo, _ := vehicleStatus.GetLocationInfo()
-		output, err = formatLocationStatus(locationInfo, jsonOutput)
-	case StatusTires:
-		tireInfo, _ := vehicleStatus.GetTiresInfo()
-		output, err = formatTiresStatus(tireInfo, jsonOutput)
-	case StatusDoors:
-		doorStatus, _ := vehicleStatus.GetDoorsInfo()
-		output, err = formatDoorsStatus(doorStatus, jsonOutput)
-	case StatusWindows:
-		windowsInfo, _ := vehicleStatus.GetWindowsInfo()
-		output, err = formatWindowsStatus(windowsInfo, jsonOutput)
-	case StatusOdometer:
-		odometerInfo, _ := vehicleStatus.GetOdometerInfo()
-		output, err = formatOdometerStatus(odometerInfo, jsonOutput)
-	case StatusHVAC:
-		hvacInfo, _ := evStatus.GetHvacInfo()
-		output, err = formatHvacStatus(hvacInfo, jsonOutput)
-	case StatusAll:
-		output, err = displayAllStatus(vehicleStatus, evStatus, vehicleInfo, jsonOutput)
+// getStatusFormatter returns a formatter function for the given status type.
+func getStatusFormatter(statusType StatusType, vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) statusFormatter {
+	formatters := map[StatusType]statusFormatter{
+		StatusBattery: func() (string, error) {
+			batteryInfo, _ := evStatus.GetBatteryInfo()
+
+			return formatBatteryStatus(batteryInfo, jsonOutput)
+		},
+		StatusFuel: func() (string, error) {
+			fuelInfo, _ := vehicleStatus.GetFuelInfo()
+
+			return formatFuelStatus(fuelInfo, jsonOutput)
+		},
+		StatusLocation: func() (string, error) {
+			locationInfo, _ := vehicleStatus.GetLocationInfo()
+
+			return formatLocationStatus(locationInfo, jsonOutput)
+		},
+		StatusTires: func() (string, error) {
+			tireInfo, _ := vehicleStatus.GetTiresInfo()
+
+			return formatTiresStatus(tireInfo, jsonOutput)
+		},
+		StatusDoors: func() (string, error) {
+			doorStatus, _ := vehicleStatus.GetDoorsInfo()
+
+			return formatDoorsStatus(doorStatus, jsonOutput)
+		},
+		StatusWindows: func() (string, error) {
+			windowsInfo, _ := vehicleStatus.GetWindowsInfo()
+
+			return formatWindowsStatus(windowsInfo, jsonOutput)
+		},
+		StatusOdometer: func() (string, error) {
+			odometerInfo, _ := vehicleStatus.GetOdometerInfo()
+
+			return formatOdometerStatus(odometerInfo, jsonOutput)
+		},
+		StatusHVAC: func() (string, error) {
+			hvacInfo, _ := evStatus.GetHvacInfo()
+
+			return formatHvacStatus(hvacInfo, jsonOutput)
+		},
+		StatusAll: func() (string, error) {
+			return displayAllStatus(vehicleStatus, evStatus, vehicleInfo, jsonOutput)
+		},
 	}
 
+	return formatters[statusType]
+}
+
+// displayStatusWithVehicle outputs the status based on type, including vehicle info for "all".
+func displayStatusWithVehicle(cmd *cobra.Command, statusType StatusType, vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) error {
+	formatter := getStatusFormatter(statusType, vehicleStatus, evStatus, vehicleInfo, jsonOutput)
+	output, err := formatter()
 	if err != nil {
 		return err
 	}

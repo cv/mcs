@@ -76,10 +76,35 @@ linters:
           - goconst
       # TODO(mcs-e0yb): Temporarily exclude new linters until refactored
       # Cyclomatic complexity - excluded paths that still need refactoring
-      - path: (cmd/|internal/cache/|internal/cli/|internal/config/|internal/crypto/|internal/sensordata/)
+      - path: (cmd/|internal/cache/|internal/config/|internal/crypto/|internal/sensordata/)
         linters:
           - cyclop
-      # Global variables - 9 globals need evaluation
-      - path: \.go
+
+      # Global variables - justified exclusions:
+      # 1. Read-only lookup tables (RegionConfigs, screenSizes, androidVersionToSDK)
+      - path: internal/api/auth\.go
         linters:
           - gochecknoglobals
+        text: RegionConfigs
+      - path: internal/sensordata/system_info\.go
+        linters:
+          - gochecknoglobals
+        text: (screenSizes|androidVersionToSDK)
+
+      # 2. CLI flags bound by Cobra framework (Version, ConfigFile, NoColor)
+      - path: internal/cli/root\.go
+        linters:
+          - gochecknoglobals
+        text: (Version|ConfigFile|NoColor)
+
+      # 3. Color state management - global state needed for CLI output formatting
+      - path: internal/cli/color\.go
+        linters:
+          - gochecknoglobals
+        text: (colorEnabled|colorMu)
+
+      # 4. Test helper mutex for serializing parallel tests
+      - path: internal/cli/color_test\.go
+        linters:
+          - gochecknoglobals
+        text: colorTestMutex
