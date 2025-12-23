@@ -7,6 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestClient_GetEncryptionKeys(t *testing.T) {
@@ -21,17 +24,11 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/prod/"+EndpointCheckVersion {
-			t.Errorf("Expected path /prod/"+EndpointCheckVersion+", got %s", r.URL.Path)
-		}
-		if r.Method != "POST" {
-			t.Errorf("Expected POST method, got %s", r.Method)
-		}
+		assert.EqualValuesf(t, "/prod/"+EndpointCheckVersion, r.URL.Path, "Expected path /prod/"+EndpointCheckVersion+", got %s", r.URL.Path)
+		assert.EqualValuesf(t, "POST", r.Method, "Expected POST method, got %s", r.Method)
 
 		// Verify headers
-		if r.Header.Get("app-code") == "" {
-			t.Error("Expected app-code header")
-		}
+		assert.NotEqual(t, "", r.Header.Get("app-code"), "Expected app-code header")
 
 		// Mock response - encrypt a simple JSON payload
 		response := map[string]interface{}{
@@ -64,32 +61,20 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 	client.usherAPIDeviceID = GenerateUsherDeviceID(client.email)
 
 	err := client.GetEncryptionKeys(context.Background())
-	if err != nil {
-		t.Fatalf("GetEncryptionKeys() error = %v", err)
-	}
+	require.NoError(t, err, "GetEncryptionKeys() error = %v")
 
-	if client.Keys.EncKey != "test-enc-key-123" {
-		t.Errorf("Expected encKey='test-enc-key-123', got '%s'", client.Keys.EncKey)
-	}
-	if client.Keys.SignKey != "test-sign-key-456" {
-		t.Errorf("Expected signKey='test-sign-key-456', got '%s'", client.Keys.SignKey)
-	}
+	assert.EqualValuesf(t, "test-enc-key-123", client.Keys.EncKey, "Expected encKey='test-enc-key-123', got '%s'", client.Keys.EncKey)
+	assert.EqualValuesf(t, "test-sign-key-456", client.Keys.SignKey, "Expected signKey='test-sign-key-456', got '%s'", client.Keys.SignKey)
 }
 
 func TestClient_GetUsherEncryptionKey(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/appapi/v1/"+EndpointEncryptionKey {
-			t.Errorf("Expected path /appapi/v1/"+EndpointEncryptionKey+", got %s", r.URL.Path)
-		}
-		if r.Method != "GET" {
-			t.Errorf("Expected GET method, got %s", r.Method)
-		}
+		assert.EqualValuesf(t, "/appapi/v1/"+EndpointEncryptionKey, r.URL.Path, "Expected path /appapi/v1/"+EndpointEncryptionKey+", got %s", r.URL.Path)
+		assert.EqualValuesf(t, "GET", r.Method, "Expected GET method, got %s", r.Method)
 
 		// Verify query params
 		appId := r.URL.Query().Get("appId")
-		if appId != "MazdaApp" {
-			t.Errorf("Expected appId=MazdaApp, got %s", appId)
-		}
+		assert.EqualValuesf(t, "MazdaApp", appId, "Expected appId=MazdaApp, got %s", appId)
 
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -110,16 +95,10 @@ func TestClient_GetUsherEncryptionKey(t *testing.T) {
 	client.usherAPIDeviceID = GenerateUsherDeviceID(client.email)
 
 	pubKey, versionPrefix, err := client.GetUsherEncryptionKey(context.Background())
-	if err != nil {
-		t.Fatalf("GetUsherEncryptionKey() error = %v", err)
-	}
+	require.NoError(t, err, "GetUsherEncryptionKey() error = %v")
 
-	if pubKey != "test-public-key" {
-		t.Errorf("Expected publicKey='test-public-key', got %s", pubKey)
-	}
-	if versionPrefix != "v1:" {
-		t.Errorf("Expected versionPrefix='v1:', got %s", versionPrefix)
-	}
+	assert.EqualValuesf(t, "test-public-key", pubKey, "Expected publicKey='test-public-key', got %s", pubKey)
+	assert.EqualValuesf(t, "v1:", versionPrefix, "Expected versionPrefix='v1:', got %s", versionPrefix)
 }
 
 func TestClient_Login(t *testing.T) {
@@ -140,12 +119,8 @@ func TestClient_Login(t *testing.T) {
 			_ = json.NewDecoder(r.Body).Decode(&loginReq)
 
 			// Verify request structure
-			if loginReq["appId"] != "MazdaApp" {
-				t.Errorf("Expected appId=MazdaApp, got %s", loginReq["appId"])
-			}
-			if loginReq["userId"] != "test@example.com" {
-				t.Errorf("Expected userId=test@example.com, got %s", loginReq["userId"])
-			}
+			assert.EqualValuesf(t, "MazdaApp", loginReq["appId"], "Expected appId=MazdaApp, got %s", loginReq["appId"])
+			assert.EqualValuesf(t, "test@example.com", loginReq["userId"], "Expected userId=test@example.com, got %s", loginReq["userId"])
 
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -169,16 +144,10 @@ func TestClient_Login(t *testing.T) {
 	client.usherAPIDeviceID = GenerateUsherDeviceID(client.email)
 
 	err := client.Login(context.Background())
-	if err != nil {
-		t.Fatalf("Login() error = %v", err)
-	}
+	require.NoError(t, err, "Login() error = %v")
 
-	if client.accessToken == "" {
-		t.Error("Expected accessToken to be set")
-	}
-	if client.accessTokenExpirationTs == 0 {
-		t.Error("Expected accessTokenExpirationTs to be set")
-	}
+	assert.NotEqual(t, "", client.accessToken, "Expected accessToken to be set")
+	assert.NotEqual(t, 0, client.accessTokenExpirationTs, "Expected accessTokenExpirationTs to be set")
 }
 
 func TestClient_IsTokenValid(t *testing.T) {
@@ -215,9 +184,7 @@ func TestClient_IsTokenValid(t *testing.T) {
 				accessTokenExpirationTs: tt.expiration,
 			}
 			got := client.IsTokenValid()
-			if got != tt.want {
-				t.Errorf("IsTokenValid() = %v, want %v", got, tt.want)
-			}
+			assert.EqualValuesf(t, tt.want, got, "IsTokenValid() = %v, want %v")
 		})
 	}
 }
@@ -248,9 +215,7 @@ func TestRegion_String(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.region.String()
-			if got != tt.want {
-				t.Errorf("Region.String() = %v, want %v", got, tt.want)
-			}
+			assert.EqualValuesf(t, tt.want, got, "Region.String() = %v, want %v")
 		})
 	}
 }
@@ -303,13 +268,13 @@ func TestParseRegion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ParseRegion(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseRegion() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "ParseRegion() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "ParseRegion() error = %v, wantErr %v")
 			}
-			if got != tt.want {
-				t.Errorf("ParseRegion() = %v, want %v", got, tt.want)
-			}
+
+			assert.EqualValuesf(t, tt.want, got, "ParseRegion() = %v, want %v")
 		})
 	}
 }
@@ -350,9 +315,7 @@ func TestRegion_IsValid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.region.IsValid()
-			if got != tt.want {
-				t.Errorf("Region.IsValid() = %v, want %v", got, tt.want)
-			}
+			assert.EqualValuesf(t, tt.want, got, "Region.IsValid() = %v, want %v")
 		})
 	}
 }

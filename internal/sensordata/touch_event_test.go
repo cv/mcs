@@ -4,6 +4,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTouchEvent_ToString(t *testing.T) {
@@ -17,21 +20,15 @@ func TestTouchEvent_ToString(t *testing.T) {
 	result := event.ToString()
 	expected := "2,1000,0,0,1,1,1,-1;"
 
-	if result != expected {
-		t.Errorf("TouchEvent.ToString() = %q, want %q", result, expected)
-	}
+	assert.Equalf(t, expected, result, "TouchEvent.ToString() = %q, want %q")
 }
 
 func TestNewTouchEventList(t *testing.T) {
 	list := NewTouchEventList()
 
-	if list == nil {
-		t.Fatal("Expected non-nil TouchEventList")
-	}
+	require.NotNil(t, list, "Expected non-nil TouchEventList")
 
-	if len(list.touchEvents) != 0 {
-		t.Errorf("Expected empty touchEvents, got %d", len(list.touchEvents))
-	}
+	assert.Lenf(t, list.touchEvents, 0, "Expected empty touchEvents, got %d", len(list.touchEvents))
 }
 
 func TestTouchEventList_Randomize_ShortDuration(t *testing.T) {
@@ -42,9 +39,7 @@ func TestTouchEventList_Randomize_ShortDuration(t *testing.T) {
 	list.Randomize(recentTimestamp)
 
 	// With duration < 3000ms, should have no events
-	if len(list.touchEvents) != 0 {
-		t.Errorf("Expected 0 events for short duration, got %d", len(list.touchEvents))
-	}
+	assert.Lenf(t, list.touchEvents, 0, "Expected 0 events for short duration, got %d", len(list.touchEvents))
 }
 
 func TestTouchEventList_Randomize_MediumDuration(t *testing.T) {
@@ -55,19 +50,13 @@ func TestTouchEventList_Randomize_MediumDuration(t *testing.T) {
 	list.Randomize(timestamp)
 
 	// Should have events: 1 down + 2-8 move + 1 up = at least 4 events
-	if len(list.touchEvents) < 4 {
-		t.Errorf("Expected at least 4 events for medium duration, got %d", len(list.touchEvents))
-	}
+	assert.GreaterOrEqualf(t, len(list.touchEvents), 4, "Expected at least 4 events for medium duration, got %d", len(list.touchEvents))
 
 	// First event should be down (type 2)
-	if list.touchEvents[0].eventType != 2 {
-		t.Errorf("Expected first event type 2 (down), got %d", list.touchEvents[0].eventType)
-	}
+	assert.Equalf(t, 2, list.touchEvents[0].eventType, "Expected first event type 2 (down), got %d", list.touchEvents[0].eventType)
 
 	// Last event should be up (type 3)
-	if list.touchEvents[len(list.touchEvents)-1].eventType != 3 {
-		t.Errorf("Expected last event type 3 (up), got %d", list.touchEvents[len(list.touchEvents)-1].eventType)
-	}
+	assert.Equalf(t, 3, list.touchEvents[len(list.touchEvents)-1].eventType, "Expected last event type 3 (up), got %d", list.touchEvents[len(list.touchEvents)-1].eventType)
 }
 
 func TestTouchEventList_Randomize_LongDuration(t *testing.T) {
@@ -80,9 +69,7 @@ func TestTouchEventList_Randomize_LongDuration(t *testing.T) {
 	// Should have multiple touch sequences (3 sets)
 	// Each set has: 1 down + 2-8 move + 1 up = at least 4 events per set
 	// 3 sets = at least 12 events
-	if len(list.touchEvents) < 12 {
-		t.Errorf("Expected at least 12 events for long duration, got %d", len(list.touchEvents))
-	}
+	assert.GreaterOrEqualf(t, len(list.touchEvents), 12, "Expected at least 12 events for long duration, got %d", len(list.touchEvents))
 }
 
 func TestTouchEventList_ToString(t *testing.T) {
@@ -96,20 +83,12 @@ func TestTouchEventList_ToString(t *testing.T) {
 	result := list.ToString()
 
 	// Should contain all events
-	if !strings.Contains(result, "2,100") {
-		t.Error("Expected ToString to contain first event")
-	}
-	if !strings.Contains(result, "1,50") {
-		t.Error("Expected ToString to contain second event")
-	}
-	if !strings.Contains(result, "3,25") {
-		t.Error("Expected ToString to contain third event")
-	}
+	assert.True(t, strings.Contains(result, "2,100"), "Expected ToString to contain first event")
+	assert.True(t, strings.Contains(result, "1,50"), "Expected ToString to contain second event")
+	assert.True(t, strings.Contains(result, "3,25"), "Expected ToString to contain third event")
 
 	// Should end with semicolon
-	if !strings.HasSuffix(result, ";") {
-		t.Error("Expected ToString to end with semicolon")
-	}
+	assert.True(t, strings.HasSuffix(result, ";"), "Expected ToString to end with semicolon")
 }
 
 func TestTouchEventList_GetSum(t *testing.T) {
@@ -123,16 +102,12 @@ func TestTouchEventList_GetSum(t *testing.T) {
 	sum := list.GetSum()
 	expected := (2 + 100) + (1 + 50) + (3 + 25)
 
-	if sum != expected {
-		t.Errorf("GetSum() = %d, want %d", sum, expected)
-	}
+	assert.Equalf(t, expected, sum, "GetSum() = %d, want %d")
 }
 
 func TestTouchEventList_GetSum_Empty(t *testing.T) {
 	list := NewTouchEventList()
 	sum := list.GetSum()
 
-	if sum != 0 {
-		t.Errorf("GetSum() for empty list = %d, want 0", sum)
-	}
+	assert.Equalf(t, 0, sum, "GetSum() for empty list = %d, want 0", sum)
 }

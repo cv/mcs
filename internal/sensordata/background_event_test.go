@@ -3,6 +3,9 @@ package sensordata
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBackgroundEvent_ToString(t *testing.T) {
@@ -14,21 +17,15 @@ func TestBackgroundEvent_ToString(t *testing.T) {
 	result := event.ToString()
 	expected := "2,1701446400000"
 
-	if result != expected {
-		t.Errorf("BackgroundEvent.ToString() = %q, want %q", result, expected)
-	}
+	assert.Equalf(t, expected, result, "BackgroundEvent.ToString() = %q, want %q")
 }
 
 func TestNewBackgroundEventList(t *testing.T) {
 	list := NewBackgroundEventList()
 
-	if list == nil {
-		t.Fatal("Expected non-nil BackgroundEventList")
-	}
+	require.NotNil(t, list, "Expected non-nil BackgroundEventList")
 
-	if len(list.backgroundEvents) != 0 {
-		t.Errorf("Expected empty backgroundEvents, got %d", len(list.backgroundEvents))
-	}
+	assert.Lenf(t, list.backgroundEvents, 0, "Expected empty backgroundEvents, got %d", len(list.backgroundEvents))
 }
 
 func TestBackgroundEventList_Randomize_ShortDuration(t *testing.T) {
@@ -39,9 +36,7 @@ func TestBackgroundEventList_Randomize_ShortDuration(t *testing.T) {
 	list.Randomize(timestamp)
 
 	// With duration < 10000ms, should have no events
-	if len(list.backgroundEvents) != 0 {
-		t.Errorf("Expected 0 events for short duration, got %d", len(list.backgroundEvents))
-	}
+	assert.Lenf(t, list.backgroundEvents, 0, "Expected 0 events for short duration, got %d", len(list.backgroundEvents))
 }
 
 func TestBackgroundEventList_ToString(t *testing.T) {
@@ -54,16 +49,12 @@ func TestBackgroundEventList_ToString(t *testing.T) {
 	result := list.ToString()
 	expected := "2,10000003,1005000"
 
-	if result != expected {
-		t.Errorf("ToString() = %q, want %q", result, expected)
-	}
+	assert.Equalf(t, expected, result, "ToString() = %q, want %q")
 }
 
 func TestBackgroundEventList_ToString_Empty(t *testing.T) {
 	list := NewBackgroundEventList()
 	result := list.ToString()
 
-	if result != "" {
-		t.Errorf("ToString() for empty list = %q, want empty string", result)
-	}
+	assert.Equalf(t, "", result, "ToString() for empty list = %q, want empty string", result)
 }

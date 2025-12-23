@@ -7,29 +7,23 @@ import (
 	"testing"
 
 	"github.com/cv/mcs/internal/skill"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestGetSkillPath tests that getSkillPath returns the correct path
 func TestGetSkillPath(t *testing.T) {
 	path, err := getSkillPath()
-	if err != nil {
-		t.Fatalf("Expected getSkillPath to succeed, got error: %v", err)
-	}
+	require.NoError(t, err, "Expected getSkillPath to succeed, got error: %v")
 
 	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatalf("Expected UserHomeDir to succeed, got error: %v", err)
-	}
+	require.NoError(t, err, "Expected UserHomeDir to succeed, got error: %v")
 
 	expected := filepath.Join(home, ".claude", "skills", skill.SkillName)
-	if path != expected {
-		t.Errorf("Expected path to be '%s', got '%s'", expected, path)
-	}
+	assert.Equalf(t, expected, path, "Expected path to be '%s', got '%s'")
 
 	// Verify it ends with the skill name
-	if filepath.Base(path) != skill.SkillName {
-		t.Errorf("Expected path to end with '%s', got '%s'", skill.SkillName, filepath.Base(path))
-	}
+	assert.Equalf(t, skill.SkillName, filepath.Base(path), "Expected path to end with '%s', got '%s'")
 }
 
 // TestUninstallSkill tests the uninstallSkill function
@@ -44,14 +38,14 @@ func TestUninstallSkill(t *testing.T) {
 			setupFunc: func(t *testing.T, tempDir string) {
 				// Create the directory structure
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
-				if err := os.MkdirAll(skillPath, 0755); err != nil {
-					t.Fatalf("Failed to create test directory: %v", err)
-				}
+				err := os.MkdirAll(skillPath, 0755)
+				require.NoError(t, err, "Failed to create test directory: %v")
+
 				// Add a file to verify recursive removal
 				testFile := filepath.Join(skillPath, "test.txt")
-				if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
-					t.Fatalf("Failed to create test file: %v", err)
-				}
+				err = os.WriteFile(testFile, []byte("test"), 0644)
+				require.NoError(t, err, "Failed to create test file: %v")
+
 			},
 			wantErr: false,
 		},
@@ -84,8 +78,10 @@ func TestUninstallSkill(t *testing.T) {
 			// Run uninstall
 			err := uninstallSkill()
 
-			if (err != nil) != tt.wantErr {
-				t.Errorf("uninstallSkill() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				require.Error(t, err, "uninstallSkill() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "uninstallSkill() error = %v, wantErr %v")
 			}
 
 			// Verify directory is removed
@@ -137,17 +133,14 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 	var outBuf bytes.Buffer
 	cmd.SetOut(&outBuf)
 
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Expected install to succeed, got error: %v", err)
-	}
+	err := cmd.Execute()
+	require.NoError(t, err, "Expected install to succeed, got error: %v")
 
 	// Verify output message
 	output := outBuf.String()
 	skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 	expectedOutput := "Skill installed to " + skillPath + "\n"
-	if output != expectedOutput {
-		t.Errorf("Expected output '%s', got '%s'", expectedOutput, output)
-	}
+	assert.Equalf(t, expectedOutput, output, "Expected output '%s', got '%s'")
 
 	// Verify directory was created
 	if _, err := os.Stat(skillPath); os.IsNotExist(err) {
@@ -171,9 +164,7 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 		if err != nil {
 			t.Errorf("Expected to read file %s, got error: %v", file, err)
 		}
-		if len(content) == 0 {
-			t.Errorf("Expected file %s to have content", file)
-		}
+		assert.NotEqualf(t, 0, len(content), "Expected file %s to have content", file)
 	}
 }
 
@@ -196,21 +187,19 @@ func TestSkillInstallCommand_ReinstallRemovesOld(t *testing.T) {
 	skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 
 	// Create old installation with extra file
-	if err := os.MkdirAll(skillPath, 0755); err != nil {
-		t.Fatalf("Failed to create skill directory: %v", err)
-	}
+	err := os.MkdirAll(skillPath, 0755)
+	require.NoError(t, err, "Failed to create skill directory: %v")
+
 	oldFilePath := filepath.Join(skillPath, "old_file.txt")
-	if err := os.WriteFile(oldFilePath, []byte("old content"), 0644); err != nil {
-		t.Fatalf("Failed to create old file: %v", err)
-	}
+	err = os.WriteFile(oldFilePath, []byte("old content"), 0644)
+	require.NoError(t, err, "Failed to create old file: %v")
 
 	// Execute install command
 	cmd := NewSkillInstallCmd()
 	cmd.SetOut(&bytes.Buffer{})
 
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Expected install to succeed, got error: %v", err)
-	}
+	err = cmd.Execute()
+	require.NoError(t, err, "Expected install to succeed, got error: %v")
 
 	// Verify old file is gone
 	if _, err := os.Stat(oldFilePath); !os.IsNotExist(err) {
@@ -242,13 +231,13 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 			name: "removes existing installation",
 			setupFunc: func(t *testing.T, tempDir string) {
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
-				if err := os.MkdirAll(skillPath, 0755); err != nil {
-					t.Fatalf("Failed to create skill directory: %v", err)
-				}
+				err := os.MkdirAll(skillPath, 0755)
+				require.NoError(t, err, "Failed to create skill directory: %v")
+
 				testFile := filepath.Join(skillPath, "test.txt")
-				if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
-					t.Fatalf("Failed to create test file: %v", err)
-				}
+				err = os.WriteFile(testFile, []byte("test"), 0644)
+				require.NoError(t, err, "Failed to create test file: %v")
+
 			},
 			expectedOutput: "Skill uninstalled from ",
 		},
@@ -283,17 +272,14 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 			var outBuf bytes.Buffer
 			cmd.SetOut(&outBuf)
 
-			if err := cmd.Execute(); err != nil {
-				t.Fatalf("Expected uninstall to succeed, got error: %v", err)
-			}
+			err := cmd.Execute()
+			require.NoError(t, err, "Expected uninstall to succeed, got error: %v")
 
 			// Verify output message
 			output := outBuf.String()
-			if len(output) == 0 {
-				t.Error("Expected output message")
-			}
-			if len(tt.expectedOutput) > 0 && !bytes.Contains([]byte(output), []byte(tt.expectedOutput)) {
-				t.Errorf("Expected output to contain '%s', got '%s'", tt.expectedOutput, output)
+			assert.NotEqual(t, 0, len(output), "Expected output message")
+			if len(tt.expectedOutput) > 0 {
+				assert.Truef(t, bytes.Contains([]byte(output), []byte(tt.expectedOutput)), "Expected output to contain '%s', got '%s'", tt.expectedOutput, output)
 			}
 
 			// Verify directory is removed
@@ -333,16 +319,13 @@ func TestSkillPathCommand_Execute(t *testing.T) {
 	var outBuf bytes.Buffer
 	cmd.SetOut(&outBuf)
 
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Expected path command to succeed, got error: %v", err)
-	}
+	err := cmd.Execute()
+	require.NoError(t, err, "Expected path command to succeed, got error: %v")
 
 	// Verify output is the correct path
 	output := outBuf.String()
 	expectedPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName) + "\n"
-	if output != expectedPath {
-		t.Errorf("Expected path '%s', got '%s'", expectedPath, output)
-	}
+	assert.Equalf(t, expectedPath, output, "Expected path '%s', got '%s'")
 }
 
 // TestSkillPathCommand_OutputFormat tests that path output is just the path
@@ -366,9 +349,8 @@ func TestSkillPathCommand_OutputFormat(t *testing.T) {
 	var outBuf bytes.Buffer
 	cmd.SetOut(&outBuf)
 
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Expected path command to succeed, got error: %v", err)
-	}
+	err := cmd.Execute()
+	require.NoError(t, err, "Expected path command to succeed, got error: %v")
 
 	// Verify output is a single line
 	output := outBuf.String()
@@ -380,9 +362,7 @@ func TestSkillPathCommand_OutputFormat(t *testing.T) {
 
 	// Verify it's a valid path
 	pathStr := string(lines[0])
-	if !filepath.IsAbs(pathStr) {
-		t.Errorf("Expected absolute path, got '%s'", pathStr)
-	}
+	assert.Truef(t, filepath.IsAbs(pathStr), "Expected absolute path, got '%s'", pathStr)
 }
 
 // TestSkillInstallCommand_WritesVersionFile tests that install creates a version file
@@ -405,23 +385,18 @@ func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
 	cmd := NewSkillInstallCmd()
 	cmd.SetOut(&bytes.Buffer{})
 
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("Expected install to succeed, got error: %v", err)
-	}
+	err := cmd.Execute()
+	require.NoError(t, err, "Expected install to succeed, got error: %v")
 
 	// Verify version file was created
 	skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 	versionPath := filepath.Join(skillPath, ".mcs-version")
 
 	content, err := os.ReadFile(versionPath)
-	if err != nil {
-		t.Fatalf("Expected version file to exist, got error: %v", err)
-	}
+	require.NoError(t, err, "Expected version file to exist, got error: %v")
 
 	// Verify content matches current version
-	if string(content) != Version {
-		t.Errorf("Expected version file to contain '%s', got '%s'", Version, string(content))
-	}
+	assert.Equalf(t, Version, string(content), "Expected version file to contain '%s', got '%s'")
 }
 
 // TestCheckSkillVersion tests the CheckSkillVersion function
@@ -444,13 +419,13 @@ func TestCheckSkillVersion(t *testing.T) {
 			name: "returns SkillVersionUnknown when skill exists without version file",
 			setupFunc: func(t *testing.T, tempDir string) {
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
-				if err := os.MkdirAll(skillPath, 0755); err != nil {
-					t.Fatalf("Failed to create skill directory: %v", err)
-				}
+				err := os.MkdirAll(skillPath, 0755)
+				require.NoError(t, err, "Failed to create skill directory: %v")
+
 				// Create SKILL.md but no version file (legacy install)
-				if err := os.WriteFile(filepath.Join(skillPath, "SKILL.md"), []byte("test"), 0644); err != nil {
-					t.Fatalf("Failed to create SKILL.md: %v", err)
-				}
+				err = os.WriteFile(filepath.Join(skillPath, "SKILL.md"), []byte("test"), 0644)
+				require.NoError(t, err, "Failed to create SKILL.md: %v")
+
 			},
 			expectedStatus:  SkillVersionUnknown,
 			expectedVersion: "",
@@ -459,13 +434,13 @@ func TestCheckSkillVersion(t *testing.T) {
 			name: "returns SkillVersionMatch when versions match",
 			setupFunc: func(t *testing.T, tempDir string) {
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
-				if err := os.MkdirAll(skillPath, 0755); err != nil {
-					t.Fatalf("Failed to create skill directory: %v", err)
-				}
+				err := os.MkdirAll(skillPath, 0755)
+				require.NoError(t, err, "Failed to create skill directory: %v")
+
 				versionPath := filepath.Join(skillPath, ".mcs-version")
-				if err := os.WriteFile(versionPath, []byte(Version), 0644); err != nil {
-					t.Fatalf("Failed to create version file: %v", err)
-				}
+				err = os.WriteFile(versionPath, []byte(Version), 0644)
+				require.NoError(t, err, "Failed to create version file: %v")
+
 			},
 			expectedStatus:  SkillVersionMatch,
 			expectedVersion: Version,
@@ -474,13 +449,13 @@ func TestCheckSkillVersion(t *testing.T) {
 			name: "returns SkillVersionMismatch when versions differ",
 			setupFunc: func(t *testing.T, tempDir string) {
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
-				if err := os.MkdirAll(skillPath, 0755); err != nil {
-					t.Fatalf("Failed to create skill directory: %v", err)
-				}
+				err := os.MkdirAll(skillPath, 0755)
+				require.NoError(t, err, "Failed to create skill directory: %v")
+
 				versionPath := filepath.Join(skillPath, ".mcs-version")
-				if err := os.WriteFile(versionPath, []byte("1.0.0"), 0644); err != nil {
-					t.Fatalf("Failed to create version file: %v", err)
-				}
+				err = os.WriteFile(versionPath, []byte("1.0.0"), 0644)
+				require.NoError(t, err, "Failed to create version file: %v")
+
 			},
 			expectedStatus:  SkillVersionMismatch,
 			expectedVersion: "1.0.0",
@@ -489,14 +464,14 @@ func TestCheckSkillVersion(t *testing.T) {
 			name: "handles version file with whitespace",
 			setupFunc: func(t *testing.T, tempDir string) {
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
-				if err := os.MkdirAll(skillPath, 0755); err != nil {
-					t.Fatalf("Failed to create skill directory: %v", err)
-				}
+				err := os.MkdirAll(skillPath, 0755)
+				require.NoError(t, err, "Failed to create skill directory: %v")
+
 				versionPath := filepath.Join(skillPath, ".mcs-version")
 				// Write version with trailing newline
-				if err := os.WriteFile(versionPath, []byte(Version+"\n"), 0644); err != nil {
-					t.Fatalf("Failed to create version file: %v", err)
-				}
+				err = os.WriteFile(versionPath, []byte(Version+"\n"), 0644)
+				require.NoError(t, err, "Failed to create version file: %v")
+
 			},
 			expectedStatus:  SkillVersionMatch,
 			expectedVersion: Version,
@@ -522,13 +497,9 @@ func TestCheckSkillVersion(t *testing.T) {
 
 			status, version := CheckSkillVersion()
 
-			if status != tt.expectedStatus {
-				t.Errorf("Expected status %v, got %v", tt.expectedStatus, status)
-			}
+			assert.Equalf(t, tt.expectedStatus, status, "Expected status %v, got %v")
 
-			if version != tt.expectedVersion {
-				t.Errorf("Expected version '%s', got '%s'", tt.expectedVersion, version)
-			}
+			assert.Equalf(t, tt.expectedVersion, version, "Expected version '%s', got '%s'")
 		})
 	}
 }

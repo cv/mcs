@@ -1,6 +1,10 @@
 package cli
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
 
 // TestClimateCommand tests the climate command
 func TestClimateCommand(t *testing.T) {
@@ -26,9 +30,7 @@ func TestClimateCommand_SetSubcommand_Flags(t *testing.T) {
 	cmd := NewClimateCmd()
 	setCmd := findSubcommand(cmd, "set")
 
-	if setCmd == nil {
-		t.Fatal("Expected set subcommand to exist")
-	}
+	require.NotNil(t, setCmd, "Expected set subcommand to exist")
 
 	// Test that flags exist with proper defaults
 	assertFlagExists(t, setCmd, FlagAssertion{Name: "temp"})

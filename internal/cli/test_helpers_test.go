@@ -6,6 +6,8 @@ import (
 
 	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // findSubcommand finds a subcommand by name in the given parent command.
@@ -25,13 +27,9 @@ func findSubcommand(cmd *cobra.Command, name string) *cobra.Command {
 func assertCommandBasics(t *testing.T, cmd *cobra.Command, expectedUse string) {
 	t.Helper()
 
-	if cmd.Use != expectedUse {
-		t.Errorf("Expected Use to be '%s', got '%s'", expectedUse, cmd.Use)
-	}
+	assert.Equalf(t, expectedUse, cmd.Use, "Expected Use to be '%s', got '%s'")
 
-	if cmd.Short == "" {
-		t.Error("Expected Short description to be set")
-	}
+	assert.NotEqual(t, "", cmd.Short, "Expected Short description to be set")
 }
 
 // assertNoArgsCommand tests that a command accepts no arguments.
@@ -49,14 +47,9 @@ func assertSubcommandExists(t *testing.T, parent *cobra.Command, subcommandName 
 	t.Helper()
 
 	subCmd := findSubcommand(parent, subcommandName)
-	if subCmd == nil {
-		t.Fatalf("Expected %s subcommand to exist", subcommandName)
-		return nil
-	}
+	require.NotNilf(t, subCmd, "Expected %s subcommand to exist", subcommandName)
 
-	if subCmd.Short == "" {
-		t.Errorf("Expected %s subcommand to have a description", subcommandName)
-	}
+	assert.NotEqualf(t, "", subCmd.Short, "Expected %s subcommand to have a description", subcommandName)
 
 	if shouldAcceptNoArgs {
 		if err := subCmd.ValidateArgs([]string{}); err != nil {
@@ -90,10 +83,7 @@ func assertFlagExists(t *testing.T, cmd *cobra.Command, assertion FlagAssertion)
 	t.Helper()
 
 	flag := cmd.Flags().Lookup(assertion.Name)
-	if flag == nil {
-		t.Errorf("Expected --%s flag to exist", assertion.Name)
-		return
-	}
+	assert.NotEqualf(t, nil, flag, "Expected --%s flag to exist", assertion.Name)
 
 	if assertion.DefaultValue != "" && flag.DefValue != assertion.DefaultValue {
 		t.Errorf("Expected --%s default to be '%s', got '%s'", assertion.Name, assertion.DefaultValue, flag.DefValue)
@@ -269,9 +259,9 @@ func (b *MockEVVehicleStatusBuilder) Build() *api.EVVehicleStatusResponse {
 func parseJSONToMap(t *testing.T, jsonStr string) map[string]interface{} {
 	t.Helper()
 	var data map[string]interface{}
-	if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
-		t.Fatalf("Expected valid JSON, got error: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonStr), &data)
+	require.NoError(t, err, "Expected valid JSON, got error: %v")
+
 	return data
 }
 
@@ -279,11 +269,6 @@ func parseJSONToMap(t *testing.T, jsonStr string) map[string]interface{} {
 func assertMapValue(t *testing.T, data map[string]interface{}, key string, expected interface{}) {
 	t.Helper()
 	actual, ok := data[key]
-	if !ok {
-		t.Errorf("Expected key %q to exist in map", key)
-		return
-	}
-	if actual != expected {
-		t.Errorf("Expected %s to be %v, got %v", key, expected, actual)
-	}
+	assert.Truef(t, ok, "Expected key %q to exist in map", key)
+	assert.Equalf(t, expected, actual, "Expected %s to be %v, got %v", key, expected, actual)
 }

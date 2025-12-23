@@ -1,6 +1,10 @@
 package api
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestGetString(t *testing.T) {
 	tests := []struct {
@@ -50,12 +54,8 @@ func TestGetString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getString(tt.input, tt.key)
-			if gotValue != tt.wantValue {
-				t.Errorf("getString() value = %v, want %v", gotValue, tt.wantValue)
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("getString() ok = %v, want %v", gotOk, tt.wantOk)
-			}
+			assert.EqualValuesf(t, tt.wantValue, gotValue, "getString() value = %v, want %v")
+			assert.EqualValuesf(t, tt.wantOk, gotOk, "getString() ok = %v, want %v")
 		})
 	}
 }
@@ -115,12 +115,8 @@ func TestGetInt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getInt(tt.input, tt.key)
-			if gotValue != tt.wantValue {
-				t.Errorf("getInt() value = %v, want %v", gotValue, tt.wantValue)
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("getInt() ok = %v, want %v", gotOk, tt.wantOk)
-			}
+			assert.EqualValuesf(t, tt.wantValue, gotValue, "getInt() value = %v, want %v")
+			assert.EqualValuesf(t, tt.wantOk, gotOk, "getInt() ok = %v, want %v")
 		})
 	}
 }
@@ -173,12 +169,8 @@ func TestGetFloat64(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getFloat64(tt.input, tt.key)
-			if gotValue != tt.wantValue {
-				t.Errorf("getFloat64() value = %v, want %v", gotValue, tt.wantValue)
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("getFloat64() ok = %v, want %v", gotOk, tt.wantOk)
-			}
+			assert.EqualValuesf(t, tt.wantValue, gotValue, "getFloat64() value = %v, want %v")
+			assert.EqualValuesf(t, tt.wantOk, gotOk, "getFloat64() ok = %v, want %v")
 		})
 	}
 }
@@ -231,12 +223,8 @@ func TestGetBool(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getBool(tt.input, tt.key)
-			if gotValue != tt.wantValue {
-				t.Errorf("getBool() value = %v, want %v", gotValue, tt.wantValue)
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("getBool() ok = %v, want %v", gotOk, tt.wantOk)
-			}
+			assert.EqualValuesf(t, tt.wantValue, gotValue, "getBool() value = %v, want %v")
+			assert.EqualValuesf(t, tt.wantOk, gotOk, "getBool() ok = %v, want %v")
 		})
 	}
 }
@@ -279,9 +267,7 @@ func TestGetMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getMap(tt.input, tt.key)
-			if gotOk != tt.wantOk {
-				t.Errorf("getMap() ok = %v, want %v", gotOk, tt.wantOk)
-			}
+			assert.EqualValuesf(t, tt.wantOk, gotOk, "getMap() ok = %v, want %v")
 			if tt.wantOk && gotValue == nil {
 				t.Errorf("getMap() returned nil when ok=true")
 			}
@@ -327,9 +313,7 @@ func TestGetSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getSlice(tt.input, tt.key)
-			if gotOk != tt.wantOk {
-				t.Errorf("getSlice() ok = %v, want %v", gotOk, tt.wantOk)
-			}
+			assert.EqualValuesf(t, tt.wantOk, gotOk, "getSlice() ok = %v, want %v")
 			if tt.wantOk && gotValue == nil {
 				t.Errorf("getSlice() returned nil when ok=true")
 			}
@@ -397,12 +381,8 @@ func TestGetMapSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getMapSlice(tt.input, tt.key)
-			if gotOk != tt.wantOk {
-				t.Errorf("getMapSlice() ok = %v, want %v", gotOk, tt.wantOk)
-			}
-			if len(gotValue) != tt.wantLen {
-				t.Errorf("getMapSlice() len = %v, want %v", len(gotValue), tt.wantLen)
-			}
+			assert.EqualValuesf(t, tt.wantOk, gotOk, "getMapSlice() ok = %v, want %v")
+			assert.EqualValuesf(t, tt.wantLen, len(gotValue), "getMapSlice() len = %v, want %v")
 		})
 	}
 }
@@ -461,9 +441,7 @@ func TestGetMapFromSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getMapFromSlice(tt.slice, tt.index)
-			if gotOk != tt.wantOk {
-				t.Errorf("getMapFromSlice() ok = %v, want %v", gotOk, tt.wantOk)
-			}
+			assert.EqualValuesf(t, tt.wantOk, gotOk, "getMapFromSlice() ok = %v, want %v")
 			if tt.wantOk && gotValue == nil {
 				t.Errorf("getMapFromSlice() returned nil when ok=true")
 			}

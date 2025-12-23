@@ -3,14 +3,15 @@ package sensordata
 import (
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewPerformanceTestResults(t *testing.T) {
 	p := NewPerformanceTestResults()
 
-	if p == nil {
-		t.Fatal("Expected non-nil PerformanceTestResults")
-	}
+	require.NotNil(t, p, "Expected non-nil PerformanceTestResults")
 }
 
 func TestPerformanceTestResults_Randomize(t *testing.T) {
@@ -18,14 +19,10 @@ func TestPerformanceTestResults_Randomize(t *testing.T) {
 	p.Randomize()
 
 	// Check that modTestResult is set correctly
-	if p.modTestResult != 16 {
-		t.Errorf("Expected modTestResult = 16, got %d", p.modTestResult)
-	}
+	assert.Equalf(t, 16, p.modTestResult, "Expected modTestResult = 16, got %d", p.modTestResult)
 
 	// Check that floatTestResult is set correctly
-	if p.floatTestResult != 59 {
-		t.Errorf("Expected floatTestResult = 59, got %d", p.floatTestResult)
-	}
+	assert.Equalf(t, 59, p.floatTestResult, "Expected floatTestResult = 59, got %d", p.floatTestResult)
 
 	// Check that loop test result is in expected range
 	if p.loopTestResult < 8500 || p.loopTestResult > 16000 {
@@ -64,12 +61,8 @@ func TestPerformanceTestResults_ToString(t *testing.T) {
 
 	// Should be comma-separated values
 	parts := strings.Split(result, ",")
-	if len(parts) != 9 {
-		t.Errorf("Expected 9 comma-separated values, got %d", len(parts))
-	}
+	assert.Lenf(t, parts, 9, "Expected 9 comma-separated values, got %d", len(parts))
 
 	expected := "16,500,59,1000,100,800,75000,750,10000"
-	if result != expected {
-		t.Errorf("ToString() = %q, want %q", result, expected)
-	}
+	assert.Equalf(t, expected, result, "ToString() = %q, want %q")
 }

@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTokenCache_IsValid(t *testing.T) {
@@ -57,9 +60,7 @@ func TestTokenCache_IsValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.cache.IsValid(); got != tt.want {
-				t.Errorf("TokenCache.IsValid() = %v, want %v", got, tt.want)
-			}
+			assert.Equalf(t, tt.want, tt.cache.IsValid(), "TokenCache.IsValid() = %v, want %v")
 		})
 	}
 }
@@ -78,42 +79,24 @@ func TestSaveAndLoad(t *testing.T) {
 
 	// Test Save
 	err := Save(testCache)
-	if err != nil {
-		t.Fatalf("Save() failed: %v", err)
-	}
+	require.NoError(t, err, "Save() failed: %v")
 
 	// Verify cache file was created with correct permissions
 	cachePath := filepath.Join(tmpDir, ".cache", "mcs", "token.json")
 	info, err := os.Stat(cachePath)
-	if err != nil {
-		t.Fatalf("Cache file not created: %v", err)
-	}
-	if info.Mode().Perm() != 0600 {
-		t.Errorf("Cache file has incorrect permissions: got %v, want 0600", info.Mode().Perm())
-	}
+	require.NoError(t, err, "Cache file not created: %v")
+	assert.Equal(t, os.FileMode(0600), info.Mode().Perm(), "Cache file has incorrect permissions")
 
 	// Test Load
 	loadedCache, err := Load()
-	if err != nil {
-		t.Fatalf("Load() failed: %v", err)
-	}
-	if loadedCache == nil {
-		t.Fatal("Load() returned nil cache")
-	}
+	require.NoError(t, err, "Load() failed: %v")
+	require.NotNil(t, loadedCache, "Load() returned nil cache")
 
 	// Verify loaded data matches saved data
-	if loadedCache.AccessToken != testCache.AccessToken {
-		t.Errorf("AccessToken mismatch: got %v, want %v", loadedCache.AccessToken, testCache.AccessToken)
-	}
-	if loadedCache.AccessTokenExpirationTs != testCache.AccessTokenExpirationTs {
-		t.Errorf("AccessTokenExpirationTs mismatch: got %v, want %v", loadedCache.AccessTokenExpirationTs, testCache.AccessTokenExpirationTs)
-	}
-	if loadedCache.EncKey != testCache.EncKey {
-		t.Errorf("EncKey mismatch: got %v, want %v", loadedCache.EncKey, testCache.EncKey)
-	}
-	if loadedCache.SignKey != testCache.SignKey {
-		t.Errorf("SignKey mismatch: got %v, want %v", loadedCache.SignKey, testCache.SignKey)
-	}
+	assert.Equalf(t, testCache.AccessToken, loadedCache.AccessToken, "AccessToken mismatch: got %v, want %v")
+	assert.Equalf(t, testCache.AccessTokenExpirationTs, loadedCache.AccessTokenExpirationTs, "AccessTokenExpirationTs mismatch: got %v, want %v")
+	assert.Equalf(t, testCache.EncKey, loadedCache.EncKey, "EncKey mismatch: got %v, want %v")
+	assert.Equalf(t, testCache.SignKey, loadedCache.SignKey, "SignKey mismatch: got %v, want %v")
 }
 
 func TestLoad_NoCache(t *testing.T) {
@@ -123,12 +106,8 @@ func TestLoad_NoCache(t *testing.T) {
 
 	// Load without any cache file
 	cache, err := Load()
-	if err != nil {
-		t.Fatalf("Load() failed: %v", err)
-	}
-	if cache != nil {
-		t.Errorf("Load() should return nil when no cache exists, got %v", cache)
-	}
+	require.NoError(t, err, "Load() failed: %v")
+	assert.Nil(t, cache, "Load() should return nil when no cache exists")
 }
 
 func TestLoad_InvalidJSON(t *testing.T) {
@@ -139,19 +118,13 @@ func TestLoad_InvalidJSON(t *testing.T) {
 	// Create cache directory and invalid JSON file
 	cachePath := filepath.Join(tmpDir, ".cache", "mcs", "token.json")
 	err := os.MkdirAll(filepath.Dir(cachePath), 0700)
-	if err != nil {
-		t.Fatalf("Failed to create cache directory: %v", err)
-	}
+	require.NoError(t, err, "Failed to create cache directory: %v")
 	err = os.WriteFile(cachePath, []byte("invalid json"), 0600)
-	if err != nil {
-		t.Fatalf("Failed to write invalid cache file: %v", err)
-	}
+	require.NoError(t, err, "Failed to write invalid cache file: %v")
 
 	// Load should fail with parse error
 	_, err = Load()
-	if err == nil {
-		t.Error("Load() should fail with invalid JSON")
-	}
+	assert.Error(t, err, "Load() should fail with invalid JSON")
 }
 
 func TestIsTokenValid(t *testing.T) {
@@ -189,9 +162,7 @@ func TestIsTokenValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsTokenValid(tt.accessToken, tt.expirationTs); got != tt.want {
-				t.Errorf("IsTokenValid() = %v, want %v", got, tt.want)
-			}
+			assert.Equalf(t, tt.want, IsTokenValid(tt.accessToken, tt.expirationTs), "IsTokenValid() = %v, want %v")
 		})
 	}
 }
@@ -208,18 +179,13 @@ func TestCachePersistence_MultipleSaveLoad(t *testing.T) {
 		EncKey:                  "enckey-1",
 		SignKey:                 "signkey-1",
 	}
-	if err := Save(cache1); err != nil {
-		t.Fatalf("First Save() failed: %v", err)
-	}
+	err := Save(cache1)
+	require.NoError(t, err, "First Save() failed: %v")
 
 	// First load
 	loaded1, err := Load()
-	if err != nil {
-		t.Fatalf("First Load() failed: %v", err)
-	}
-	if loaded1.AccessToken != "token-1" {
-		t.Errorf("First load: expected token-1, got %s", loaded1.AccessToken)
-	}
+	require.NoError(t, err, "First Load() failed: %v")
+	assert.Equalf(t, "token-1", loaded1.AccessToken, "First load: expected token-1, got %s", loaded1.AccessToken)
 
 	// Second save (overwrite)
 	cache2 := &TokenCache{
@@ -228,23 +194,16 @@ func TestCachePersistence_MultipleSaveLoad(t *testing.T) {
 		EncKey:                  "enckey-2",
 		SignKey:                 "signkey-2",
 	}
-	if err := Save(cache2); err != nil {
-		t.Fatalf("Second Save() failed: %v", err)
-	}
+	err = Save(cache2)
+	require.NoError(t, err, "Second Save() failed: %v")
 
 	// Second load
 	loaded2, err := Load()
-	if err != nil {
-		t.Fatalf("Second Load() failed: %v", err)
-	}
-	if loaded2.AccessToken != "token-2" {
-		t.Errorf("Second load: expected token-2, got %s", loaded2.AccessToken)
-	}
+	require.NoError(t, err, "Second Load() failed: %v")
+	assert.Equalf(t, "token-2", loaded2.AccessToken, "Second load: expected token-2, got %s", loaded2.AccessToken)
 
 	// Verify old values are gone
-	if loaded2.AccessToken == "token-1" {
-		t.Error("Old cache values should be overwritten")
-	}
+	assert.NotEqual(t, "token-1", loaded2.AccessToken, "Old cache values should be overwritten")
 }
 
 // TestCachePersistence_ConcurrentAccess tests concurrent save/load operations
@@ -259,9 +218,8 @@ func TestCachePersistence_ConcurrentAccess(t *testing.T) {
 		EncKey:                  "initial-enc",
 		SignKey:                 "initial-sign",
 	}
-	if err := Save(initialCache); err != nil {
-		t.Fatalf("Initial Save() failed: %v", err)
-	}
+	err := Save(initialCache)
+	require.NoError(t, err, "Initial Save() failed: %v")
 
 	// Try concurrent loads (should all succeed)
 	done := make(chan bool, 3)
@@ -271,9 +229,7 @@ func TestCachePersistence_ConcurrentAccess(t *testing.T) {
 			if err != nil {
 				t.Errorf("Concurrent load %d failed: %v", id, err)
 			}
-			if cache == nil {
-				t.Errorf("Concurrent load %d returned nil", id)
-			}
+			assert.NotEqualf(t, nil, cache, "Concurrent load %d returned nil", id)
 			done <- true
 		}(i)
 	}
@@ -291,21 +247,17 @@ func TestCachePersistence_CorruptedData(t *testing.T) {
 
 	// Create cache directory and write corrupted data
 	cachePath := filepath.Join(tmpDir, ".cache", "mcs", "token.json")
-	if err := os.MkdirAll(filepath.Dir(cachePath), 0700); err != nil {
-		t.Fatalf("Failed to create cache directory: %v", err)
-	}
+	err := os.MkdirAll(filepath.Dir(cachePath), 0700)
+	require.NoError(t, err, "Failed to create cache directory: %v")
 
 	// Write truly corrupted JSON (not valid JSON at all)
 	corruptedJSON := `{this is not valid json at all!!!`
-	if err := os.WriteFile(cachePath, []byte(corruptedJSON), 0600); err != nil {
-		t.Fatalf("Failed to write corrupted cache: %v", err)
-	}
+	err = os.WriteFile(cachePath, []byte(corruptedJSON), 0600)
+	require.NoError(t, err, "Failed to write corrupted cache: %v")
 
 	// Load should fail gracefully
-	_, err := Load()
-	if err == nil {
-		t.Error("Expected error when loading corrupted cache")
-	}
+	_, err = Load()
+	assert.Error(t, err, "Expected error when loading corrupted cache")
 }
 
 // TestCachePersistence_PartialData tests cache with missing fields
@@ -315,25 +267,19 @@ func TestCachePersistence_PartialData(t *testing.T) {
 
 	// Create cache with only some fields
 	cachePath := filepath.Join(tmpDir, ".cache", "mcs", "token.json")
-	if err := os.MkdirAll(filepath.Dir(cachePath), 0700); err != nil {
-		t.Fatalf("Failed to create cache directory: %v", err)
-	}
+	err := os.MkdirAll(filepath.Dir(cachePath), 0700)
+	require.NoError(t, err, "Failed to create cache directory: %v")
 
 	// Write partial JSON (missing signKey)
 	partialJSON := `{"accessToken": "partial-token", "accessTokenExpirationTs": 1234567890, "encKey": "partial-enc"}`
-	if err := os.WriteFile(cachePath, []byte(partialJSON), 0600); err != nil {
-		t.Fatalf("Failed to write partial cache: %v", err)
-	}
+	err = os.WriteFile(cachePath, []byte(partialJSON), 0600)
+	require.NoError(t, err, "Failed to write partial cache: %v")
 
 	// Load should succeed but cache should be invalid (missing signKey)
 	cache, err := Load()
-	if err != nil {
-		t.Fatalf("Load() failed: %v", err)
-	}
+	require.NoError(t, err, "Load() failed: %v")
 
-	if cache.SignKey != "" {
-		t.Errorf("Expected empty SignKey, got %s", cache.SignKey)
-	}
+	assert.Equalf(t, "", cache.SignKey, "Expected empty SignKey, got %s", cache.SignKey)
 
 	// Note: IsValid only checks token validity, not presence of keys
 	// So this cache will be considered "valid" even though signKey is missing
@@ -411,9 +357,7 @@ func TestCacheValidation_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.cache.IsValid(); got != tt.want {
-				t.Errorf("TokenCache.IsValid() = %v, want %v", got, tt.want)
-			}
+			assert.Equalf(t, tt.want, tt.cache.IsValid(), "TokenCache.IsValid() = %v, want %v")
 		})
 	}
 }
@@ -430,20 +374,15 @@ func TestCachePersistence_FilePermissions(t *testing.T) {
 		SignKey:                 "secure-sign",
 	}
 
-	if err := Save(cache); err != nil {
-		t.Fatalf("Save() failed: %v", err)
-	}
+	err := Save(cache)
+	require.NoError(t, err, "Save() failed: %v")
 
 	cachePath := filepath.Join(tmpDir, ".cache", "mcs", "token.json")
 	info, err := os.Stat(cachePath)
-	if err != nil {
-		t.Fatalf("Failed to stat cache file: %v", err)
-	}
+	require.NoError(t, err, "Failed to stat cache file: %v")
 
 	// Verify file permissions are 0600 (read/write for owner only)
-	if info.Mode().Perm() != 0600 {
-		t.Errorf("Cache file has incorrect permissions: got %v, want 0600", info.Mode().Perm())
-	}
+	assert.Equal(t, os.FileMode(0600), info.Mode().Perm(), "Cache file has incorrect permissions")
 }
 
 // TestCachePersistence_DirectoryCreation tests that cache directory is created if it doesn't exist
@@ -465,9 +404,8 @@ func TestCachePersistence_DirectoryCreation(t *testing.T) {
 		SignKey:                 "new-sign",
 	}
 
-	if err := Save(cache); err != nil {
-		t.Fatalf("Save() failed: %v", err)
-	}
+	err := Save(cache)
+	require.NoError(t, err, "Save() failed: %v")
 
 	// Verify directory was created
 	if _, err := os.Stat(cachePath); err != nil {
@@ -490,7 +428,5 @@ func TestCachePersistence_EmptyHomeDir(t *testing.T) {
 
 	// Save should fail gracefully when HOME is empty
 	err := Save(cache)
-	if err == nil {
-		t.Error("Expected error when HOME is empty, got nil")
-	}
+	assert.Error(t, err, "Expected error when HOME is empty, got nil")
 }

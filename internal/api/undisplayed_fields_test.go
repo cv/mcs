@@ -3,6 +3,9 @@ package api
 import (
 	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestUndisplayedFieldsInVehicleStatus verifies that undisplayed fields from GetVehicleStatus
@@ -84,22 +87,14 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("GetVehicleStatus failed: %v", err)
-	}
+	require.NoError(t, err, "GetVehicleStatus failed: %v")
 
-	if result.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	// Test that we can parse the response as raw map to access undisplayed fields
-	if len(result.AlertInfos) != 1 {
-		t.Fatalf("Expected 1 alert info, got %d", len(result.AlertInfos))
-	}
+	require.Lenf(t, result.AlertInfos, 1, "Expected 1 alert info, got %d", len(result.AlertInfos))
 
-	if len(result.RemoteInfos) != 1 {
-		t.Fatalf("Expected 1 remote info, got %d", len(result.RemoteInfos))
-	}
+	require.Lenf(t, result.RemoteInfos, 1, "Expected 1 remote info, got %d", len(result.RemoteInfos))
 
 	// Verify undisplayed fields can be accessed via the raw response
 	// Note: The current typed structs don't include these fields, so we need to
@@ -107,141 +102,81 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	t.Run("VerifyOdometerField", func(t *testing.T) {
 		// DriveInformation.OdoDispValue
 		remoteInfos, ok := getMapSlice(responseData, "remoteInfos")
-		if !ok {
-			t.Fatal("remoteInfos not found in response")
-		}
-		if len(remoteInfos) == 0 {
-			t.Fatal("remoteInfos is empty")
-		}
+		require.True(t, ok, "remoteInfos not found in response")
+		require.False(t, len(remoteInfos) == 0, "remoteInfos is empty")
 		driveInfo, ok := getMap(remoteInfos[0], "DriveInformation")
-		if !ok {
-			t.Fatal("DriveInformation not found in response")
-		}
+		require.True(t, ok, "DriveInformation not found in response")
 		odometer, ok := getFloat64(driveInfo, "OdoDispValue")
-		if !ok {
-			t.Fatal("OdoDispValue not found or wrong type")
-		}
-		if odometer != 12345.6 {
-			t.Errorf("Expected odometer 12345.6, got %v", odometer)
-		}
+		require.True(t, ok, "OdoDispValue not found or wrong type")
+		assert.EqualValuesf(t, 12345.6, odometer, "Expected odometer 12345.6, got %v", odometer)
 	})
 
 	t.Run("VerifyHoodStatusField", func(t *testing.T) {
 		// alertInfos[].Door.DrStatHood
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
-		if !ok {
-			t.Fatal("alertInfos not found in response")
-		}
-		if len(alertInfos) == 0 {
-			t.Fatal("alertInfos is empty")
-		}
+		require.True(t, ok, "alertInfos not found in response")
+		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
 		door, ok := getMap(alertInfos[0], "Door")
-		if !ok {
-			t.Fatal("Door not found in response")
-		}
+		require.True(t, ok, "Door not found in response")
 		hoodStatus, ok := getFloat64(door, "DrStatHood")
-		if !ok {
-			t.Fatal("DrStatHood not found or wrong type")
-		}
-		if hoodStatus != 0 {
-			t.Errorf("Expected hood status 0, got %v", hoodStatus)
-		}
+		require.True(t, ok, "DrStatHood not found or wrong type")
+		assert.EqualValuesf(t, 0, hoodStatus, "Expected hood status 0, got %v", hoodStatus)
 	})
 
 	t.Run("VerifyFuelLidStatusField", func(t *testing.T) {
 		// alertInfos[].Door.FuelLidOpenStatus
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
-		if !ok {
-			t.Fatal("alertInfos not found in response")
-		}
-		if len(alertInfos) == 0 {
-			t.Fatal("alertInfos is empty")
-		}
+		require.True(t, ok, "alertInfos not found in response")
+		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
 		door, ok := getMap(alertInfos[0], "Door")
-		if !ok {
-			t.Fatal("Door not found in response")
-		}
+		require.True(t, ok, "Door not found in response")
 		fuelLid, ok := getFloat64(door, "FuelLidOpenStatus")
-		if !ok {
-			t.Fatal("FuelLidOpenStatus not found or wrong type")
-		}
-		if fuelLid != 0 {
-			t.Errorf("Expected fuel lid status 0, got %v", fuelLid)
-		}
+		require.True(t, ok, "FuelLidOpenStatus not found or wrong type")
+		assert.EqualValuesf(t, 0, fuelLid, "Expected fuel lid status 0, got %v", fuelLid)
 	})
 
 	t.Run("VerifyIndividualDoorLockFields", func(t *testing.T) {
 		// alertInfos[].Door.LockLinkSwDrv/Psngr/Rl/Rr
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
-		if !ok {
-			t.Fatal("alertInfos not found in response")
-		}
-		if len(alertInfos) == 0 {
-			t.Fatal("alertInfos is empty")
-		}
+		require.True(t, ok, "alertInfos not found in response")
+		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
 		door, ok := getMap(alertInfos[0], "Door")
-		if !ok {
-			t.Fatal("Door not found in response")
-		}
+		require.True(t, ok, "Door not found in response")
 
 		locks := []string{"LockLinkSwDrv", "LockLinkSwPsngr", "LockLinkSwRl", "LockLinkSwRr"}
 		for _, lockField := range locks {
 			lockStatus, ok := getFloat64(door, lockField)
-			if !ok {
-				t.Fatalf("%s not found or wrong type", lockField)
-			}
-			if lockStatus != 0 {
-				t.Errorf("Expected %s status 0, got %v", lockField, lockStatus)
-			}
+			require.Truef(t, ok, "%s not found or wrong type", lockField)
+			assert.Zerof(t, lockStatus, "Expected %s status 0, got %v", lockField, lockStatus)
 		}
 	})
 
 	t.Run("VerifyWindowPositionFields", func(t *testing.T) {
 		// alertInfos[].Pw.PwPosDrv/Psngr/Rl/Rr
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
-		if !ok {
-			t.Fatal("alertInfos not found in response")
-		}
-		if len(alertInfos) == 0 {
-			t.Fatal("alertInfos is empty")
-		}
+		require.True(t, ok, "alertInfos not found in response")
+		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
 		pw, ok := getMap(alertInfos[0], "Pw")
-		if !ok {
-			t.Fatal("Pw not found in response")
-		}
+		require.True(t, ok, "Pw not found in response")
 
 		windows := []string{"PwPosDrv", "PwPosPsngr", "PwPosRl", "PwPosRr"}
 		for _, windowField := range windows {
 			windowPos, ok := getFloat64(pw, windowField)
-			if !ok {
-				t.Fatalf("%s not found or wrong type", windowField)
-			}
-			if windowPos != 0 {
-				t.Errorf("Expected %s position 0, got %v", windowField, windowPos)
-			}
+			require.Truef(t, ok, "%s not found or wrong type", windowField)
+			assert.Zerof(t, windowPos, "Expected %s position 0, got %v", windowField, windowPos)
 		}
 	})
 
 	t.Run("VerifyHazardLightField", func(t *testing.T) {
 		// alertInfos[].HazardLamp.HazardSw
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
-		if !ok {
-			t.Fatal("alertInfos not found in response")
-		}
-		if len(alertInfos) == 0 {
-			t.Fatal("alertInfos is empty")
-		}
+		require.True(t, ok, "alertInfos not found in response")
+		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
 		hazard, ok := getMap(alertInfos[0], "HazardLamp")
-		if !ok {
-			t.Fatal("HazardLamp not found in response")
-		}
+		require.True(t, ok, "HazardLamp not found in response")
 		hazardSw, ok := getFloat64(hazard, "HazardSw")
-		if !ok {
-			t.Fatal("HazardSw not found or wrong type")
-		}
-		if hazardSw != 0 {
-			t.Errorf("Expected hazard switch 0, got %v", hazardSw)
-		}
+		require.True(t, ok, "HazardSw not found or wrong type")
+		assert.EqualValuesf(t, 0, hazardSw, "Expected hazard switch 0, got %v", hazardSw)
 	})
 }
 
@@ -294,178 +229,100 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("GetEVVehicleStatus failed: %v", err)
-	}
+	require.NoError(t, err, "GetEVVehicleStatus failed: %v")
 
-	if result.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
-	if len(result.ResultData) != 1 {
-		t.Fatalf("Expected 1 result data, got %d", len(result.ResultData))
-	}
+	require.Lenf(t, result.ResultData, 1, "Expected 1 result data, got %d", len(result.ResultData))
 
 	t.Run("VerifyACChargeTimeField", func(t *testing.T) {
 		// ChargeInfo.MaxChargeMinuteAC
 		resultData, ok := getMapSlice(responseData, "resultData")
-		if !ok || len(resultData) == 0 {
-			t.Fatal("resultData not found in response")
-		}
+		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
-		if !ok {
-			t.Fatal("PlusBInformation not found in response")
-		}
+		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
-		if !ok {
-			t.Fatal("VehicleInfo not found in response")
-		}
+		require.True(t, ok, "VehicleInfo not found in response")
 		chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
-		if !ok {
-			t.Fatal("ChargeInfo not found in response")
-		}
+		require.True(t, ok, "ChargeInfo not found in response")
 		acChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteAC")
-		if !ok {
-			t.Fatal("MaxChargeMinuteAC not found or wrong type")
-		}
-		if acChargeTime != 180 {
-			t.Errorf("Expected AC charge time 180, got %v", acChargeTime)
-		}
+		require.True(t, ok, "MaxChargeMinuteAC not found or wrong type")
+		assert.EqualValuesf(t, 180, acChargeTime, "Expected AC charge time 180, got %v", acChargeTime)
 	})
 
 	t.Run("VerifyQuickChargeTimeField", func(t *testing.T) {
 		// ChargeInfo.MaxChargeMinuteQBC
 		resultData, ok := getMapSlice(responseData, "resultData")
-		if !ok || len(resultData) == 0 {
-			t.Fatal("resultData not found in response")
-		}
+		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
-		if !ok {
-			t.Fatal("PlusBInformation not found in response")
-		}
+		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
-		if !ok {
-			t.Fatal("VehicleInfo not found in response")
-		}
+		require.True(t, ok, "VehicleInfo not found in response")
 		chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
-		if !ok {
-			t.Fatal("ChargeInfo not found in response")
-		}
+		require.True(t, ok, "ChargeInfo not found in response")
 		qbcChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteQBC")
-		if !ok {
-			t.Fatal("MaxChargeMinuteQBC not found or wrong type")
-		}
-		if qbcChargeTime != 45 {
-			t.Errorf("Expected QBC charge time 45, got %v", qbcChargeTime)
-		}
+		require.True(t, ok, "MaxChargeMinuteQBC not found or wrong type")
+		assert.EqualValuesf(t, 45, qbcChargeTime, "Expected QBC charge time 45, got %v", qbcChargeTime)
 	})
 
 	t.Run("VerifyBatteryHeaterAutoField", func(t *testing.T) {
 		// ChargeInfo.CstmzStatBatHeatAutoSW
 		resultData, ok := getMapSlice(responseData, "resultData")
-		if !ok || len(resultData) == 0 {
-			t.Fatal("resultData not found in response")
-		}
+		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
-		if !ok {
-			t.Fatal("PlusBInformation not found in response")
-		}
+		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
-		if !ok {
-			t.Fatal("VehicleInfo not found in response")
-		}
+		require.True(t, ok, "VehicleInfo not found in response")
 		chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
-		if !ok {
-			t.Fatal("ChargeInfo not found in response")
-		}
+		require.True(t, ok, "ChargeInfo not found in response")
 		batHeatAuto, ok := getFloat64(chargeInfo, "CstmzStatBatHeatAutoSW")
-		if !ok {
-			t.Fatal("CstmzStatBatHeatAutoSW not found or wrong type")
-		}
-		if batHeatAuto != 1 {
-			t.Errorf("Expected battery heater auto 1, got %v", batHeatAuto)
-		}
+		require.True(t, ok, "CstmzStatBatHeatAutoSW not found or wrong type")
+		assert.EqualValuesf(t, 1, batHeatAuto, "Expected battery heater auto 1, got %v", batHeatAuto)
 	})
 
 	t.Run("VerifyBatteryHeaterOnField", func(t *testing.T) {
 		// ChargeInfo.BatteryHeaterON
 		resultData, ok := getMapSlice(responseData, "resultData")
-		if !ok || len(resultData) == 0 {
-			t.Fatal("resultData not found in response")
-		}
+		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
-		if !ok {
-			t.Fatal("PlusBInformation not found in response")
-		}
+		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
-		if !ok {
-			t.Fatal("VehicleInfo not found in response")
-		}
+		require.True(t, ok, "VehicleInfo not found in response")
 		chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
-		if !ok {
-			t.Fatal("ChargeInfo not found in response")
-		}
+		require.True(t, ok, "ChargeInfo not found in response")
 		batHeaterOn, ok := getFloat64(chargeInfo, "BatteryHeaterON")
-		if !ok {
-			t.Fatal("BatteryHeaterON not found or wrong type")
-		}
-		if batHeaterOn != 0 {
-			t.Errorf("Expected battery heater on 0, got %v", batHeaterOn)
-		}
+		require.True(t, ok, "BatteryHeaterON not found or wrong type")
+		assert.EqualValuesf(t, 0, batHeaterOn, "Expected battery heater on 0, got %v", batHeaterOn)
 	})
 
 	t.Run("VerifyInteriorTempField", func(t *testing.T) {
 		// RemoteHvacInfo.InteriorTemp
 		resultData, ok := getMapSlice(responseData, "resultData")
-		if !ok || len(resultData) == 0 {
-			t.Fatal("resultData not found in response")
-		}
+		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
-		if !ok {
-			t.Fatal("PlusBInformation not found in response")
-		}
+		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
-		if !ok {
-			t.Fatal("VehicleInfo not found in response")
-		}
+		require.True(t, ok, "VehicleInfo not found in response")
 		hvacInfo, ok := getMap(vehicleInfo, "RemoteHvacInfo")
-		if !ok {
-			t.Fatal("RemoteHvacInfo not found in response")
-		}
+		require.True(t, ok, "RemoteHvacInfo not found in response")
 		interiorTemp, ok := getFloat64(hvacInfo, "InteriorTemp")
-		if !ok {
-			t.Fatal("InteriorTemp not found or wrong type")
-		}
-		if interiorTemp != 22 {
-			t.Errorf("Expected interior temp 22, got %v", interiorTemp)
-		}
+		require.True(t, ok, "InteriorTemp not found or wrong type")
+		assert.EqualValuesf(t, 22, interiorTemp, "Expected interior temp 22, got %v", interiorTemp)
 	})
 
 	t.Run("VerifyTargetTempField", func(t *testing.T) {
 		// RemoteHvacInfo.TargetTemp
 		resultData, ok := getMapSlice(responseData, "resultData")
-		if !ok || len(resultData) == 0 {
-			t.Fatal("resultData not found in response")
-		}
+		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
-		if !ok {
-			t.Fatal("PlusBInformation not found in response")
-		}
+		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
-		if !ok {
-			t.Fatal("VehicleInfo not found in response")
-		}
+		require.True(t, ok, "VehicleInfo not found in response")
 		hvacInfo, ok := getMap(vehicleInfo, "RemoteHvacInfo")
-		if !ok {
-			t.Fatal("RemoteHvacInfo not found in response")
-		}
+		require.True(t, ok, "RemoteHvacInfo not found in response")
 		targetTemp, ok := getFloat64(hvacInfo, "TargetTemp")
-		if !ok {
-			t.Fatal("TargetTemp not found or wrong type")
-		}
-		if targetTemp != 21 {
-			t.Errorf("Expected target temp 21, got %v", targetTemp)
-		}
+		require.True(t, ok, "TargetTemp not found or wrong type")
+		assert.EqualValuesf(t, 21, targetTemp, "Expected target temp 21, got %v", targetTemp)
 	})
 }
 
@@ -531,23 +388,15 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("GetVehicleStatus failed: %v", err)
-	}
+	require.NoError(t, err, "GetVehicleStatus failed: %v")
 
-	if result.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	// Verify varied values
 	alertInfos, ok := getMapSlice(responseData, "alertInfos")
-	if !ok || len(alertInfos) == 0 {
-		t.Fatal("alertInfos not found in response")
-	}
+	require.False(t, !ok || len(alertInfos) == 0, "alertInfos not found in response")
 	door, ok := getMap(alertInfos[0], "Door")
-	if !ok {
-		t.Fatal("Door not found")
-	}
+	require.True(t, ok, "Door not found")
 	if hoodStatus, ok := getFloat64(door, "DrStatHood"); !ok || hoodStatus != 1 {
 		t.Error("Expected hood open (1)")
 	}
@@ -556,9 +405,7 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	}
 
 	pw, ok := getMap(alertInfos[0], "Pw")
-	if !ok {
-		t.Fatal("Pw not found")
-	}
+	require.True(t, ok, "Pw not found")
 	if drvWindow, ok := getFloat64(pw, "PwPosDrv"); !ok || drvWindow != 50 {
 		t.Error("Expected driver window at 50")
 	}
@@ -567,21 +414,15 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	}
 
 	hazard, ok := getMap(alertInfos[0], "HazardLamp")
-	if !ok {
-		t.Fatal("HazardLamp not found")
-	}
+	require.True(t, ok, "HazardLamp not found")
 	if hazardSw, ok := getFloat64(hazard, "HazardSw"); !ok || hazardSw != 1 {
 		t.Error("Expected hazard lights on (1)")
 	}
 
 	remoteInfos, ok := getMapSlice(responseData, "remoteInfos")
-	if !ok || len(remoteInfos) == 0 {
-		t.Fatal("remoteInfos not found in response")
-	}
+	require.False(t, !ok || len(remoteInfos) == 0, "remoteInfos not found in response")
 	driveInfo, ok := getMap(remoteInfos[0], "DriveInformation")
-	if !ok {
-		t.Fatal("DriveInformation not found")
-	}
+	require.True(t, ok, "DriveInformation not found")
 	if odometer, ok := getFloat64(driveInfo, "OdoDispValue"); !ok || odometer != 99999.9 {
 		t.Error("Expected odometer at 99999.9")
 	}
@@ -627,31 +468,19 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("GetEVVehicleStatus failed: %v", err)
-	}
+	require.NoError(t, err, "GetEVVehicleStatus failed: %v")
 
-	if result.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	// Verify varied values
 	resultData, ok := getMapSlice(responseData, "resultData")
-	if !ok || len(resultData) == 0 {
-		t.Fatal("resultData not found in response")
-	}
+	require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
 	plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
-	if !ok {
-		t.Fatal("PlusBInformation not found in response")
-	}
+	require.True(t, ok, "PlusBInformation not found in response")
 	vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
-	if !ok {
-		t.Fatal("VehicleInfo not found in response")
-	}
+	require.True(t, ok, "VehicleInfo not found in response")
 	chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
-	if !ok {
-		t.Fatal("ChargeInfo not found in response")
-	}
+	require.True(t, ok, "ChargeInfo not found in response")
 	if acChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteAC"); !ok || acChargeTime != 240 {
 		t.Error("Expected AC charge time 240 minutes")
 	}
@@ -660,9 +489,7 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 	}
 
 	hvacInfo, ok := getMap(vehicleInfo, "RemoteHvacInfo")
-	if !ok {
-		t.Fatal("RemoteHvacInfo not found in response")
-	}
+	require.True(t, ok, "RemoteHvacInfo not found in response")
 	if interiorTemp, ok := getFloat64(hvacInfo, "InteriorTemp"); !ok || interiorTemp != 18 {
 		t.Error("Expected interior temp 18")
 	}

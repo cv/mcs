@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/cv/mcs/internal/api"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // mockAPIClientSetup is a helper that sets up environment for API client creation tests
@@ -33,18 +35,12 @@ func TestSetupVehicleClient_Success(t *testing.T) {
 	ctx := context.Background()
 	client, vehicleInfo, err := setupVehicleClient(ctx)
 
-	if err != nil {
-		t.Fatalf("Expected successful setup, got error: %v", err)
-	}
+	require.NoError(t, err, "Expected successful setup, got error: %v")
 
-	if client == nil {
-		t.Error("Expected client to be created, got nil")
-	}
+	assert.NotNil(t, client, "Expected client to be created, got nil")
 
 	// Verify VehicleInfo fields are populated
-	if vehicleInfo.InternalVIN == "" {
-		t.Error("Expected InternalVIN to be set")
-	}
+	assert.NotEqual(t, "", vehicleInfo.InternalVIN, "Expected InternalVIN to be set")
 }
 
 // TestSetupVehicleClient_ConfigError tests error handling when config is invalid
@@ -61,9 +57,7 @@ func TestSetupVehicleClient_ConfigError(t *testing.T) {
 	ctx := context.Background()
 	_, _, err := setupVehicleClient(ctx)
 
-	if err == nil {
-		t.Fatal("Expected error with invalid config, got nil")
-	}
+	require.Error(t, err, "Expected error with invalid config, got nil")
 }
 
 // TestSetupVehicleClient_MissingConfig tests error when config file doesn't exist
@@ -82,9 +76,7 @@ func TestSetupVehicleClient_MissingConfig(t *testing.T) {
 	ctx := context.Background()
 	_, _, err := setupVehicleClient(ctx)
 
-	if err == nil {
-		t.Fatal("Expected error with missing config, got nil")
-	}
+	require.Error(t, err, "Expected error with missing config, got nil")
 }
 
 // TestSetupVehicleClient_ContextCancellation tests context cancellation handling
@@ -98,9 +90,7 @@ func TestSetupVehicleClient_ContextCancellation(t *testing.T) {
 	_, _, err := setupVehicleClient(ctx)
 
 	// Should return an error (either context cancelled or connection error)
-	if err == nil {
-		t.Error("Expected error with cancelled context, got nil")
-	}
+	assert.Error(t, err, "Expected error with cancelled context, got nil")
 }
 
 // TestWithVehicleClient_CallbackExecuted tests that callback is executed with client
@@ -121,21 +111,13 @@ func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 		return nil
 	})
 
-	if err != nil {
-		t.Fatalf("Expected successful execution, got error: %v", err)
-	}
+	require.NoError(t, err, "Expected successful execution, got error: %v")
 
-	if !callbackExecuted {
-		t.Error("Expected callback to be executed")
-	}
+	assert.True(t, callbackExecuted, "Expected callback to be executed")
 
-	if receivedClient == nil {
-		t.Error("Expected client to be passed to callback")
-	}
+	assert.NotNil(t, receivedClient, "Expected client to be passed to callback")
 
-	if receivedVIN == "" {
-		t.Error("Expected VIN to be passed to callback")
-	}
+	assert.NotEqual(t, "", receivedVIN, "Expected VIN to be passed to callback")
 }
 
 // TestWithVehicleClient_CallbackError tests that callback errors are propagated
@@ -151,9 +133,7 @@ func TestWithVehicleClient_CallbackError(t *testing.T) {
 		return expectedErr
 	})
 
-	if err != expectedErr {
-		t.Errorf("Expected error to be propagated, got: %v", err)
-	}
+	assert.Equalf(t, expectedErr, err, "Expected error to be propagated, got: %v", err)
 }
 
 // TestWithVehicleClient_SetupError tests that setup errors are propagated
@@ -174,13 +154,9 @@ func TestWithVehicleClient_SetupError(t *testing.T) {
 		return nil
 	})
 
-	if err == nil {
-		t.Fatal("Expected setup error to be propagated")
-	}
+	require.Error(t, err, "Expected setup error to be propagated")
 
-	if callbackExecuted {
-		t.Error("Expected callback not to be executed when setup fails")
-	}
+	assert.False(t, callbackExecuted, "Expected callback not to be executed when setup fails")
 }
 
 // TestWithVehicleClientEx_CallbackExecuted tests extended callback execution
@@ -201,22 +177,14 @@ func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 		return nil
 	})
 
-	if err != nil {
-		t.Fatalf("Expected successful execution, got error: %v", err)
-	}
+	require.NoError(t, err, "Expected successful execution, got error: %v")
 
-	if !callbackExecuted {
-		t.Error("Expected callback to be executed")
-	}
+	assert.True(t, callbackExecuted, "Expected callback to be executed")
 
-	if receivedClient == nil {
-		t.Error("Expected client to be passed to callback")
-	}
+	assert.NotNil(t, receivedClient, "Expected client to be passed to callback")
 
 	// Verify full VehicleInfo is passed
-	if receivedInfo.InternalVIN == "" {
-		t.Error("Expected InternalVIN to be set")
-	}
+	assert.NotEqual(t, "", receivedInfo.InternalVIN, "Expected InternalVIN to be set")
 }
 
 // TestWithVehicleClientEx_CallbackError tests error propagation
@@ -232,9 +200,7 @@ func TestWithVehicleClientEx_CallbackError(t *testing.T) {
 		return expectedErr
 	})
 
-	if err != expectedErr {
-		t.Errorf("Expected error to be propagated, got: %v", err)
-	}
+	assert.Equalf(t, expectedErr, err, "Expected error to be propagated, got: %v", err)
 }
 
 // TestWithVehicleClientEx_SetupError tests setup error propagation
@@ -255,13 +221,9 @@ func TestWithVehicleClientEx_SetupError(t *testing.T) {
 		return nil
 	})
 
-	if err == nil {
-		t.Fatal("Expected setup error to be propagated")
-	}
+	require.Error(t, err, "Expected setup error to be propagated")
 
-	if callbackExecuted {
-		t.Error("Expected callback not to be executed when setup fails")
-	}
+	assert.False(t, callbackExecuted, "Expected callback not to be executed when setup fails")
 }
 
 // TestVehicleInfo_StructFields tests VehicleInfo struct field types
@@ -279,31 +241,19 @@ func TestVehicleInfo_StructFields(t *testing.T) {
 	var _ = info.InternalVIN
 
 	// Verify string conversion works
-	if string(info.InternalVIN) != "test123" {
-		t.Errorf("Expected InternalVIN to be 'test123', got '%s'", string(info.InternalVIN))
-	}
+	assert.Equalf(t, "test123", string(info.InternalVIN), "Expected InternalVIN to be 'test123', got '%s'", string(info.InternalVIN))
 
 	// Verify String() method works
-	if info.InternalVIN.String() != "test123" {
-		t.Errorf("Expected InternalVIN.String() to be 'test123', got '%s'", info.InternalVIN.String())
-	}
+	assert.Equalf(t, "test123", info.InternalVIN.String(), "Expected InternalVIN.String() to be 'test123', got '%s'", info.InternalVIN.String())
 
 	// Verify other fields
-	if info.VIN != "JM3KKEHC1R0123456" {
-		t.Errorf("Expected VIN to be 'JM3KKEHC1R0123456', got '%s'", info.VIN)
-	}
+	assert.Equalf(t, "JM3KKEHC1R0123456", info.VIN, "Expected VIN to be 'JM3KKEHC1R0123456', got '%s'", info.VIN)
 
-	if info.Nickname != "Test Car" {
-		t.Errorf("Expected Nickname to be 'Test Car', got '%s'", info.Nickname)
-	}
+	assert.Equalf(t, "Test Car", info.Nickname, "Expected Nickname to be 'Test Car', got '%s'", info.Nickname)
 
-	if info.ModelName != "CX-90" {
-		t.Errorf("Expected ModelName to be 'CX-90', got '%s'", info.ModelName)
-	}
+	assert.Equalf(t, "CX-90", info.ModelName, "Expected ModelName to be 'CX-90', got '%s'", info.ModelName)
 
-	if info.ModelYear != "2024" {
-		t.Errorf("Expected ModelYear to be '2024', got '%s'", info.ModelYear)
-	}
+	assert.Equalf(t, "2024", info.ModelYear, "Expected ModelYear to be '2024', got '%s'", info.ModelYear)
 }
 
 // TestSetupVehicleClient_ConfigFromFile tests config loading from file
@@ -318,9 +268,8 @@ email = "file@example.com"
 password = "file-password"
 region = "MNAO"
 `
-	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
-		t.Fatalf("Failed to create config file: %v", err)
-	}
+	err := os.WriteFile(configPath, []byte(configContent), 0600)
+	require.NoError(t, err, "Failed to create config file: %v")
 
 	// Clear env vars
 	t.Setenv("MCS_EMAIL", "")
@@ -331,7 +280,7 @@ region = "MNAO"
 
 	// This would fail without real API, but should at least get past config loading
 	ctx := context.Background()
-	_, _, err := setupVehicleClient(ctx)
+	_, _, err = setupVehicleClient(ctx)
 
 	// We expect an API error, not a config error
 	// This verifies config was loaded successfully

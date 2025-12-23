@@ -2,6 +2,9 @@ package api
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestCheckResultCode tests the checkResultCode helper function
@@ -45,10 +48,12 @@ func TestCheckResultCode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := checkResultCode(tt.resultCode, tt.operation)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("checkResultCode() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "checkResultCode() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "checkResultCode() error = %v, wantErr %v")
 			}
+
 			if tt.wantErr && err.Error() != tt.errMessage {
 				t.Errorf("checkResultCode() error message = %v, want %v", err.Error(), tt.errMessage)
 			}
@@ -59,38 +64,24 @@ func TestCheckResultCode(t *testing.T) {
 // TestCheckResultCode_ReturnType tests that checkResultCode returns ResultCodeError
 func TestCheckResultCode_ReturnType(t *testing.T) {
 	err := checkResultCode("500E00", "test operation")
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err, "Expected error, got nil")
 
 	resultCodeErr, ok := err.(*ResultCodeError)
-	if !ok {
-		t.Fatalf("Expected *ResultCodeError, got %T", err)
-	}
+	require.Truef(t, ok, "Expected *ResultCodeError, got %T", err)
 
-	if resultCodeErr.ResultCode != "500E00" {
-		t.Errorf("Expected ResultCode '500E00', got '%s'", resultCodeErr.ResultCode)
-	}
+	assert.EqualValuesf(t, "500E00", resultCodeErr.ResultCode, "Expected ResultCode '500E00', got '%s'", resultCodeErr.ResultCode)
 
-	if resultCodeErr.Operation != "test operation" {
-		t.Errorf("Expected Operation 'test operation', got '%s'", resultCodeErr.Operation)
-	}
+	assert.EqualValuesf(t, "test operation", resultCodeErr.Operation, "Expected Operation 'test operation', got '%s'", resultCodeErr.Operation)
 }
 
 // TestNewResultCodeError tests the ResultCodeError constructor
 func TestNewResultCodeError(t *testing.T) {
 	err := NewResultCodeError("400E01", "unlock doors")
 
-	if err.ResultCode != "400E01" {
-		t.Errorf("Expected ResultCode '400E01', got '%s'", err.ResultCode)
-	}
+	assert.EqualValuesf(t, "400E01", err.ResultCode, "Expected ResultCode '400E01', got '%s'", err.ResultCode)
 
-	if err.Operation != "unlock doors" {
-		t.Errorf("Expected Operation 'unlock doors', got '%s'", err.Operation)
-	}
+	assert.EqualValuesf(t, "unlock doors", err.Operation, "Expected Operation 'unlock doors', got '%s'", err.Operation)
 
 	expectedMsg := "failed to unlock doors: result code 400E01"
-	if err.Error() != expectedMsg {
-		t.Errorf("Expected error message '%s', got '%s'", expectedMsg, err.Error())
-	}
+	assert.EqualValuesf(t, expectedMsg, err.Error(), "Expected error message '%s', got '%s'")
 }

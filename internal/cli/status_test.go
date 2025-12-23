@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/cv/mcs/internal/api"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -37,13 +39,9 @@ func TestStatusCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := NewStatusCmd()
 
-			if cmd.Use != tt.expectedUse {
-				t.Errorf("Expected Use to be '%s', got '%s'", tt.expectedUse, cmd.Use)
-			}
+			assert.Equalf(t, tt.expectedUse, cmd.Use, "Expected Use to be '%s', got '%s'")
 
-			if tt.checkShortSet && cmd.Short == "" {
-				t.Error("Expected Short description to be set")
-			}
+			assert.False(t, tt.checkShortSet && cmd.Short == "", "Expected Short description to be set")
 		})
 	}
 }
@@ -56,9 +54,9 @@ func TestStatusCommand_NoSubcommand(t *testing.T) {
 
 	// We need to inject a mock client - this will be handled in the actual implementation
 	// For now, we test that the command structure is correct
-	if err := cmd.ValidateArgs([]string{}); err != nil {
-		t.Errorf("Status command should accept no arguments: %v", err)
-	}
+	err := cmd.ValidateArgs([]string{})
+	assert.NoErrorf(t, err, "Status command should accept no arguments: %v", err)
+
 }
 
 // TestStatusCommand_Subcommands tests all status subcommands using table-driven pattern
@@ -70,13 +68,9 @@ func TestStatusCommand_Subcommands(t *testing.T) {
 			cmd := NewStatusCmd()
 			subCmd := findSubcommand(cmd, name)
 
-			if subCmd == nil {
-				t.Fatalf("Expected %s subcommand to exist", name)
-			}
+			require.NotNilf(t, subCmd, "Expected %s subcommand to exist", name)
 
-			if subCmd.Short == "" {
-				t.Errorf("Expected %s subcommand to have a description", name)
-			}
+			assert.NotEqualf(t, "", subCmd.Short, "Expected %s subcommand to have a description", name)
 		})
 	}
 }
@@ -190,12 +184,8 @@ func TestFormatBatteryStatus(t *testing.T) {
 				HeaterAuto:       false,
 			}
 			result, err := formatBatteryStatus(batteryInfo, false)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
-			if result != tt.expectedOutput {
-				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
+			assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
 		})
 	}
 }
@@ -233,9 +223,7 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatBatteryStatus(tt.batteryInfo, true)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
 
 			data := parseJSONToMap(t, result)
 			for key, expected := range tt.expectedJSON {
@@ -313,12 +301,8 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 				}
 			}
 			result, err := formatBatteryStatus(batteryInfo, false)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
-			if result != tt.expected {
-				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
+			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
 		})
 	}
 }
@@ -359,9 +343,7 @@ func TestFormatFuelStatus(t *testing.T) {
 				RangeKm:   tt.rangeKm,
 			}
 			result, err := formatFuelStatus(fuelInfo, tt.asJSON)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
 
 			if tt.asJSON {
 				data := parseJSONToMap(t, result)
@@ -369,9 +351,7 @@ func TestFormatFuelStatus(t *testing.T) {
 					assertMapValue(t, data, key, expected)
 				}
 			} else {
-				if result != tt.expectedOutput {
-					t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
-				}
+				assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
 			}
 		})
 	}
@@ -457,12 +437,8 @@ func TestFormatDoorsStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatDoorsStatus(tt.doorStatus, false)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
-			if result != tt.expectedOutput {
-				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
+			assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
 		})
 	}
 }
@@ -496,13 +472,9 @@ func TestFormatTiresStatus(t *testing.T) {
 				RearRightPsi:  tt.rearRightPsi,
 			}
 			result, err := formatTiresStatus(tireInfo, false)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
 
-			if !strings.Contains(result, tt.expectedPart) {
-				t.Errorf("Expected output to contain '%s', got '%s'", tt.expectedPart, result)
-			}
+			assert.Truef(t, strings.Contains(result, tt.expectedPart), "Expected output to contain '%s', got '%s'", tt.expectedPart, result)
 		})
 	}
 }
@@ -537,14 +509,10 @@ func TestFormatLocationStatus(t *testing.T) {
 				Timestamp: tt.timestamp,
 			}
 			result, err := formatLocationStatus(locationInfo, false)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
 
 			for _, expected := range tt.expectedContains {
-				if !strings.Contains(result, expected) {
-					t.Errorf("Expected output to contain '%s', got '%s'", expected, result)
-				}
+				assert.Truef(t, strings.Contains(result, expected), "Expected output to contain '%s', got '%s'", expected, result)
 			}
 		})
 	}
@@ -590,16 +558,10 @@ func TestGetInternalVIN(t *testing.T) {
 			vin, err := tt.response.GetInternalVIN()
 
 			if tt.expectError {
-				if err == nil {
-					t.Fatal("Expected error, got nil")
-				}
+				require.Error(t, err, "Expected error, got nil")
 			} else {
-				if err != nil {
-					t.Fatalf("Expected no error, got: %v", err)
-				}
-				if vin != tt.expectedVIN {
-					t.Errorf("Expected VIN '%s', got '%s'", tt.expectedVIN, vin)
-				}
+				require.NoError(t, err, "Expected no error, got: %v")
+				assert.Equalf(t, tt.expectedVIN, vin, "Expected VIN '%s', got '%s'")
 			}
 		})
 	}
@@ -697,12 +659,8 @@ func TestFormatHvacStatus(t *testing.T) {
 				TargetTempC:    tt.targetTempC,
 			}
 			result, err := formatHvacStatus(hvacInfo, false)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
-			if result != tt.expectedOutput {
-				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
+			assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
 		})
 	}
 }
@@ -736,9 +694,7 @@ func TestFormatHvacStatus_JSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatHvacStatus(tt.hvacInfo, true)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
 
 			data := parseJSONToMap(t, result)
 			for key, expected := range tt.expectedJSON {
@@ -814,28 +770,14 @@ func TestGetHvacInfo(t *testing.T) {
 			hvacInfo, err := tt.response.GetHvacInfo()
 
 			if tt.expectError {
-				if err == nil {
-					t.Fatal("Expected error, got nil")
-				}
+				require.Error(t, err, "Expected error, got nil")
 			} else {
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
-				if hvacInfo.HVACOn != tt.expectedHVACOn {
-					t.Errorf("Expected HVACOn to be %v, got %v", tt.expectedHVACOn, hvacInfo.HVACOn)
-				}
-				if hvacInfo.FrontDefroster != tt.expectedFrontDefr {
-					t.Errorf("Expected FrontDefroster to be %v, got %v", tt.expectedFrontDefr, hvacInfo.FrontDefroster)
-				}
-				if hvacInfo.RearDefroster != tt.expectedRearDefr {
-					t.Errorf("Expected RearDefroster to be %v, got %v", tt.expectedRearDefr, hvacInfo.RearDefroster)
-				}
-				if hvacInfo.InteriorTempC != tt.expectedInteriorC {
-					t.Errorf("Expected InteriorTempC %v, got %v", tt.expectedInteriorC, hvacInfo.InteriorTempC)
-				}
-				if hvacInfo.TargetTempC != tt.expectedTargetC {
-					t.Errorf("Expected TargetTempC %v, got %v", tt.expectedTargetC, hvacInfo.TargetTempC)
-				}
+				require.NoError(t, err, "Unexpected error: %v")
+				assert.Equalf(t, tt.expectedHVACOn, hvacInfo.HVACOn, "Expected HVACOn to be %v, got %v")
+				assert.Equalf(t, tt.expectedFrontDefr, hvacInfo.FrontDefroster, "Expected FrontDefroster to be %v, got %v")
+				assert.Equalf(t, tt.expectedRearDefr, hvacInfo.RearDefroster, "Expected RearDefroster to be %v, got %v")
+				assert.Equalf(t, tt.expectedInteriorC, hvacInfo.InteriorTempC, "Expected InteriorTempC %v, got %v")
+				assert.Equalf(t, tt.expectedTargetC, hvacInfo.TargetTempC, "Expected TargetTempC %v, got %v")
 			}
 		})
 	}
@@ -924,12 +866,8 @@ func TestFormatOdometerStatus(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			odometerInfo := api.OdometerInfo{OdometerKm: tt.odometerKm}
 			result, err := formatOdometerStatus(odometerInfo, false)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
-			if result != tt.expectedOutput {
-				t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
+			assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
 		})
 	}
 }
@@ -954,9 +892,7 @@ func TestFormatOdometerStatus_JSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			odometerInfo := api.OdometerInfo{OdometerKm: tt.odometerKm}
 			result, err := formatOdometerStatus(odometerInfo, true)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
 
 			data := parseJSONToMap(t, result)
 			for key, expected := range tt.expectedJSON {
@@ -992,13 +928,9 @@ func TestGetOdometerInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			odometerInfo, err := tt.response.GetOdometerInfo()
-			if err != nil {
-				t.Fatalf("Expected no error, got: %v", err)
-			}
+			require.NoError(t, err, "Expected no error, got: %v")
 
-			if odometerInfo.OdometerKm != tt.expectedOdometer {
-				t.Errorf("Expected odometer %v, got %v", tt.expectedOdometer, odometerInfo.OdometerKm)
-			}
+			assert.Equalf(t, tt.expectedOdometer, odometerInfo.OdometerKm, "Expected odometer %v, got %v")
 		})
 	}
 }
@@ -1094,9 +1026,7 @@ func TestFormatChargeTime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatChargeTime(tt.acMinutes, tt.qbcMinutes)
-			if result != tt.expected {
-				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
-			}
+			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
 		})
 	}
 }
@@ -1160,9 +1090,7 @@ func TestFormatVehicleHeader(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatVehicleHeader(tt.info)
-			if result != tt.expected {
-				t.Errorf("Expected %q, got %q", tt.expected, result)
-			}
+			assert.Equalf(t, tt.expected, result, "Expected %q, got %q")
 		})
 	}
 }
@@ -1276,9 +1204,7 @@ func TestFormatRelativeTime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatRelativeTime(tt.time)
-			if result != tt.expected {
-				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
-			}
+			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
 		})
 	}
 }
@@ -1329,9 +1255,7 @@ func TestFormatTimestamp(t *testing.T) {
 			result := formatTimestamp(tt.timestamp)
 
 			if tt.expectedFormat != "" {
-				if !strings.Contains(result, tt.expectedFormat) {
-					t.Errorf("Expected result to contain '%s', got '%s'", tt.expectedFormat, result)
-				}
+				assert.Truef(t, strings.Contains(result, tt.expectedFormat), "Expected result to contain '%s', got '%s'", tt.expectedFormat, result)
 				// Should also contain relative time in parentheses
 				if !strings.Contains(result, "(") || !strings.Contains(result, ")") {
 					t.Errorf("Expected result to contain relative time in parentheses, got '%s'", result)
@@ -1339,9 +1263,7 @@ func TestFormatTimestamp(t *testing.T) {
 			}
 
 			for _, expected := range tt.expectedContains {
-				if !strings.Contains(result, expected) {
-					t.Errorf("Expected result to contain '%s', got '%s'", expected, result)
-				}
+				assert.Truef(t, strings.Contains(result, expected), "Expected result to contain '%s', got '%s'", expected, result)
 			}
 		})
 	}
@@ -1427,9 +1349,7 @@ func TestFormatWindowsStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatWindowsStatus(tt.windowsInfo, tt.jsonOutput)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
 
 			if tt.expectJSON {
 				data := parseJSONToMap(t, result)
@@ -1438,9 +1358,7 @@ func TestFormatWindowsStatus(t *testing.T) {
 				assertMapValue(t, data, "rear_left_position", float64(tt.windowsInfo.RearLeftPosition))
 				assertMapValue(t, data, "rear_right_position", float64(tt.windowsInfo.RearRightPosition))
 			} else if tt.expectedOutput != "" {
-				if result != tt.expectedOutput {
-					t.Errorf("Expected '%s', got '%s'", tt.expectedOutput, result)
-				}
+				assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
 			}
 		})
 	}
@@ -1590,15 +1508,11 @@ func TestDisplayStatusWithVehicle(t *testing.T) {
 			cmd.SetErr(buf)
 
 			err := displayStatusWithVehicle(cmd, tt.statusType, tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, tt.jsonOutput)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
 
 			output := buf.String()
 			for _, expected := range tt.expectedOutput {
-				if !strings.Contains(output, expected) {
-					t.Errorf("Expected output to contain '%s', got '%s'", expected, output)
-				}
+				assert.Truef(t, strings.Contains(output, expected), "Expected output to contain '%s', got '%s'", expected, output)
 			}
 		})
 	}
@@ -1762,9 +1676,7 @@ func TestDisplayAllStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := displayAllStatus(tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, tt.jsonOutput)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
+			require.NoError(t, err, "Unexpected error: %v")
 
 			if tt.expectJSON {
 				data := parseJSONToMap(t, result)
@@ -1777,9 +1689,7 @@ func TestDisplayAllStatus(t *testing.T) {
 				}
 			} else {
 				for _, expected := range tt.expectedOutput {
-					if !strings.Contains(result, expected) {
-						t.Errorf("Expected output to contain '%s', got '%s'", expected, result)
-					}
+					assert.Truef(t, strings.Contains(result, expected), "Expected output to contain '%s', got '%s'", expected, result)
 				}
 			}
 		})
@@ -1822,13 +1732,9 @@ func TestDisplayAllStatus_ErrorHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := displayAllStatus(tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, false)
 			if tt.expectError {
-				if err == nil {
-					t.Error("Expected error, got nil")
-				}
+				assert.Error(t, err, "Expected error, got nil")
 			} else {
-				if err != nil {
-					t.Errorf("Expected no error, got: %v", err)
-				}
+				assert.Equalf(t, nil, err, "Expected no error, got: %v", err)
 			}
 		})
 	}

@@ -3,6 +3,9 @@ package api
 import (
 	"encoding/base64"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEncryptAES128CBC(t *testing.T) {
@@ -32,16 +35,16 @@ func TestEncryptAES128CBC(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			encrypted, err := EncryptAES128CBC(tt.data, tt.key, tt.iv)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("EncryptAES128CBC() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "EncryptAES128CBC() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "EncryptAES128CBC() error = %v, wantErr %v")
 			}
+
 			if !tt.wantErr {
 				// Should return base64 encoded string
 				_, err := base64.StdEncoding.DecodeString(encrypted)
-				if err != nil {
-					t.Errorf("EncryptAES128CBC() returned invalid base64: %v", err)
-				}
+				assert.EqualValuesf(t, nil, err, "EncryptAES128CBC() returned invalid base64: %v", err)
 			}
 		})
 	}
@@ -54,15 +57,11 @@ func TestDecryptAES128CBC(t *testing.T) {
 
 	// First encrypt
 	encrypted, err := EncryptAES128CBC(original, key, iv)
-	if err != nil {
-		t.Fatalf("Failed to encrypt: %v", err)
-	}
+	require.NoError(t, err, "Failed to encrypt: %v")
 
 	// Then decrypt
 	decrypted, err := DecryptAES128CBC(encrypted, key, iv)
-	if err != nil {
-		t.Fatalf("DecryptAES128CBC() error = %v", err)
-	}
+	require.NoError(t, err, "DecryptAES128CBC() error = %v")
 
 	if string(decrypted) != string(original) {
 		t.Errorf("DecryptAES128CBC() = %s, want %s", decrypted, original)
@@ -86,9 +85,7 @@ func TestGenerateUUIDFromSeed(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := GenerateUUIDFromSeed(tt.seed)
-			if got != tt.want {
-				t.Errorf("GenerateUUIDFromSeed() = %v, want %v", got, tt.want)
-			}
+			assert.EqualValuesf(t, tt.want, got, "GenerateUUIDFromSeed() = %v, want %v")
 		})
 	}
 }
@@ -111,9 +108,7 @@ func TestGenerateUsherDeviceID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := GenerateUsherDeviceID(tt.seed)
-			if got != tt.want {
-				t.Errorf("GenerateUsherDeviceID() = %v, want %v", got, tt.want)
-			}
+			assert.EqualValuesf(t, tt.want, got, "GenerateUsherDeviceID() = %v, want %v")
 		})
 	}
 }
@@ -146,10 +141,12 @@ func TestEncryptRSA(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			encrypted, err := EncryptRSA(tt.data, tt.pubKey)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("EncryptRSA() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "EncryptRSA() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "EncryptRSA() error = %v, wantErr %v")
 			}
+
 			if !tt.wantErr && len(encrypted) == 0 {
 				t.Errorf("EncryptRSA() returned empty result")
 			}
@@ -162,14 +159,10 @@ func TestSignWithMD5(t *testing.T) {
 	signature := SignWithMD5(data)
 
 	// MD5 hash should be 32 characters (hex encoded)
-	if len(signature) != 32 {
-		t.Errorf("SignWithMD5() returned wrong length = %d, want 32", len(signature))
-	}
+	assert.Lenf(t, signature, 32, "SignWithMD5() returned wrong length = %d, want 32", len(signature))
 
 	// Should be uppercase
-	if signature != "EB733A00C0C9D336E65691A37AB54293" {
-		t.Errorf("SignWithMD5() = %s, want EB733A00C0C9D336E65691A37AB54293", signature)
-	}
+	assert.EqualValuesf(t, "EB733A00C0C9D336E65691A37AB54293", signature, "SignWithMD5() = %s, want EB733A00C0C9D336E65691A37AB54293", signature)
 }
 
 func TestSignWithSHA256(t *testing.T) {
@@ -177,12 +170,8 @@ func TestSignWithSHA256(t *testing.T) {
 	signature := SignWithSHA256(data)
 
 	// SHA256 hash should be 64 characters (hex encoded)
-	if len(signature) != 64 {
-		t.Errorf("SignWithSHA256() returned wrong length = %d, want 64", len(signature))
-	}
+	assert.Lenf(t, signature, 64, "SignWithSHA256() returned wrong length = %d, want 64", len(signature))
 
 	// Should be uppercase
-	if signature != "916F0027A575074CE72A331777C3478D6513F786A591BD892DA1A577BF2335F9" {
-		t.Errorf("SignWithSHA256() = %s, want 916F0027A575074CE72A331777C3478D6513F786A591BD892DA1A577BF2335F9", signature)
-	}
+	assert.EqualValuesf(t, "916F0027A575074CE72A331777C3478D6513F786A591BD892DA1A577BF2335F9", signature, "SignWithSHA256() = %s, want 916F0027A575074CE72A331777C3478D6513F786A591BD892DA1A577BF2335F9", signature)
 }

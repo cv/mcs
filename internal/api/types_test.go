@@ -3,6 +3,9 @@ package api
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVecBaseInfosResponse_Unmarshal(t *testing.T) {
@@ -20,22 +23,15 @@ func TestVecBaseInfosResponse_Unmarshal(t *testing.T) {
 	}`
 
 	var resp VecBaseInfosResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if resp.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 'ResultCodeSuccess', got '%s'", resp.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, resp.ResultCode, "Expected resultCode 'ResultCodeSuccess', got '%s'", resp.ResultCode)
 
-	if len(resp.VecBaseInfos) != 1 {
-		t.Fatalf("Expected 1 vehicle, got %d", len(resp.VecBaseInfos))
-	}
+	require.Lenf(t, resp.VecBaseInfos, 1, "Expected 1 vehicle, got %d", len(resp.VecBaseInfos))
 
 	vin := resp.VecBaseInfos[0].Vehicle.CvInformation.InternalVIN
-	if vin != "12345678901234567" {
-		t.Errorf("Expected internalVin '12345678901234567', got '%v'", vin)
-	}
+	assert.EqualValuesf(t, "12345678901234567", vin, "Expected internalVin '12345678901234567', got '%v'", vin)
 }
 
 func TestVecBaseInfosResponse_VehicleInfo(t *testing.T) {
@@ -56,24 +52,15 @@ func TestVecBaseInfosResponse_VehicleInfo(t *testing.T) {
 	}`
 
 	var resp VecBaseInfosResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if len(resp.VecBaseInfos) != 1 {
-		t.Fatalf("Expected 1 vehicle, got %d", len(resp.VecBaseInfos))
-	}
+	require.Lenf(t, resp.VecBaseInfos, 1, "Expected 1 vehicle, got %d", len(resp.VecBaseInfos))
 
 	info := resp.VecBaseInfos[0]
-	if info.VIN != "JM3KKEHC1R0123456" {
-		t.Errorf("Expected VIN 'JM3KKEHC1R0123456', got '%s'", info.VIN)
-	}
-	if info.Nickname != "My CX-90" {
-		t.Errorf("Expected Nickname 'My CX-90', got '%s'", info.Nickname)
-	}
-	if info.EconnectType != 1 {
-		t.Errorf("Expected EconnectType 1, got %d", info.EconnectType)
-	}
+	assert.EqualValuesf(t, "JM3KKEHC1R0123456", info.VIN, "Expected VIN 'JM3KKEHC1R0123456', got '%s'", info.VIN)
+	assert.EqualValuesf(t, "My CX-90", info.Nickname, "Expected Nickname 'My CX-90', got '%s'", info.Nickname)
+	assert.EqualValuesf(t, 1, info.EconnectType, "Expected EconnectType 1, got %d", info.EconnectType)
 }
 
 func TestVecBaseInfosResponse_GetVehicleInfo(t *testing.T) {
@@ -93,34 +80,21 @@ func TestVecBaseInfosResponse_GetVehicleInfo(t *testing.T) {
 	}`
 
 	var resp VecBaseInfosResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
 	vin, nickname, modelName, modelYear, err := resp.GetVehicleInfo()
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-	if vin != "JM3KKEHC1R0123456" {
-		t.Errorf("Expected VIN 'JM3KKEHC1R0123456', got '%s'", vin)
-	}
-	if nickname != "My Car" {
-		t.Errorf("Expected nickname 'My Car', got '%s'", nickname)
-	}
-	if modelName != "CX-90 PHEV" {
-		t.Errorf("Expected modelName 'CX-90 PHEV', got '%s'", modelName)
-	}
-	if modelYear != "2024" {
-		t.Errorf("Expected modelYear '2024', got '%s'", modelYear)
-	}
+	require.NoError(t, err, "Unexpected error: %v")
+	assert.EqualValuesf(t, "JM3KKEHC1R0123456", vin, "Expected VIN 'JM3KKEHC1R0123456', got '%s'", vin)
+	assert.EqualValuesf(t, "My Car", nickname, "Expected nickname 'My Car', got '%s'", nickname)
+	assert.EqualValuesf(t, "CX-90 PHEV", modelName, "Expected modelName 'CX-90 PHEV', got '%s'", modelName)
+	assert.EqualValuesf(t, "2024", modelYear, "Expected modelYear '2024', got '%s'", modelYear)
 }
 
 func TestVecBaseInfosResponse_GetVehicleInfo_Empty(t *testing.T) {
 	resp := &VecBaseInfosResponse{}
 	_, _, _, _, err := resp.GetVehicleInfo()
-	if err == nil {
-		t.Error("Expected error for empty response")
-	}
+	assert.Error(t, err, "Expected error for empty response")
 }
 
 func TestVecBaseInfosResponse_InternalVINAsNumber(t *testing.T) {
@@ -139,15 +113,12 @@ func TestVecBaseInfosResponse_InternalVINAsNumber(t *testing.T) {
 	}`
 
 	var resp VecBaseInfosResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
 	vin := resp.VecBaseInfos[0].Vehicle.CvInformation.InternalVIN
 	// When parsed as float64, large numbers lose precision
-	if vin == "" {
-		t.Error("Expected internalVin to be set")
-	}
+	assert.NotEqual(t, "", vin, "Expected internalVin to be set")
 }
 
 func TestVehicleStatusResponse_Unmarshal(t *testing.T) {
@@ -194,48 +165,29 @@ func TestVehicleStatusResponse_Unmarshal(t *testing.T) {
 	}`
 
 	var resp VehicleStatusResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if resp.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 'ResultCodeSuccess', got '%s'", resp.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, resp.ResultCode, "Expected resultCode 'ResultCodeSuccess', got '%s'", resp.ResultCode)
 
-	if len(resp.RemoteInfos) != 1 {
-		t.Fatalf("Expected 1 remoteInfo, got %d", len(resp.RemoteInfos))
-	}
+	require.Lenf(t, resp.RemoteInfos, 1, "Expected 1 remoteInfo, got %d", len(resp.RemoteInfos))
 
 	fuel := resp.RemoteInfos[0].ResidualFuel
-	if fuel.FuelSegmentDActl != 92.0 {
-		t.Errorf("Expected FuelSegmentDActl 92.0, got %f", fuel.FuelSegmentDActl)
-	}
-	if fuel.RemDrvDistDActlKm != 630.5 {
-		t.Errorf("Expected RemDrvDistDActlKm 630.5, got %f", fuel.RemDrvDistDActlKm)
-	}
+	assert.EqualValuesf(t, 92.0, fuel.FuelSegmentDActl, "Expected FuelSegmentDActl 92.0, got %f", fuel.FuelSegmentDActl)
+	assert.EqualValuesf(t, 630.5, fuel.RemDrvDistDActlKm, "Expected RemDrvDistDActlKm 630.5, got %f", fuel.RemDrvDistDActlKm)
 
 	driveInfo := resp.RemoteInfos[0].DriveInformation
-	if driveInfo.OdoDispValue != 12345.6 {
-		t.Errorf("Expected OdoDispValue 12345.6, got %f", driveInfo.OdoDispValue)
-	}
+	assert.EqualValuesf(t, 12345.6, driveInfo.OdoDispValue, "Expected OdoDispValue 12345.6, got %f", driveInfo.OdoDispValue)
 
 	tpms := resp.RemoteInfos[0].TPMSInformation
-	if tpms.FLTPrsDispPsi != 32.5 {
-		t.Errorf("Expected FLTPrsDispPsi 32.5, got %f", tpms.FLTPrsDispPsi)
-	}
+	assert.EqualValuesf(t, 32.5, tpms.FLTPrsDispPsi, "Expected FLTPrsDispPsi 32.5, got %f", tpms.FLTPrsDispPsi)
 
 	alert := resp.AlertInfos[0]
-	if alert.PositionInfo.Latitude != 37.7749 {
-		t.Errorf("Expected Latitude 37.7749, got %f", alert.PositionInfo.Latitude)
-	}
-	if alert.PositionInfo.Longitude != -122.4194 {
-		t.Errorf("Expected Longitude -122.4194, got %f", alert.PositionInfo.Longitude)
-	}
+	assert.EqualValuesf(t, 37.7749, alert.PositionInfo.Latitude, "Expected Latitude 37.7749, got %f", alert.PositionInfo.Latitude)
+	assert.EqualValuesf(t, -122.4194, alert.PositionInfo.Longitude, "Expected Longitude -122.4194, got %f", alert.PositionInfo.Longitude)
 
 	door := alert.Door
-	if door.DrStatDrv != 0 || door.DrStatPsngr != 0 || door.DrStatRl != 0 || door.DrStatRr != 0 || door.DrStatTrnkLg != 0 {
-		t.Error("Expected all doors to be locked (0)")
-	}
+	assert.False(t, door.DrStatDrv != 0 || door.DrStatPsngr != 0 || door.DrStatRl != 0 || door.DrStatRr != 0 || door.DrStatTrnkLg != 0, "Expected all doors to be locked (0)")
 }
 
 func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
@@ -270,65 +222,32 @@ func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
 	}`
 
 	var resp EVVehicleStatusResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if resp.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 'ResultCodeSuccess', got '%s'", resp.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, resp.ResultCode, "Expected resultCode 'ResultCodeSuccess', got '%s'", resp.ResultCode)
 
-	if len(resp.ResultData) != 1 {
-		t.Fatalf("Expected 1 resultData, got %d", len(resp.ResultData))
-	}
+	require.Lenf(t, resp.ResultData, 1, "Expected 1 resultData, got %d", len(resp.ResultData))
 
 	result := resp.ResultData[0]
-	if result.OccurrenceDate != "20231201120000" {
-		t.Errorf("Expected OccurrenceDate '20231201120000', got '%s'", result.OccurrenceDate)
-	}
+	assert.EqualValuesf(t, "20231201120000", result.OccurrenceDate, "Expected OccurrenceDate '20231201120000', got '%s'", result.OccurrenceDate)
 
 	chargeInfo := result.PlusBInformation.VehicleInfo.ChargeInfo
-	if chargeInfo.SmaphSOC != 66.0 {
-		t.Errorf("Expected SmaphSOC 66.0, got %f", chargeInfo.SmaphSOC)
-	}
-	if chargeInfo.SmaphRemDrvDistKm != 245.5 {
-		t.Errorf("Expected SmaphRemDrvDistKm 245.5, got %f", chargeInfo.SmaphRemDrvDistKm)
-	}
-	if chargeInfo.ChargerConnectorFitting != 1 {
-		t.Errorf("Expected ChargerConnectorFitting 1, got %f", chargeInfo.ChargerConnectorFitting)
-	}
-	if chargeInfo.ChargeStatusSub != 6 {
-		t.Errorf("Expected ChargeStatusSub 6, got %f", chargeInfo.ChargeStatusSub)
-	}
-	if chargeInfo.MaxChargeMinuteAC != 180 {
-		t.Errorf("Expected MaxChargeMinuteAC 180, got %f", chargeInfo.MaxChargeMinuteAC)
-	}
-	if chargeInfo.MaxChargeMinuteQBC != 45 {
-		t.Errorf("Expected MaxChargeMinuteQBC 45, got %f", chargeInfo.MaxChargeMinuteQBC)
-	}
-	if chargeInfo.BatteryHeaterON != 1 {
-		t.Errorf("Expected BatteryHeaterON 1, got %f", chargeInfo.BatteryHeaterON)
-	}
-	if chargeInfo.CstmzStatBatHeatAutoSW != 1 {
-		t.Errorf("Expected CstmzStatBatHeatAutoSW 1, got %f", chargeInfo.CstmzStatBatHeatAutoSW)
-	}
+	assert.EqualValuesf(t, 66.0, chargeInfo.SmaphSOC, "Expected SmaphSOC 66.0, got %f", chargeInfo.SmaphSOC)
+	assert.EqualValuesf(t, 245.5, chargeInfo.SmaphRemDrvDistKm, "Expected SmaphRemDrvDistKm 245.5, got %f", chargeInfo.SmaphRemDrvDistKm)
+	assert.EqualValuesf(t, 1, chargeInfo.ChargerConnectorFitting, "Expected ChargerConnectorFitting 1, got %f", chargeInfo.ChargerConnectorFitting)
+	assert.EqualValuesf(t, 6, chargeInfo.ChargeStatusSub, "Expected ChargeStatusSub 6, got %f", chargeInfo.ChargeStatusSub)
+	assert.EqualValuesf(t, 180, chargeInfo.MaxChargeMinuteAC, "Expected MaxChargeMinuteAC 180, got %f", chargeInfo.MaxChargeMinuteAC)
+	assert.EqualValuesf(t, 45, chargeInfo.MaxChargeMinuteQBC, "Expected MaxChargeMinuteQBC 45, got %f", chargeInfo.MaxChargeMinuteQBC)
+	assert.EqualValuesf(t, 1, chargeInfo.BatteryHeaterON, "Expected BatteryHeaterON 1, got %f", chargeInfo.BatteryHeaterON)
+	assert.EqualValuesf(t, 1, chargeInfo.CstmzStatBatHeatAutoSW, "Expected CstmzStatBatHeatAutoSW 1, got %f", chargeInfo.CstmzStatBatHeatAutoSW)
 
 	hvacInfo := result.PlusBInformation.VehicleInfo.RemoteHvacInfo
-	if hvacInfo == nil {
-		t.Fatal("Expected RemoteHvacInfo to be set")
-	}
-	if hvacInfo.HVAC != 1 {
-		t.Errorf("Expected HVAC 1, got %f", hvacInfo.HVAC)
-	}
-	if hvacInfo.FrontDefroster != 1 {
-		t.Errorf("Expected FrontDefroster 1, got %f", hvacInfo.FrontDefroster)
-	}
-	if hvacInfo.InCarTeDC != 21.5 {
-		t.Errorf("Expected InCarTeDC 21.5, got %f", hvacInfo.InCarTeDC)
-	}
-	if hvacInfo.TargetTemp != 22.0 {
-		t.Errorf("Expected TargetTemp 22.0, got %f", hvacInfo.TargetTemp)
-	}
+	require.NotNil(t, hvacInfo, "Expected RemoteHvacInfo to be set")
+	assert.EqualValuesf(t, 1, hvacInfo.HVAC, "Expected HVAC 1, got %f", hvacInfo.HVAC)
+	assert.EqualValuesf(t, 1, hvacInfo.FrontDefroster, "Expected FrontDefroster 1, got %f", hvacInfo.FrontDefroster)
+	assert.EqualValuesf(t, 21.5, hvacInfo.InCarTeDC, "Expected InCarTeDC 21.5, got %f", hvacInfo.InCarTeDC)
+	assert.EqualValuesf(t, 22.0, hvacInfo.TargetTemp, "Expected TargetTemp 22.0, got %f", hvacInfo.TargetTemp)
 }
 
 func TestEVVehicleStatusResponse_MissingHvacInfo(t *testing.T) {
@@ -352,46 +271,37 @@ func TestEVVehicleStatusResponse_MissingHvacInfo(t *testing.T) {
 	}`
 
 	var resp EVVehicleStatusResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
 	hvacInfo := resp.ResultData[0].PlusBInformation.VehicleInfo.RemoteHvacInfo
-	if hvacInfo != nil {
-		t.Error("Expected RemoteHvacInfo to be nil when not present")
-	}
+	assert.Nil(t, hvacInfo, "Expected RemoteHvacInfo to be nil when not present")
 }
 
 func TestInternalVIN_UnmarshalString(t *testing.T) {
 	var vin InternalVIN
-	if err := json.Unmarshal([]byte(`"ABC123"`), &vin); err != nil {
-		t.Fatalf("Failed to unmarshal string: %v", err)
-	}
-	if string(vin) != "ABC123" {
-		t.Errorf("Expected 'ABC123', got '%s'", string(vin))
-	}
+	err := json.Unmarshal([]byte(`"ABC123"`), &vin)
+	require.NoError(t, err, "Failed to unmarshal string: %v")
+
+	assert.EqualValuesf(t, "ABC123", string(vin), "Expected 'ABC123', got '%s'", string(vin))
 }
 
 func TestInternalVIN_UnmarshalNumber(t *testing.T) {
 	var vin InternalVIN
-	if err := json.Unmarshal([]byte(`12345`), &vin); err != nil {
-		t.Fatalf("Failed to unmarshal number: %v", err)
-	}
-	if string(vin) != "12345" {
-		t.Errorf("Expected '12345', got '%s'", string(vin))
-	}
+	err := json.Unmarshal([]byte(`12345`), &vin)
+	require.NoError(t, err, "Failed to unmarshal number: %v")
+
+	assert.EqualValuesf(t, "12345", string(vin), "Expected '12345', got '%s'", string(vin))
 }
 
 func TestInternalVIN_UnmarshalLargeNumber(t *testing.T) {
 	// Test with a large number that would lose precision as float64
 	var vin InternalVIN
-	if err := json.Unmarshal([]byte(`12345678901234567`), &vin); err != nil {
-		t.Fatalf("Failed to unmarshal large number: %v", err)
-	}
+	err := json.Unmarshal([]byte(`12345678901234567`), &vin)
+	require.NoError(t, err, "Failed to unmarshal large number: %v")
+
 	// The exact value may be affected by float64 precision
-	if string(vin) == "" {
-		t.Error("Expected non-empty VIN")
-	}
+	assert.NotEqual(t, "", string(vin), "Expected non-empty VIN")
 }
 
 // Auth response struct tests
@@ -403,16 +313,11 @@ func TestCheckVersionResponse_Unmarshal(t *testing.T) {
 	}`
 
 	var resp CheckVersionResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if resp.EncKey != "test-encryption-key-1234" {
-		t.Errorf("Expected encKey 'test-encryption-key-1234', got '%s'", resp.EncKey)
-	}
-	if resp.SignKey != "test-signing-key-5678" {
-		t.Errorf("Expected signKey 'test-signing-key-5678', got '%s'", resp.SignKey)
-	}
+	assert.EqualValuesf(t, "test-encryption-key-1234", resp.EncKey, "Expected encKey 'test-encryption-key-1234', got '%s'", resp.EncKey)
+	assert.EqualValuesf(t, "test-signing-key-5678", resp.SignKey, "Expected signKey 'test-signing-key-5678', got '%s'", resp.SignKey)
 }
 
 func TestUsherEncryptionKeyResponse_Unmarshal(t *testing.T) {
@@ -424,16 +329,11 @@ func TestUsherEncryptionKeyResponse_Unmarshal(t *testing.T) {
 	}`
 
 	var resp UsherEncryptionKeyResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if resp.Data.PublicKey != "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ..." {
-		t.Errorf("Expected publicKey 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ...', got '%s'", resp.Data.PublicKey)
-	}
-	if resp.Data.VersionPrefix != "v1:" {
-		t.Errorf("Expected versionPrefix 'v1:', got '%s'", resp.Data.VersionPrefix)
-	}
+	assert.EqualValuesf(t, "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ...", resp.Data.PublicKey, "Expected publicKey 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ...', got '%s'", resp.Data.PublicKey)
+	assert.EqualValuesf(t, "v1:", resp.Data.VersionPrefix, "Expected versionPrefix 'v1:', got '%s'", resp.Data.VersionPrefix)
 }
 
 func TestLoginResponse_Unmarshal(t *testing.T) {
@@ -446,19 +346,12 @@ func TestLoginResponse_Unmarshal(t *testing.T) {
 	}`
 
 	var resp LoginResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if resp.Status != "OK" {
-		t.Errorf("Expected status 'OK', got '%s'", resp.Status)
-	}
-	if resp.Data.AccessToken != "test-access-token-abc123" {
-		t.Errorf("Expected accessToken 'test-access-token-abc123', got '%s'", resp.Data.AccessToken)
-	}
-	if resp.Data.AccessTokenExpirationTs != 1701446400 {
-		t.Errorf("Expected accessTokenExpirationTs 1701446400, got %d", resp.Data.AccessTokenExpirationTs)
-	}
+	assert.EqualValuesf(t, "OK", resp.Status, "Expected status 'OK', got '%s'", resp.Status)
+	assert.EqualValuesf(t, "test-access-token-abc123", resp.Data.AccessToken, "Expected accessToken 'test-access-token-abc123', got '%s'", resp.Data.AccessToken)
+	assert.EqualValuesf(t, 1701446400, resp.Data.AccessTokenExpirationTs, "Expected accessTokenExpirationTs 1701446400, got %d", resp.Data.AccessTokenExpirationTs)
 }
 
 func TestLoginResponse_InvalidCredential(t *testing.T) {
@@ -467,13 +360,10 @@ func TestLoginResponse_InvalidCredential(t *testing.T) {
 	}`
 
 	var resp LoginResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if resp.Status != "INVALID_CREDENTIAL" {
-		t.Errorf("Expected status 'INVALID_CREDENTIAL', got '%s'", resp.Status)
-	}
+	assert.EqualValuesf(t, "INVALID_CREDENTIAL", resp.Status, "Expected status 'INVALID_CREDENTIAL', got '%s'", resp.Status)
 }
 
 func TestAPIBaseResponse_Unmarshal(t *testing.T) {
@@ -500,16 +390,11 @@ func TestAPIBaseResponse_Unmarshal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var resp APIBaseResponse
-			if err := json.Unmarshal([]byte(tt.jsonData), &resp); err != nil {
-				t.Fatalf("Failed to unmarshal: %v", err)
-			}
+			err := json.Unmarshal([]byte(tt.jsonData), &resp)
+			require.NoError(t, err, "Failed to unmarshal: %v")
 
-			if resp.State != tt.wantState {
-				t.Errorf("Expected state '%s', got '%s'", tt.wantState, resp.State)
-			}
-			if resp.ErrorCode != tt.wantErr {
-				t.Errorf("Expected errorCode %f, got %f", tt.wantErr, resp.ErrorCode)
-			}
+			assert.EqualValuesf(t, tt.wantState, resp.State, "Expected state '%s', got '%s'")
+			assert.EqualValuesf(t, tt.wantErr, resp.ErrorCode, "Expected errorCode %f, got %f")
 		})
 	}
 }
@@ -528,9 +413,7 @@ func TestTemperatureUnit_String(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
-			if got := tt.unit.String(); got != tt.want {
-				t.Errorf("TemperatureUnit.String() = %q, want %q", got, tt.want)
-			}
+			assert.EqualValuesf(t, tt.want, tt.unit.String(), "TemperatureUnit.String() = %q, want %q")
 		})
 	}
 }
@@ -561,13 +444,8 @@ func TestParseTemperatureUnit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			got, err := ParseTemperatureUnit(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseTemperatureUnit(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("ParseTemperatureUnit(%q) = %v, want %v", tt.input, got, tt.want)
-			}
+			assert.EqualValuesf(t, tt.wantErr, (err != nil), "ParseTemperatureUnit(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+			assert.EqualValuesf(t, tt.want, got, "ParseTemperatureUnit(%q) = %v, want %v", tt.input, got, tt.want)
 		})
 	}
 }
@@ -632,13 +510,13 @@ func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.resp.GetOdometerInfo()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetOdometerInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "GetOdometerInfo() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "GetOdometerInfo() error = %v, wantErr %v")
 			}
-			if got != tt.want {
-				t.Errorf("GetOdometerInfo() = %+v, want %+v", got, tt.want)
-			}
+
+			assert.EqualValuesf(t, tt.want, got, "GetOdometerInfo() = %+v, want %+v")
 		})
 	}
 }
@@ -809,13 +687,13 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			status, err := tt.resp.GetDoorsInfo()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetDoorsInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "GetDoorsInfo() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "GetDoorsInfo() error = %v, wantErr %v")
 			}
-			if status != tt.wantStatus {
-				t.Errorf("GetDoorsInfo() = %+v, want %+v", status, tt.wantStatus)
-			}
+
+			assert.EqualValuesf(t, tt.wantStatus, status, "GetDoorsInfo() = %+v, want %+v")
 		})
 	}
 }
@@ -854,27 +732,16 @@ func TestVehicleStatusResponse_WindowParsing(t *testing.T) {
 	}`
 
 	var resp VehicleStatusResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if len(resp.AlertInfos) != 1 {
-		t.Fatalf("Expected 1 alertInfo, got %d", len(resp.AlertInfos))
-	}
+	require.Lenf(t, resp.AlertInfos, 1, "Expected 1 alertInfo, got %d", len(resp.AlertInfos))
 
 	pw := resp.AlertInfos[0].Pw
-	if pw.PwPosDrv != 0 {
-		t.Errorf("Expected PwPosDrv 0, got %f", pw.PwPosDrv)
-	}
-	if pw.PwPosPsngr != 50 {
-		t.Errorf("Expected PwPosPsngr 50, got %f", pw.PwPosPsngr)
-	}
-	if pw.PwPosRl != 0 {
-		t.Errorf("Expected PwPosRl 0, got %f", pw.PwPosRl)
-	}
-	if pw.PwPosRr != 25 {
-		t.Errorf("Expected PwPosRr 25, got %f", pw.PwPosRr)
-	}
+	assert.EqualValuesf(t, 0, pw.PwPosDrv, "Expected PwPosDrv 0, got %f", pw.PwPosDrv)
+	assert.EqualValuesf(t, 50, pw.PwPosPsngr, "Expected PwPosPsngr 50, got %f", pw.PwPosPsngr)
+	assert.EqualValuesf(t, 0, pw.PwPosRl, "Expected PwPosRl 0, got %f", pw.PwPosRl)
+	assert.EqualValuesf(t, 25, pw.PwPosRr, "Expected PwPosRr 25, got %f", pw.PwPosRr)
 }
 
 func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
@@ -961,13 +828,13 @@ func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.resp.GetWindowsInfo()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetWindowsInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "GetWindowsInfo() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "GetWindowsInfo() error = %v, wantErr %v")
 			}
-			if got != tt.want {
-				t.Errorf("GetWindowsInfo() = %+v, want %+v", got, tt.want)
-			}
+
+			assert.EqualValuesf(t, tt.want, got, "GetWindowsInfo() = %+v, want %+v")
 		})
 	}
 }
@@ -1003,18 +870,13 @@ func TestVehicleStatusResponse_HazardParsing(t *testing.T) {
 	}`
 
 	var resp VehicleStatusResponse
-	if err := json.Unmarshal([]byte(jsonData), &resp); err != nil {
-		t.Fatalf("Failed to unmarshal: %v", err)
-	}
+	err := json.Unmarshal([]byte(jsonData), &resp)
+	require.NoError(t, err, "Failed to unmarshal: %v")
 
-	if len(resp.AlertInfos) != 1 {
-		t.Fatalf("Expected 1 alertInfo, got %d", len(resp.AlertInfos))
-	}
+	require.Lenf(t, resp.AlertInfos, 1, "Expected 1 alertInfo, got %d", len(resp.AlertInfos))
 
 	hazard := resp.AlertInfos[0].HazardLamp
-	if hazard.HazardSw != 1 {
-		t.Errorf("Expected HazardSw 1, got %f", hazard.HazardSw)
-	}
+	assert.EqualValuesf(t, 1, hazard.HazardSw, "Expected HazardSw 1, got %f", hazard.HazardSw)
 }
 
 func TestVehicleStatusResponse_GetHazardInfo(t *testing.T) {
@@ -1063,13 +925,13 @@ func TestVehicleStatusResponse_GetHazardInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hazards, err := tt.resp.GetHazardInfo()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetHazardInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "GetHazardInfo() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "GetHazardInfo() error = %v, wantErr %v")
 			}
-			if hazards != tt.wantHazards {
-				t.Errorf("GetHazardInfo() = %v, want %v", hazards, tt.wantHazards)
-			}
+
+			assert.EqualValuesf(t, tt.wantHazards, hazards, "GetHazardInfo() = %v, want %v")
 		})
 	}
 }
@@ -1162,13 +1024,13 @@ func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.resp.GetHvacInfo()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetHvacInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "GetHvacInfo() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "GetHvacInfo() error = %v, wantErr %v")
 			}
-			if got != tt.want {
-				t.Errorf("GetHvacInfo() = %+v, want %+v", got, tt.want)
-			}
+
+			assert.EqualValuesf(t, tt.want, got, "GetHvacInfo() = %+v, want %+v")
 		})
 	}
 }
@@ -1289,13 +1151,13 @@ func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.resp.GetBatteryInfo()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetBatteryInfo() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "GetBatteryInfo() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "GetBatteryInfo() error = %v, wantErr %v")
 			}
-			if got != tt.want {
-				t.Errorf("GetBatteryInfo() = %+v, want %+v", got, tt.want)
-			}
+
+			assert.EqualValuesf(t, tt.want, got, "GetBatteryInfo() = %+v, want %+v")
 		})
 	}
 }

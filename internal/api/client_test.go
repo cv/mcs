@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestAPIRequest_Success tests successful API request with encryption
@@ -15,21 +18,11 @@ func TestAPIRequest_Success(t *testing.T) {
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify headers
-		if r.Header.Get("device-id") == "" {
-			t.Error("device-id header is missing")
-		}
-		if r.Header.Get("app-code") == "" {
-			t.Error("app-code header is missing")
-		}
-		if r.Header.Get("user-agent") != UserAgentBaseAPI {
-			t.Errorf("expected user-agent %s, got %s", UserAgentBaseAPI, r.Header.Get("user-agent"))
-		}
-		if r.Header.Get("sign") == "" {
-			t.Error("sign header is missing")
-		}
-		if r.Header.Get("timestamp") == "" {
-			t.Error("timestamp header is missing")
-		}
+		assert.NotEqual(t, "", r.Header.Get("device-id"), "device-id header is missing")
+		assert.NotEqual(t, "", r.Header.Get("app-code"), "app-code header is missing")
+		assert.EqualValuesf(t, UserAgentBaseAPI, r.Header.Get("user-agent"), "expected user-agent %s, got %s")
+		assert.NotEqual(t, "", r.Header.Get("sign"), "sign header is missing")
+		assert.NotEqual(t, "", r.Header.Get("timestamp"), "timestamp header is missing")
 
 		// Return success response with encrypted payload
 		// Encrypt a simple JSON response
@@ -45,17 +38,15 @@ func TestAPIRequest_Success(t *testing.T) {
 			"payload": encrypted,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 	defer server.Close()
 
 	// Create client with test server URL
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 	client.baseURL = server.URL + "/"
 
 	// Set encryption keys (must be exactly 16 bytes for AES-128)
@@ -64,16 +55,10 @@ func TestAPIRequest_Success(t *testing.T) {
 
 	// Make API request
 	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
-	if err != nil {
-		t.Fatalf("APIRequest failed: %v", err)
-	}
+	require.NoError(t, err, "APIRequest failed: %v")
 
-	if result["resultCode"] != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
-	}
-	if result["message"] != "Success" {
-		t.Errorf("Expected message Success, got %v", result["message"])
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
+	assert.EqualValuesf(t, "Success", result["message"], "Expected message Success, got %v", result["message"])
 }
 
 // TestAPIRequest_EncryptionError tests handling of encryption error response
@@ -85,31 +70,25 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 			"message":   "Encryption error",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 	defer server.Close()
 
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 	client.baseURL = server.URL + "/"
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err, "Expected error, got nil")
 
 	// APIRequest retries on EncryptionError by fetching new keys
 	// Since our mock server always returns the same error, it eventually fails with wrapped error
 	expectedMsg := "failed to retrieve encryption keys"
-	if !strings.Contains(err.Error(), expectedMsg) {
-		t.Errorf("Expected error containing %q, got: %v", expectedMsg, err)
-	}
+	assert.Truef(t, strings.Contains(err.Error(), expectedMsg), "Expected error containing %q, got: %v", expectedMsg, err)
 }
 
 // TestAPIRequest_TokenExpired tests handling of expired token error
@@ -121,31 +100,25 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 			"message":   "Token expired",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 	defer server.Close()
 
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 	client.baseURL = server.URL + "/"
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err, "Expected error, got nil")
 
 	// APIRequest retries on TokenExpiredError by re-logging in
 	// Since re-login will fail (mock server only handles one endpoint), we get a wrapped error
 	expectedMsg := "failed to login"
-	if !strings.Contains(err.Error(), expectedMsg) {
-		t.Errorf("Expected error containing %q, got: %v", expectedMsg, err)
-	}
+	assert.Truef(t, strings.Contains(err.Error(), expectedMsg), "Expected error containing %q, got: %v", expectedMsg, err)
 }
 
 // TestAPIRequest_RequestInProgress tests handling of request in progress error
@@ -158,24 +131,20 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 			"message":   "Request in progress",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 	defer server.Close()
 
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 	client.baseURL = server.URL + "/"
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err, "Expected error, got nil")
 
 	// Verify it's a RequestInProgressError
 	if _, ok := err.(*RequestInProgressError); !ok {
@@ -186,9 +155,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 // TestEncryptPayloadUsingKey tests payload encryption
 func TestEncryptPayloadUsingKey(t *testing.T) {
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 
 	client.Keys.EncKey = "testenckey123456"
 
@@ -198,31 +165,21 @@ func TestEncryptPayloadUsingKey(t *testing.T) {
 	}
 
 	dataJSON, err := json.Marshal(testData)
-	if err != nil {
-		t.Fatalf("Failed to marshal test data: %v", err)
-	}
+	require.NoError(t, err, "Failed to marshal test data: %v")
 
 	encrypted, err := client.encryptPayloadUsingKey(string(dataJSON))
-	if err != nil {
-		t.Fatalf("Failed to encrypt payload: %v", err)
-	}
+	require.NoError(t, err, "Failed to encrypt payload: %v")
 
-	if encrypted == "" {
-		t.Error("Encrypted payload is empty")
-	}
+	assert.NotEqual(t, "", encrypted, "Encrypted payload is empty")
 
 	// Verify it's base64 encoded
-	if len(encrypted) == 0 {
-		t.Error("Encrypted payload should not be empty")
-	}
+	assert.NotEqual(t, 0, len(encrypted), "Encrypted payload should not be empty")
 }
 
 // TestDecryptPayloadUsingKey tests payload decryption
 func TestDecryptPayloadUsingKey(t *testing.T) {
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 
 	client.Keys.EncKey = "testenckey123456"
 
@@ -232,37 +189,25 @@ func TestDecryptPayloadUsingKey(t *testing.T) {
 	}
 
 	dataJSON, err := json.Marshal(testData)
-	if err != nil {
-		t.Fatalf("Failed to marshal test data: %v", err)
-	}
+	require.NoError(t, err, "Failed to marshal test data: %v")
 
 	// Encrypt first
 	encrypted, err := client.encryptPayloadUsingKey(string(dataJSON))
-	if err != nil {
-		t.Fatalf("Failed to encrypt payload: %v", err)
-	}
+	require.NoError(t, err, "Failed to encrypt payload: %v")
 
 	// Then decrypt
 	decrypted, err := client.decryptPayloadUsingKey(encrypted)
-	if err != nil {
-		t.Fatalf("Failed to decrypt payload: %v", err)
-	}
+	require.NoError(t, err, "Failed to decrypt payload: %v")
 
 	// Verify decrypted data matches original
-	if decrypted["test"] != "data" {
-		t.Errorf("Expected test=data, got test=%v", decrypted["test"])
-	}
-	if decrypted["foo"] != "bar" {
-		t.Errorf("Expected foo=bar, got foo=%v", decrypted["foo"])
-	}
+	assert.EqualValuesf(t, "data", decrypted["test"], "Expected test=data, got test=%v", decrypted["test"])
+	assert.EqualValuesf(t, "bar", decrypted["foo"], "Expected foo=bar, got foo=%v", decrypted["foo"])
 }
 
 // TestGetSignFromPayloadAndTimestamp tests signature generation
 func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
@@ -271,14 +216,10 @@ func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
 	timestamp := "1234567890123"
 
 	sign := client.getSignFromPayloadAndTimestamp(payload, timestamp)
-	if sign == "" {
-		t.Error("Signature should not be empty")
-	}
+	assert.NotEqual(t, "", sign, "Signature should not be empty")
 
 	// Verify it's uppercase hex (SHA256)
-	if len(sign) != 64 {
-		t.Errorf("Expected signature length of 64, got %d", len(sign))
-	}
+	assert.Lenf(t, sign, 64, "Expected signature length of 64, got %d", len(sign))
 }
 
 // TestAPIRequest_MissingKeys tests that APIRequest attempts to get keys when missing
@@ -290,24 +231,20 @@ func TestAPIRequest_MissingKeys(t *testing.T) {
 			"message": "Server error",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 	defer server.Close()
 
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 	client.baseURL = server.URL + "/"
 
 	// Don't set encryption keys, but request needsKeys=true
 	// APIRequest should attempt to get keys and fail
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
-	if err == nil {
-		t.Fatal("Expected error when keys are missing, got nil")
-	}
+	require.Error(t, err, "Expected error when keys are missing, got nil")
 }
 
 // TestAPIRequest_POST_WithBody tests POST request with body encryption
@@ -317,14 +254,10 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 		requestReceived = true
 
 		// Verify method
-		if r.Method != "POST" {
-			t.Errorf("Expected POST method, got %s", r.Method)
-		}
+		assert.EqualValuesf(t, "POST", r.Method, "Expected POST method, got %s", r.Method)
 
 		// Verify sign header is present
-		if r.Header.Get("sign") == "" {
-			t.Error("sign header is missing")
-		}
+		assert.NotEqual(t, "", r.Header.Get("sign"), "sign header is missing")
 
 		// Return encrypted success response
 		testResponse := map[string]interface{}{
@@ -339,32 +272,24 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 			"payload": encrypted,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 	defer server.Close()
 
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 	client.baseURL = server.URL + "/"
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
 	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
-	if err != nil {
-		t.Fatalf("APIRequest failed: %v", err)
-	}
+	require.NoError(t, err, "APIRequest failed: %v")
 
-	if !requestReceived {
-		t.Error("Request was not received by server")
-	}
+	assert.True(t, requestReceived, "Request was not received by server")
 
-	if result["resultCode"] != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
 }
 
 // TestAPIRequest_GET_WithQuery tests GET request with query parameter encryption
@@ -374,14 +299,10 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 		requestReceived = true
 
 		// Verify method
-		if r.Method != "GET" {
-			t.Errorf("Expected GET method, got %s", r.Method)
-		}
+		assert.EqualValuesf(t, "GET", r.Method, "Expected GET method, got %s", r.Method)
 
 		// Verify params query parameter exists
-		if r.URL.Query().Get("params") == "" {
-			t.Error("params query parameter is missing")
-		}
+		assert.NotEqual(t, "", r.URL.Query().Get("params"), "params query parameter is missing")
 
 		// Return encrypted success response
 		testResponse := map[string]interface{}{
@@ -396,32 +317,24 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 			"payload": encrypted,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 	defer server.Close()
 
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 	client.baseURL = server.URL + "/"
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
 	result, err := client.APIRequest(context.Background(), "GET", "test/endpoint", map[string]string{"key": "value"}, nil, false, false)
-	if err != nil {
-		t.Fatalf("APIRequest failed: %v", err)
-	}
+	require.NoError(t, err, "APIRequest failed: %v")
 
-	if !requestReceived {
-		t.Error("Request was not received by server")
-	}
+	assert.True(t, requestReceived, "Request was not received by server")
 
-	if result["resultCode"] != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result["resultCode"])
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
 }
 
 // TestCalculateBackoff tests the backoff calculation
@@ -442,9 +355,7 @@ func TestCalculateBackoff(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(strings.Join([]string{"retry", strings.Repeat("x", tt.retryCount)}, "_"), func(t *testing.T) {
 			result := calculateBackoff(tt.retryCount)
-			if result != tt.expected {
-				t.Errorf("calculateBackoff(%d) = %v, want %v", tt.retryCount, result, tt.expected)
-			}
+			assert.EqualValuesf(t, tt.expected, result, "calculateBackoff(%d) = %v, want %v", tt.retryCount, result, tt.expected)
 		})
 	}
 }
@@ -458,9 +369,7 @@ func TestSleepWithContext_Completes(t *testing.T) {
 	err := sleepWithContext(ctx, duration)
 	elapsed := time.Since(start)
 
-	if err != nil {
-		t.Errorf("sleepWithContext returned error: %v", err)
-	}
+	assert.EqualValuesf(t, nil, err, "sleepWithContext returned error: %v", err)
 
 	// Allow 50ms tolerance
 	if elapsed < duration || elapsed > duration+50*time.Millisecond {
@@ -483,13 +392,9 @@ func TestSleepWithContext_Cancelled(t *testing.T) {
 	err := sleepWithContext(ctx, duration)
 	elapsed := time.Since(start)
 
-	if err == nil {
-		t.Error("sleepWithContext should return error on cancellation")
-	}
+	assert.Error(t, err, "sleepWithContext should return error on cancellation")
 
-	if err != context.Canceled {
-		t.Errorf("sleepWithContext returned %v, want context.Canceled", err)
-	}
+	assert.EqualValuesf(t, context.Canceled, err, "sleepWithContext returned %v, want context.Canceled", err)
 
 	// Should return much earlier than 5 seconds
 	if elapsed > 1*time.Second {
@@ -505,9 +410,7 @@ func TestSleepWithContext_ZeroDuration(t *testing.T) {
 	err := sleepWithContext(ctx, 0)
 	elapsed := time.Since(start)
 
-	if err != nil {
-		t.Errorf("sleepWithContext returned error: %v", err)
-	}
+	assert.EqualValuesf(t, nil, err, "sleepWithContext returned error: %v", err)
 
 	if elapsed > 10*time.Millisecond {
 		t.Errorf("sleepWithContext with 0 duration took %v, should be immediate", elapsed)
@@ -537,9 +440,9 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 				"payload": encrypted,
 			}
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(response); err != nil {
-				t.Errorf("Failed to encode response: %v", err)
-			}
+			err := json.NewEncoder(w).Encode(response)
+			assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 			return
 		}
 
@@ -552,16 +455,14 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 			"message":   "Encryption error",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 	defer server.Close()
 
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 	client.baseURL = server.URL + "/"
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
@@ -578,13 +479,11 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 	_, err = client.APIRequest(ctx, "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	elapsed := time.Since(start)
 
-	if err == nil {
-		t.Fatal("Expected error due to context cancellation, got nil")
-	}
+	require.Error(t, err, "Expected error due to context cancellation, got nil")
 
 	// Check if error is or contains context.Canceled
-	if err != context.Canceled && !strings.Contains(err.Error(), "context canceled") {
-		t.Errorf("Expected context.Canceled error, got: %v", err)
+	if err != context.Canceled {
+		assert.Truef(t, strings.Contains(err.Error(), "context canceled"), "Expected context.Canceled error, got: %v", err)
 	}
 
 	// Should return quickly after cancellation (within 1 second total)

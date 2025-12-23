@@ -2,6 +2,8 @@ package cli
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestProgressBar(t *testing.T) {
@@ -69,9 +71,7 @@ func TestProgressBar(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ProgressBar(tt.percent, tt.width)
-			if result != tt.expected {
-				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
-			}
+			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
 		})
 	}
 }
@@ -96,9 +96,7 @@ func TestProgressBar_WithColors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ProgressBar(tt.percent, tt.width)
 			// Just verify it contains ANSI codes (starts with escape sequence)
-			if result[0] != '\033' {
-				t.Errorf("Expected colored output to start with ANSI escape sequence")
-			}
+			assert.Equal(t, byte('\033'), result[0], "Expected colored output to start with ANSI escape sequence")
 		})
 	}
 }
@@ -135,30 +133,22 @@ func TestColorize_WithColors(t *testing.T) {
 	// Test Red
 	result := Red(text)
 	expected := "\033[31mtest\033[0m"
-	if result != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, result)
-	}
+	assert.Equalf(t, expected, result, "Expected '%s', got '%s'")
 
 	// Test Green
 	result = Green(text)
 	expected = "\033[32mtest\033[0m"
-	if result != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, result)
-	}
+	assert.Equalf(t, expected, result, "Expected '%s', got '%s'")
 
 	// Test Yellow
 	result = Yellow(text)
 	expected = "\033[33mtest\033[0m"
-	if result != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, result)
-	}
+	assert.Equalf(t, expected, result, "Expected '%s', got '%s'")
 
 	// Test Bold
 	result = Bold(text)
 	expected = "\033[1mtest\033[0m"
-	if result != expected {
-		t.Errorf("Expected '%s', got '%s'", expected, result)
-	}
+	assert.Equalf(t, expected, result, "Expected '%s', got '%s'")
 }
 
 func TestSetColorEnabled(t *testing.T) {
@@ -166,14 +156,10 @@ func TestSetColorEnabled(t *testing.T) {
 	defer SetColorEnabled(oldColorEnabled)
 
 	SetColorEnabled(true)
-	if !IsColorEnabled() {
-		t.Error("Expected colors to be enabled")
-	}
+	assert.True(t, IsColorEnabled(), "Expected colors to be enabled")
 
 	SetColorEnabled(false)
-	if IsColorEnabled() {
-		t.Error("Expected colors to be disabled")
-	}
+	assert.False(t, IsColorEnabled(), "Expected colors to be disabled")
 }
 
 func TestColorPressure(t *testing.T) {
@@ -206,9 +192,7 @@ func TestColorPressure(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ColorPressure(tt.pressure, target)
-			if result != tt.expected {
-				t.Errorf("Expected '%s', got '%s'", tt.expected, result)
-			}
+			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
 		})
 	}
 }
@@ -242,9 +226,7 @@ func TestColorPressure_WithColors(t *testing.T) {
 				t.Errorf("Result too short")
 				return
 			}
-			if result[:len(tt.expectedColor)] != tt.expectedColor {
-				t.Errorf("Expected color %q, got prefix %q", tt.expectedColor, result[:len(tt.expectedColor)])
-			}
+			assert.Equalf(t, tt.expectedColor, result[:len(tt.expectedColor)], "Expected color %q, got prefix %q")
 		})
 	}
 }

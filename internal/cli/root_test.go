@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRootCmd_Version(t *testing.T) {
@@ -20,14 +22,10 @@ func TestRootCmd_Version(t *testing.T) {
 	rootCmd.SetOut(&output)
 
 	err := rootCmd.Execute()
-	if err != nil {
-		t.Fatalf("Execute() error = %v", err)
-	}
+	require.NoError(t, err, "Execute() error = %v")
 
 	result := output.String()
-	if !strings.Contains(result, "mcs version") {
-		t.Errorf("Expected version output, got: %s", result)
-	}
+	assert.Truef(t, strings.Contains(result, "mcs version"), "Expected version output, got: %s", result)
 }
 
 func TestRootCmd_Help(t *testing.T) {
@@ -38,18 +36,12 @@ func TestRootCmd_Help(t *testing.T) {
 	rootCmd.SetOut(&output)
 
 	err := rootCmd.Execute()
-	if err != nil {
-		t.Fatalf("Execute() error = %v", err)
-	}
+	require.NoError(t, err, "Execute() error = %v")
 
 	result := output.String()
-	if !strings.Contains(result, "mcs") {
-		t.Errorf("Expected help output to contain 'mcs', got: %s", result)
-	}
+	assert.Truef(t, strings.Contains(result, "mcs"), "Expected help output to contain 'mcs', got: %s", result)
 	// Check for content from the Long description
-	if !strings.Contains(result, "manufacturer API") {
-		t.Errorf("Expected help output to contain 'manufacturer API', got: %s", result)
-	}
+	assert.Truef(t, strings.Contains(result, "manufacturer API"), "Expected help output to contain 'manufacturer API', got: %s", result)
 }
 
 func TestRootCmd_NoArgs(t *testing.T) {
@@ -63,9 +55,7 @@ func TestRootCmd_NoArgs(t *testing.T) {
 	// Should show help when no args provided
 	err := rootCmd.Execute()
 	// Root command with no args should not error, just show help
-	if err != nil {
-		t.Fatalf("Execute() error = %v", err)
-	}
+	require.NoError(t, err, "Execute() error = %v")
 }
 
 func TestExecute_SignalHandling(t *testing.T) {
@@ -103,9 +93,7 @@ func TestExecute_SignalHandling(t *testing.T) {
 	// Wait for command to finish
 	select {
 	case err := <-errCh:
-		if err != context.Canceled {
-			t.Errorf("Expected context.Canceled, got: %v", err)
-		}
+		assert.Equalf(t, context.Canceled, err, "Expected context.Canceled, got: %v", err)
 	case <-time.After(1 * time.Second):
 		t.Fatal("Command did not respond to context cancellation")
 	}
@@ -135,9 +123,7 @@ func TestExecute_WithRealSignal(t *testing.T) {
 	// Verify the signal types we're using are valid
 	signals := []os.Signal{os.Interrupt, syscall.SIGTERM}
 	for _, sig := range signals {
-		if sig == nil {
-			t.Errorf("Signal is nil")
-		}
+		assert.NotNil(t, sig, "Signal is nil")
 	}
 }
 

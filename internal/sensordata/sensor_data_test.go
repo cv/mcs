@@ -5,34 +5,25 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewSensorDataBuilder(t *testing.T) {
 	builder := NewSensorDataBuilder()
 
-	if builder == nil {
-		t.Fatal("Expected non-nil builder")
-	}
+	require.NotNil(t, builder, "Expected non-nil builder")
 
-	if builder.systemInfo == nil {
-		t.Error("Expected systemInfo to be initialized")
-	}
+	assert.NotNil(t, builder.systemInfo, "Expected systemInfo to be initialized")
 
-	if builder.touchEventList == nil {
-		t.Error("Expected touchEventList to be initialized")
-	}
+	assert.NotNil(t, builder.touchEventList, "Expected touchEventList to be initialized")
 
-	if builder.keyEventList == nil {
-		t.Error("Expected keyEventList to be initialized")
-	}
+	assert.NotNil(t, builder.keyEventList, "Expected keyEventList to be initialized")
 
-	if builder.backgroundEventList == nil {
-		t.Error("Expected backgroundEventList to be initialized")
-	}
+	assert.NotNil(t, builder.backgroundEventList, "Expected backgroundEventList to be initialized")
 
-	if builder.performanceTestResults == nil {
-		t.Error("Expected performanceTestResults to be initialized")
-	}
+	assert.NotNil(t, builder.performanceTestResults, "Expected performanceTestResults to be initialized")
 
 	if builder.deviceInfoTime < 3000 || builder.deviceInfoTime >= 8000 {
 		t.Errorf("Expected deviceInfoTime between 3000 and 8000, got %d", builder.deviceInfoTime)
@@ -43,24 +34,16 @@ func TestSensorDataBuilder_GenerateSensorData(t *testing.T) {
 	builder := NewSensorDataBuilder()
 
 	result, err := builder.GenerateSensorData()
-	if err != nil {
-		t.Fatalf("GenerateSensorData() error = %v", err)
-	}
+	require.NoError(t, err, "GenerateSensorData() error = %v")
 
-	if result == "" {
-		t.Error("Expected non-empty sensor data")
-	}
+	assert.NotEqual(t, "", result, "Expected non-empty sensor data")
 
 	// Check format: should start with "1,a,"
-	if !strings.HasPrefix(result, "1,a,") {
-		t.Errorf("Expected result to start with '1,a,', got prefix: %s", result[:min(10, len(result))])
-	}
+	assert.Truef(t, strings.HasPrefix(result, "1,a,"), "Expected result to start with '1,a,', got prefix: %s", result[:min(10, len(result))])
 
 	// Format is: 1,a,<aes_key>,<hmac_key>$<encrypted_data>$<timestamps>
 	// Check that it ends with timestamps in format: $<num>,<num>,<num>
-	if !regexp.MustCompile(`\$[0-9]+,[0-9]+,[0-9]+$`).MatchString(result) {
-		t.Error("Expected timestamp format at end: $<num>,<num>,<num>")
-	}
+	assert.True(t, regexp.MustCompile(`\$[0-9]+,[0-9]+,[0-9]+$`).MatchString(result), "Expected timestamp format at end: $<num>,<num>,<num>")
 }
 
 func TestCountSeparators(t *testing.T) {
@@ -79,9 +62,7 @@ func TestCountSeparators(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := countSeparators(tt.input)
-			if got != tt.want {
-				t.Errorf("countSeparators(%q) = %d, want %d", tt.input, got, tt.want)
-			}
+			assert.Equalf(t, tt.want, got, "countSeparators(%q) = %d, want %d", tt.input, got, tt.want)
 		})
 	}
 }
@@ -91,15 +72,11 @@ func TestFeistelCipher(t *testing.T) {
 	result1 := feistelCipher(100, 50, 12345)
 	result2 := feistelCipher(100, 50, 12345)
 
-	if result1 != result2 {
-		t.Errorf("feistelCipher should be deterministic: got %d and %d", result1, result2)
-	}
+	assert.Equalf(t, result2, result1, "feistelCipher should be deterministic: got %d and %d")
 
 	// Test that different inputs produce different outputs
 	result3 := feistelCipher(200, 50, 12345)
-	if result1 == result3 {
-		t.Error("feistelCipher should produce different outputs for different inputs")
-	}
+	assert.NotEqual(t, result3, result1, "feistelCipher should produce different outputs for different inputs")
 }
 
 func TestTimestampToMillis(t *testing.T) {
@@ -108,9 +85,7 @@ func TestTimestampToMillis(t *testing.T) {
 	expectedMillis := testTime.UnixMilli()
 
 	result := timestampToMillis(testTime)
-	if result != expectedMillis {
-		t.Errorf("timestampToMillis() = %d, want %d", result, expectedMillis)
-	}
+	assert.Equalf(t, expectedMillis, result, "timestampToMillis() = %d, want %d")
 }
 
 func min(a, b int) int {

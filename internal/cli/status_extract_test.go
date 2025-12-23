@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/cv/mcs/internal/api"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestBatteryInfoToMap tests batteryInfoToMap conversion
@@ -65,13 +67,8 @@ func TestBatteryInfoToMap(t *testing.T) {
 
 			for key, expected := range tt.wantFields {
 				actual, ok := data[key]
-				if !ok {
-					t.Errorf("Expected key %q to exist in map", key)
-					continue
-				}
-				if actual != expected {
-					t.Errorf("Expected %s to be %v, got %v", key, expected, actual)
-				}
+				assert.Truef(t, ok, "Expected key %q to exist in map", key)
+				assert.Equalf(t, expected, actual, "Expected %s to be %v, got %v", key, expected, actual)
 			}
 
 			// Verify charge time fields are only present when charging
@@ -115,13 +112,9 @@ func TestLocationInfoToMap(t *testing.T) {
 	assertMapValue(t, data, "timestamp", "20231201120000")
 
 	mapsURL, ok := data["maps_url"].(string)
-	if !ok {
-		t.Fatal("Expected maps_url to be a string")
-	}
+	require.True(t, ok, "Expected maps_url to be a string")
 	expectedURL := "https://maps.google.com/?q=37.774900,-122.419400"
-	if mapsURL != expectedURL {
-		t.Errorf("Expected maps_url %q, got %q", expectedURL, mapsURL)
-	}
+	assert.Equalf(t, expectedURL, mapsURL, "Expected maps_url %q, got %q")
 }
 
 // TestTireInfoToMap tests tireInfoToMap conversion

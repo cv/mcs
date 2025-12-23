@@ -3,6 +3,9 @@ package api
 import (
 	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestGetVecBaseInfos tests getting vehicle base information
@@ -31,17 +34,11 @@ func TestGetVecBaseInfos(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	result, err := client.GetVecBaseInfos(context.Background())
-	if err != nil {
-		t.Fatalf("GetVecBaseInfos failed: %v", err)
-	}
+	require.NoError(t, err, "GetVecBaseInfos failed: %v")
 
-	if result.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
-	if len(result.VecBaseInfos) != 1 {
-		t.Errorf("Expected 1 vehicle, got %d", len(result.VecBaseInfos))
-	}
+	assert.Lenf(t, result.VecBaseInfos, 1, "Expected 1 vehicle, got %d", len(result.VecBaseInfos))
 }
 
 // TestGetVehicleStatus tests getting vehicle status
@@ -80,21 +77,13 @@ func TestGetVehicleStatus(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("GetVehicleStatus failed: %v", err)
-	}
+	require.NoError(t, err, "GetVehicleStatus failed: %v")
 
-	if result.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
-	if len(result.AlertInfos) != 1 {
-		t.Errorf("Expected 1 alert info, got %d", len(result.AlertInfos))
-	}
+	assert.Lenf(t, result.AlertInfos, 1, "Expected 1 alert info, got %d", len(result.AlertInfos))
 
-	if len(result.RemoteInfos) != 1 {
-		t.Errorf("Expected 1 remote info, got %d", len(result.RemoteInfos))
-	}
+	assert.Lenf(t, result.RemoteInfos, 1, "Expected 1 remote info, got %d", len(result.RemoteInfos))
 }
 
 // TestGetVehicleStatus_Error tests error handling
@@ -105,14 +94,10 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	_, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err, "Expected error, got nil")
 
 	expectedError := "failed to get vehicle status: result code 500E00"
-	if err.Error() != expectedError {
-		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
-	}
+	assert.EqualValuesf(t, expectedError, err.Error(), "Expected error '%s', got '%s'")
 }
 
 // TestGetEVVehicleStatus tests getting EV vehicle status
@@ -146,28 +131,18 @@ func TestGetEVVehicleStatus(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
-	if err != nil {
-		t.Fatalf("GetEVVehicleStatus failed: %v", err)
-	}
+	require.NoError(t, err, "GetEVVehicleStatus failed: %v")
 
-	if result.ResultCode != ResultCodeSuccess {
-		t.Errorf("Expected resultCode 200S00, got %v", result.ResultCode)
-	}
+	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
-	if len(result.ResultData) != 1 {
-		t.Errorf("Expected 1 result data, got %d", len(result.ResultData))
-	}
+	assert.Lenf(t, result.ResultData, 1, "Expected 1 result data, got %d", len(result.ResultData))
 
 	// Verify charge info
 	chargeInfo := result.ResultData[0].PlusBInformation.VehicleInfo.ChargeInfo
 
-	if chargeInfo.SmaphSOC != float64(85) {
-		t.Errorf("Expected battery level 85, got %v", chargeInfo.SmaphSOC)
-	}
+	assert.EqualValuesf(t, float64(85), chargeInfo.SmaphSOC, "Expected battery level 85, got %v", chargeInfo.SmaphSOC)
 
-	if chargeInfo.ChargerConnectorFitting != float64(1) {
-		t.Errorf("Expected plugged in (1), got %v", chargeInfo.ChargerConnectorFitting)
-	}
+	assert.EqualValuesf(t, float64(1), chargeInfo.ChargerConnectorFitting, "Expected plugged in (1), got %v", chargeInfo.ChargerConnectorFitting)
 }
 
 // TestGetEVVehicleStatus_Error tests error handling
@@ -178,12 +153,8 @@ func TestGetEVVehicleStatus_Error(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	_, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err, "Expected error, got nil")
 
 	expectedError := "failed to get EV vehicle status: result code 500E00"
-	if err.Error() != expectedError {
-		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
-	}
+	assert.EqualValuesf(t, expectedError, err.Error(), "Expected error '%s', got '%s'")
 }

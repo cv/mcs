@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"crypto/aes"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPKCS7Pad(t *testing.T) {
@@ -36,12 +39,8 @@ func TestPKCS7Pad(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := PKCS7Pad(tt.data, tt.blockSize)
-			if len(result) != tt.wantLen {
-				t.Errorf("PKCS7Pad() length = %d, want %d", len(result), tt.wantLen)
-			}
-			if len(result)%tt.blockSize != 0 {
-				t.Errorf("PKCS7Pad() result not multiple of block size")
-			}
+			assert.Equalf(t, tt.wantLen, len(result), "PKCS7Pad() length = %d, want %d")
+			assert.Equal(t, 0, len(result)%tt.blockSize, "PKCS7Pad() result not multiple of block size")
 		})
 	}
 }
@@ -76,13 +75,16 @@ func TestPKCS7Unpad(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := PKCS7Unpad(tt.data)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PKCS7Unpad() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "PKCS7Unpad() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "PKCS7Unpad() error = %v, wantErr %v")
 			}
-			if !tt.wantErr && !bytes.Equal(result, tt.want) {
-				t.Errorf("PKCS7Unpad() = %v, want %v", result, tt.want)
+
+			if !tt.wantErr {
+				assert.Truef(t, bytes.Equal(result, tt.want), "PKCS7Unpad() = %v, want %v", result, tt.want)
 			}
+
 		})
 	}
 }
@@ -91,12 +93,8 @@ func TestPKCS7PadUnpad_RoundTrip(t *testing.T) {
 	data := []byte("test data for padding")
 	padded := PKCS7Pad(data, aes.BlockSize)
 	unpadded, err := PKCS7Unpad(padded)
-	if err != nil {
-		t.Fatalf("PKCS7Unpad() error = %v", err)
-	}
-	if !bytes.Equal(unpadded, data) {
-		t.Errorf("Round trip failed: got %v, want %v", unpadded, data)
-	}
+	require.NoError(t, err, "PKCS7Unpad() error = %v")
+	assert.Truef(t, bytes.Equal(unpadded, data), "Round trip failed: got %v, want %v", unpadded, data)
 }
 
 func TestEncryptDecryptAES128CBC(t *testing.T) {
@@ -105,18 +103,12 @@ func TestEncryptDecryptAES128CBC(t *testing.T) {
 	plaintext := []byte("Hello, World! This is a test message.")
 
 	encrypted, err := EncryptAES128CBC(plaintext, key, iv)
-	if err != nil {
-		t.Fatalf("EncryptAES128CBC() error = %v", err)
-	}
+	require.NoError(t, err, "EncryptAES128CBC() error = %v")
 
 	decrypted, err := DecryptAES128CBC(encrypted, key, iv)
-	if err != nil {
-		t.Fatalf("DecryptAES128CBC() error = %v", err)
-	}
+	require.NoError(t, err, "DecryptAES128CBC() error = %v")
 
-	if !bytes.Equal(decrypted, plaintext) {
-		t.Errorf("DecryptAES128CBC() = %v, want %v", decrypted, plaintext)
-	}
+	assert.Truef(t, bytes.Equal(decrypted, plaintext), "DecryptAES128CBC() = %v, want %v", decrypted, plaintext)
 }
 
 func TestEncryptAES128CBC_InvalidKey(t *testing.T) {
@@ -125,9 +117,7 @@ func TestEncryptAES128CBC_InvalidKey(t *testing.T) {
 	plaintext := []byte("test")
 
 	_, err := EncryptAES128CBC(plaintext, key, iv)
-	if err == nil {
-		t.Error("EncryptAES128CBC() expected error for invalid key length")
-	}
+	assert.Error(t, err, "EncryptAES128CBC() expected error for invalid key length")
 }
 
 func TestDecryptAES128CBC_InvalidCiphertext(t *testing.T) {
@@ -137,7 +127,5 @@ func TestDecryptAES128CBC_InvalidCiphertext(t *testing.T) {
 	ciphertext := []byte("not valid")
 
 	_, err := DecryptAES128CBC(ciphertext, key, iv)
-	if err == nil {
-		t.Error("DecryptAES128CBC() expected error for invalid ciphertext")
-	}
+	assert.Error(t, err, "DecryptAES128CBC() expected error for invalid ciphertext")
 }

@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // testEncKey is the encryption key used in tests (must be 16 bytes for AES-128)
@@ -18,9 +21,7 @@ const testSignKey = "testsignkey12345"
 func createTestClient(t *testing.T, serverURL string) *Client {
 	t.Helper()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 	client.baseURL = serverURL + "/"
 	client.Keys.EncKey = testEncKey
 	client.Keys.SignKey = testSignKey
@@ -84,9 +85,7 @@ func createTestServer(t *testing.T, responseData map[string]interface{}, options
 		// Validate body if requested
 		if opts.validateBody {
 			body, _ := io.ReadAll(r.Body)
-			if len(body) == 0 {
-				t.Error("Expected non-empty body")
-			}
+			assert.NotEqual(t, 0, len(body), "Expected non-empty body")
 		}
 
 		// Encrypt and wrap the response
@@ -99,9 +98,9 @@ func createTestServer(t *testing.T, responseData map[string]interface{}, options
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 }
 
@@ -139,9 +138,9 @@ func createErrorServer(t *testing.T, resultCode, message string, httpStatusCode 
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			t.Errorf("Failed to encode response: %v", err)
-		}
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+
 	}))
 }
 

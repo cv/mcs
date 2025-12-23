@@ -3,6 +3,9 @@ package api
 import (
 	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestControlEndpoints tests all simple control endpoints using table-driven approach
@@ -94,9 +97,7 @@ func TestSetHVACSetting(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 22.0, Celsius, true, false)
-	if err != nil {
-		t.Fatalf("SetHVACSetting failed: %v", err)
-	}
+	require.NoError(t, err, "SetHVACSetting failed: %v")
 }
 
 // TestSetHVACSetting_Fahrenheit tests setting HVAC with Fahrenheit
@@ -107,9 +108,7 @@ func TestSetHVACSetting_Fahrenheit(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 72.0, Fahrenheit, false, true)
-	if err != nil {
-		t.Fatalf("SetHVACSetting failed: %v", err)
-	}
+	require.NoError(t, err, "SetHVACSetting failed: %v")
 }
 
 // TestControlError tests error handling for control endpoints
@@ -120,14 +119,10 @@ func TestControlError(t *testing.T) {
 	client := createTestClient(t, server.URL)
 
 	err := client.DoorLock(context.Background(), "INTERNAL123")
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err, "Expected error, got nil")
 
 	expectedError := "failed to lock doors: result code 500E00"
-	if err.Error() != expectedError {
-		t.Errorf("Expected error '%s', got '%s'", expectedError, err.Error())
-	}
+	assert.EqualValuesf(t, expectedError, err.Error(), "Expected error '%s', got '%s'")
 }
 
 // TestBoolToInt tests the boolToInt helper function

@@ -9,6 +9,8 @@ import (
 
 	"github.com/cv/mcs/internal/api"
 	"github.com/cv/mcs/internal/cache"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestCreateAPIClient_WithValidConfig tests creating an API client with valid config
@@ -25,13 +27,9 @@ func TestCreateAPIClient_WithValidConfig(t *testing.T) {
 	// Test: Create API client
 	ConfigFile = "" // Use environment variables
 	client, err := createAPIClient(context.Background())
-	if err != nil {
-		t.Fatalf("Failed to create API client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create API client: %v")
 
-	if client == nil {
-		t.Fatal("Expected client to be created, got nil")
-	}
+	require.NotNil(t, client, "Expected client to be created, got nil")
 }
 
 // TestCreateAPIClient_WithInvalidRegion tests error handling for invalid region
@@ -48,9 +46,7 @@ func TestCreateAPIClient_WithInvalidRegion(t *testing.T) {
 	// Test: Create API client should fail
 	ConfigFile = ""
 	_, err := createAPIClient(context.Background())
-	if err == nil {
-		t.Fatal("Expected error with invalid region, got nil")
-	}
+	require.Error(t, err, "Expected error with invalid region, got nil")
 }
 
 // TestCreateAPIClient_WithConfigFile tests loading config from file
@@ -66,9 +62,8 @@ email = "file@example.com"
 password = "file-password"
 region = "MNAO"
 `
-	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
-		t.Fatalf("Failed to create config file: %v", err)
-	}
+	err := os.WriteFile(configPath, []byte(configContent), 0600)
+	require.NoError(t, err, "Failed to create config file: %v")
 
 	// Clear env vars
 	t.Setenv("MCS_EMAIL", "")
@@ -78,13 +73,9 @@ region = "MNAO"
 	// Test: Create API client from file
 	ConfigFile = configPath
 	client, err := createAPIClient(context.Background())
-	if err != nil {
-		t.Fatalf("Failed to create API client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create API client: %v")
 
-	if client == nil {
-		t.Fatal("Expected client to be created, got nil")
-	}
+	require.NotNil(t, client, "Expected client to be created, got nil")
 }
 
 // TestCreateAPIClient_WithCachedCredentials tests using cached credentials
@@ -105,32 +96,21 @@ func TestCreateAPIClient_WithCachedCredentials(t *testing.T) {
 		EncKey:                  "cached-enc-key",
 		SignKey:                 "cached-sign-key",
 	}
-	if err := cache.Save(cachedToken); err != nil {
-		t.Fatalf("Failed to save cached token: %v", err)
-	}
+	err := cache.Save(cachedToken)
+	require.NoError(t, err, "Failed to save cached token: %v")
 
 	// Test: Create API client (should use cached credentials)
 	ConfigFile = ""
 	client, err := createAPIClient(context.Background())
-	if err != nil {
-		t.Fatalf("Failed to create API client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create API client: %v")
 
 	// Verify: Check that cached credentials were loaded
 	accessToken, expirationTs, encKey, signKey := client.GetCredentials()
 
-	if accessToken != "cached-token-12345" {
-		t.Errorf("Expected cached access token, got %s", accessToken)
-	}
-	if expirationTs != cachedToken.AccessTokenExpirationTs {
-		t.Errorf("Expected cached expiration ts %d, got %d", cachedToken.AccessTokenExpirationTs, expirationTs)
-	}
-	if encKey != "cached-enc-key" {
-		t.Errorf("Expected cached enc key, got %s", encKey)
-	}
-	if signKey != "cached-sign-key" {
-		t.Errorf("Expected cached sign key, got %s", signKey)
-	}
+	assert.Equalf(t, "cached-token-12345", accessToken, "Expected cached access token, got %s", accessToken)
+	assert.Equalf(t, cachedToken.AccessTokenExpirationTs, expirationTs, "Expected cached expiration ts %d, got %d")
+	assert.Equalf(t, "cached-enc-key", encKey, "Expected cached enc key, got %s", encKey)
+	assert.Equalf(t, "cached-sign-key", signKey, "Expected cached sign key, got %s", signKey)
 }
 
 // TestCreateAPIClient_WithExpiredCache tests that expired cache is ignored
@@ -151,23 +131,18 @@ func TestCreateAPIClient_WithExpiredCache(t *testing.T) {
 		EncKey:                  "old-enc-key",
 		SignKey:                 "old-sign-key",
 	}
-	if err := cache.Save(expiredToken); err != nil {
-		t.Fatalf("Failed to save expired token: %v", err)
-	}
+	err := cache.Save(expiredToken)
+	require.NoError(t, err, "Failed to save expired token: %v")
 
 	// Test: Create API client (should ignore expired cache)
 	ConfigFile = ""
 	client, err := createAPIClient(context.Background())
-	if err != nil {
-		t.Fatalf("Failed to create API client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create API client: %v")
 
 	// Verify: Cached credentials should not be loaded (expired)
 	accessToken, _, _, _ := client.GetCredentials()
 
-	if accessToken == "expired-token" {
-		t.Error("Expired cache should not be loaded")
-	}
+	assert.NotEqual(t, "expired-token", accessToken, "Expired cache should not be loaded")
 }
 
 // TestSaveClientCache_ValidCredentials tests that client credentials are saved to cache
@@ -178,9 +153,7 @@ func TestSaveClientCache_ValidCredentials(t *testing.T) {
 
 	// Setup: Create client with valid credentials
 	client, err := api.NewClient("test@example.com", "password", api.RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 
 	// Set credentials
 	futureTimestamp := time.Now().Unix() + 3600
@@ -191,25 +164,15 @@ func TestSaveClientCache_ValidCredentials(t *testing.T) {
 
 	// Verify: Load cache and check values
 	loadedCache, err := cache.Load()
-	if err != nil {
-		t.Fatalf("Failed to load cache: %v", err)
-	}
+	require.NoError(t, err, "Failed to load cache: %v")
 
-	if loadedCache == nil {
-		t.Fatal("Expected cache to be saved, got nil")
-	}
+	require.NotNil(t, loadedCache, "Expected cache to be saved, got nil")
 
-	if loadedCache.AccessToken != "test-token" {
-		t.Errorf("Expected access token 'test-token', got %s", loadedCache.AccessToken)
-	}
+	assert.Equalf(t, "test-token", loadedCache.AccessToken, "Expected access token 'test-token', got %s", loadedCache.AccessToken)
 
-	if loadedCache.EncKey != "testenckey123456" {
-		t.Errorf("Expected enc key 'testenckey123456', got %s", loadedCache.EncKey)
-	}
+	assert.Equalf(t, "testenckey123456", loadedCache.EncKey, "Expected enc key 'testenckey123456', got %s", loadedCache.EncKey)
 
-	if loadedCache.SignKey != "testsignkey12345" {
-		t.Errorf("Expected sign key 'testsignkey12345', got %s", loadedCache.SignKey)
-	}
+	assert.Equalf(t, "testsignkey12345", loadedCache.SignKey, "Expected sign key 'testsignkey12345', got %s", loadedCache.SignKey)
 }
 
 // TestSaveClientCache_EmptyCredentials tests that empty credentials are not saved
@@ -220,22 +183,16 @@ func TestSaveClientCache_EmptyCredentials(t *testing.T) {
 
 	// Setup: Create client without credentials
 	client, err := api.NewClient("test@example.com", "password", api.RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 
 	// Test: Save client cache (should not save empty credentials)
 	saveClientCache(client)
 
 	// Verify: Cache should not exist
 	loadedCache, err := cache.Load()
-	if err != nil {
-		t.Fatalf("Failed to load cache: %v", err)
-	}
+	require.NoError(t, err, "Failed to load cache: %v")
 
-	if loadedCache != nil {
-		t.Error("Expected no cache to be saved with empty credentials")
-	}
+	assert.Nil(t, loadedCache, "Expected no cache to be saved with empty credentials")
 }
 
 // TestSaveClientCache_PartialCredentials tests that partial credentials are not saved
@@ -246,9 +203,7 @@ func TestSaveClientCache_PartialCredentials(t *testing.T) {
 
 	// Setup: Create client with partial credentials
 	client, err := api.NewClient("test@example.com", "password", api.RegionMNAO)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create client: %v")
 
 	// Set only some credentials (missing signKey)
 	futureTimestamp := time.Now().Unix() + 3600
@@ -259,13 +214,9 @@ func TestSaveClientCache_PartialCredentials(t *testing.T) {
 
 	// Verify: Cache should not exist (missing signKey)
 	loadedCache, err := cache.Load()
-	if err != nil {
-		t.Fatalf("Failed to load cache: %v", err)
-	}
+	require.NoError(t, err, "Failed to load cache: %v")
 
-	if loadedCache != nil {
-		t.Error("Expected no cache to be saved with partial credentials")
-	}
+	assert.Nil(t, loadedCache, "Expected no cache to be saved with partial credentials")
 }
 
 // TestCreateAPIClient_EnvVarOverridesFile tests that env vars override config file
@@ -281,9 +232,8 @@ email = "file@example.com"
 password = "file-password"
 region = "MME"
 `
-	if err := os.WriteFile(configPath, []byte(configContent), 0600); err != nil {
-		t.Fatalf("Failed to create config file: %v", err)
-	}
+	err := os.WriteFile(configPath, []byte(configContent), 0600)
+	require.NoError(t, err, "Failed to create config file: %v")
 
 	// Setup: Set env vars (should override file)
 	t.Setenv("MCS_EMAIL", "env@example.com")
@@ -293,15 +243,11 @@ region = "MME"
 	// Test: Create API client
 	ConfigFile = configPath
 	client, err := createAPIClient(context.Background())
-	if err != nil {
-		t.Fatalf("Failed to create API client: %v", err)
-	}
+	require.NoError(t, err, "Failed to create API client: %v")
 
 	// Verify: Client should be created (env values should be used)
 	// We can't directly verify the internal values, but we can verify no error
-	if client == nil {
-		t.Error("Expected client to be created with env var values")
-	}
+	assert.NotNil(t, client, "Expected client to be created with env var values")
 }
 
 // TestCreateAPIClient_MissingCredentials tests error when credentials are missing
@@ -318,9 +264,7 @@ func TestCreateAPIClient_MissingCredentials(t *testing.T) {
 	// Test: Create API client should fail
 	ConfigFile = ""
 	_, err := createAPIClient(context.Background())
-	if err == nil {
-		t.Fatal("Expected error with missing credentials, got nil")
-	}
+	require.Error(t, err, "Expected error with missing credentials, got nil")
 }
 
 // TestVehicleInfo_InternalVINType tests that VehicleInfo.InternalVIN uses api.InternalVIN type
@@ -340,12 +284,8 @@ func TestVehicleInfo_InternalVINType(t *testing.T) {
 
 	// Verify that we can convert to string using String() method
 	vinString := vehicleInfo.InternalVIN.String()
-	if vinString != "test-vin-123" {
-		t.Errorf("Expected VIN string 'test-vin-123', got '%s'", vinString)
-	}
+	assert.Equalf(t, "test-vin-123", vinString, "Expected VIN string 'test-vin-123', got '%s'", vinString)
 
 	// Verify that we can use it directly as string (implicit conversion)
-	if string(vehicleInfo.InternalVIN) != "test-vin-123" {
-		t.Errorf("Expected VIN string 'test-vin-123', got '%s'", string(vehicleInfo.InternalVIN))
-	}
+	assert.Equalf(t, "test-vin-123", string(vehicleInfo.InternalVIN), "Expected VIN string 'test-vin-123', got '%s'", string(vehicleInfo.InternalVIN))
 }

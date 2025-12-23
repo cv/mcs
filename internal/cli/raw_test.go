@@ -8,6 +8,8 @@ import (
 
 	"github.com/cv/mcs/internal/api"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestRawCommand tests the raw command
@@ -59,21 +61,13 @@ func TestRawCommand_SubcommandStructure(t *testing.T) {
 			cmd := NewRawCmd()
 			subCmd := findSubcommand(cmd, tt.subcommandName)
 
-			if subCmd == nil {
-				t.Fatalf("Expected %s subcommand to exist", tt.subcommandName)
-			}
+			require.NotNilf(t, subCmd, "Expected %s subcommand to exist", tt.subcommandName)
 
-			if subCmd.Use != tt.expectedUse {
-				t.Errorf("Expected Use to be '%s', got '%s'", tt.expectedUse, subCmd.Use)
-			}
+			assert.Equalf(t, tt.expectedUse, subCmd.Use, "Expected Use to be '%s', got '%s'")
 
-			if tt.shouldHaveShort && subCmd.Short == "" {
-				t.Error("Expected Short description to be set")
-			}
+			assert.False(t, tt.shouldHaveShort && subCmd.Short == "", "Expected Short description to be set")
 
-			if tt.shouldHaveLong && subCmd.Long == "" {
-				t.Error("Expected Long description to be set")
-			}
+			assert.False(t, tt.shouldHaveLong && subCmd.Long == "", "Expected Long description to be set")
 		})
 	}
 }
@@ -94,13 +88,9 @@ func TestRawCommand_SubcommandSilenceUsage(t *testing.T) {
 			cmd := NewRawCmd()
 			subCmd := findSubcommand(cmd, tt.subcommandName)
 
-			if subCmd == nil {
-				t.Fatalf("Expected %s subcommand to exist", tt.subcommandName)
-			}
+			require.NotNilf(t, subCmd, "Expected %s subcommand to exist", tt.subcommandName)
 
-			if !subCmd.SilenceUsage {
-				t.Errorf("Expected %s subcommand to have SilenceUsage=true", tt.subcommandName)
-			}
+			assert.Truef(t, subCmd.SilenceUsage, "Expected %s subcommand to have SilenceUsage=true", tt.subcommandName)
 		})
 	}
 }
@@ -140,20 +130,15 @@ func TestRunRawStatus_OutputFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test that the response can be marshaled to JSON (same logic as runRawStatus)
 			jsonBytes, err := json.MarshalIndent(tt.response, "", "  ")
-			if err != nil {
-				t.Fatalf("Expected successful JSON marshal, got error: %v", err)
-			}
+			require.NoError(t, err, "Expected successful JSON marshal, got error: %v")
 
 			// Verify it's valid JSON by unmarshaling
 			var result map[string]interface{}
-			if err := json.Unmarshal(jsonBytes, &result); err != nil {
-				t.Fatalf("Expected valid JSON output, got error: %v", err)
-			}
+			err = json.Unmarshal(jsonBytes, &result)
+			require.NoError(t, err, "Expected valid JSON output, got error: %v")
 
 			// Verify expected structure exists
-			if result["resultCode"] == nil {
-				t.Error("Expected resultCode in JSON output")
-			}
+			assert.NotNil(t, result["resultCode"], "Expected resultCode in JSON output")
 		})
 	}
 }
@@ -189,20 +174,15 @@ func TestRunRawEV_OutputFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test that the response can be marshaled to JSON (same logic as runRawEV)
 			jsonBytes, err := json.MarshalIndent(tt.response, "", "  ")
-			if err != nil {
-				t.Fatalf("Expected successful JSON marshal, got error: %v", err)
-			}
+			require.NoError(t, err, "Expected successful JSON marshal, got error: %v")
 
 			// Verify it's valid JSON by unmarshaling
 			var result map[string]interface{}
-			if err := json.Unmarshal(jsonBytes, &result); err != nil {
-				t.Fatalf("Expected valid JSON output, got error: %v", err)
-			}
+			err = json.Unmarshal(jsonBytes, &result)
+			require.NoError(t, err, "Expected valid JSON output, got error: %v")
 
 			// Verify expected structure exists
-			if result["resultCode"] == nil {
-				t.Error("Expected resultCode in JSON output")
-			}
+			assert.NotNil(t, result["resultCode"], "Expected resultCode in JSON output")
 		})
 	}
 }
@@ -283,20 +263,15 @@ func TestRunRawVehicle_OutputFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test that the response can be marshaled to JSON (same logic as runRawVehicle)
 			jsonBytes, err := json.MarshalIndent(tt.response, "", "  ")
-			if err != nil {
-				t.Fatalf("Expected successful JSON marshal, got error: %v", err)
-			}
+			require.NoError(t, err, "Expected successful JSON marshal, got error: %v")
 
 			// Verify it's valid JSON by unmarshaling
 			var result map[string]interface{}
-			if err := json.Unmarshal(jsonBytes, &result); err != nil {
-				t.Fatalf("Expected valid JSON output, got error: %v", err)
-			}
+			err = json.Unmarshal(jsonBytes, &result)
+			require.NoError(t, err, "Expected valid JSON output, got error: %v")
 
 			// Verify expected structure exists
-			if result["resultCode"] == nil {
-				t.Error("Expected resultCode in JSON output")
-			}
+			assert.NotNil(t, result["resultCode"], "Expected resultCode in JSON output")
 		})
 	}
 }

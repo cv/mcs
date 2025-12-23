@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/cv/mcs/internal/api"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoad(t *testing.T) {
@@ -52,18 +54,15 @@ func TestLoad(t *testing.T) {
 			}
 
 			cfg, err := Load("")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Load() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				require.Error(t, err, "Load() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "Load() error = %v, wantErr %v")
 			}
 
 			if !tt.wantErr {
-				if cfg.Email != tt.wantEmail {
-					t.Errorf("Load() Email = %v, want %v", cfg.Email, tt.wantEmail)
-				}
-				if cfg.Region != tt.wantRegion {
-					t.Errorf("Load() Region = %v, want %v", cfg.Region, tt.wantRegion)
-				}
+				assert.Equalf(t, tt.wantEmail, cfg.Email, "Load() Email = %v, want %v")
+				assert.Equalf(t, tt.wantRegion, cfg.Region, "Load() Region = %v, want %v")
 			}
 		})
 	}
@@ -80,9 +79,7 @@ password = "filepassword"
 region = "MME"
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0600)
-	if err != nil {
-		t.Fatalf("Failed to create test config file: %v", err)
-	}
+	require.NoError(t, err, "Failed to create test config file: %v")
 
 	// Clear env vars to ensure file values are used
 	t.Setenv("MCS_EMAIL", "")
@@ -90,16 +87,10 @@ region = "MME"
 	t.Setenv("MCS_REGION", "")
 
 	cfg, err := Load(configPath)
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
-	}
+	require.NoError(t, err, "Load() error = %v")
 
-	if cfg.Email != "file@example.com" {
-		t.Errorf("Load() Email = %v, want file@example.com", cfg.Email)
-	}
-	if cfg.Region != api.RegionMME {
-		t.Errorf("Load() Region = %v, want MME", cfg.Region)
-	}
+	assert.Equalf(t, "file@example.com", cfg.Email, "Load() Email = %v, want file@example.com", cfg.Email)
+	assert.Equalf(t, api.RegionMME, cfg.Region, "Load() Region = %v, want MME", cfg.Region)
 }
 
 func TestEnvironmentOverridesFile(t *testing.T) {
@@ -113,26 +104,18 @@ password = "filepassword"
 region = "MME"
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0600)
-	if err != nil {
-		t.Fatalf("Failed to create test config file: %v", err)
-	}
+	require.NoError(t, err, "Failed to create test config file: %v")
 
 	// Set test env vars (t.Setenv auto-restores after test)
 	t.Setenv("MCS_EMAIL", "env@example.com")
 	t.Setenv("MCS_REGION", "MNAO")
 
 	cfg, err := Load(configPath)
-	if err != nil {
-		t.Fatalf("Load() error = %v", err)
-	}
+	require.NoError(t, err, "Load() error = %v")
 
 	// Env vars should override file values
-	if cfg.Email != "env@example.com" {
-		t.Errorf("Load() Email = %v, want env@example.com (env should override)", cfg.Email)
-	}
-	if cfg.Region != api.RegionMNAO {
-		t.Errorf("Load() Region = %v, want MNAO (env should override)", cfg.Region)
-	}
+	assert.Equalf(t, "env@example.com", cfg.Email, "Load() Email = %v, want env@example.com (env should override)", cfg.Email)
+	assert.Equalf(t, api.RegionMNAO, cfg.Region, "Load() Region = %v, want MNAO (env should override)", cfg.Region)
 }
 
 func TestConfig_Validate(t *testing.T) {
@@ -180,9 +163,12 @@ func TestConfig_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Config.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				require.Error(t, err, "Config.Validate() error = %v, wantErr %v")
+			} else {
+				require.NoError(t, err, "Config.Validate() error = %v, wantErr %v")
 			}
+
 		})
 	}
 }
@@ -193,14 +179,11 @@ func TestLoad_propagatesReadError(t *testing.T) {
 
 	// Write a valid TOML file
 	err := os.WriteFile(configPath, []byte(`email = "test@example.com"`), 0600)
-	if err != nil {
-		t.Fatalf("Failed to create config file: %v", err)
-	}
+	require.NoError(t, err, "Failed to create config file: %v")
 
 	// Make the file unreadable to force a read error
-	if err := os.Chmod(configPath, 0o000); err != nil {
-		t.Fatalf("Failed to chmod config file: %v", err)
-	}
+	err = os.Chmod(configPath, 0o000)
+	require.NoError(t, err, "Failed to chmod config file: %v")
 
 	// Clear environment variables so file values are used
 	t.Setenv("MCS_EMAIL", "")
@@ -209,10 +192,6 @@ func TestLoad_propagatesReadError(t *testing.T) {
 
 	// Load should return an error because reading the unreadable file failed
 	cfg, err := Load(configPath)
-	if cfg != nil {
-		t.Errorf("expected nil config, got %v", cfg)
-	}
-	if err == nil {
-		t.Errorf("expected error when reading unreadable config file, got nil")
-	}
+	assert.Nil(t, cfg, "expected nil config")
+	assert.Error(t, err, "expected error when reading unreadable config file")
 }
