@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAPIRequest_RetryOnEncryptionError tests that encryption errors trigger retry with new keys
+// TestAPIRequest_RetryOnEncryptionError tests that encryption errors trigger retry with new keys.
 func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 	t.Parallel()
 	requestCount := 0
@@ -83,7 +83,7 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 	assert.Equalf(t, 3, requestCount, "Expected 3 requests (error + get keys + retry), got %d", requestCount)
 }
 
-// TestAPIRequest_MaxRetries tests that max retries is enforced
+// TestAPIRequest_MaxRetries tests that max retries is enforced.
 func TestAPIRequest_MaxRetries(t *testing.T) {
 	t.Parallel()
 	requestCount := 0
@@ -135,7 +135,7 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 	assert.EqualError(t, err, "Request exceeded max number of retries")
 }
 
-// TestAPIRequest_EngineStartLimitError tests the engine start limit error
+// TestAPIRequest_EngineStartLimitError tests the engine start limit error.
 func TestAPIRequest_EngineStartLimitError(t *testing.T) {
 	t.Parallel()
 	server := setupErrorServer(t, 920000, "400S11", "Engine start limit")
@@ -150,7 +150,7 @@ func TestAPIRequest_EngineStartLimitError(t *testing.T) {
 	assert.ErrorAs(t, err, new(*EngineStartLimitError))
 }
 
-// TestAPIRequest_WithQueryParams tests GET request with query parameters
+// TestAPIRequest_WithQueryParams tests GET request with query parameters.
 func TestAPIRequest_WithQueryParams(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +187,7 @@ func TestAPIRequest_WithQueryParams(t *testing.T) {
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
 }
 
-// TestEncryptPayloadUsingKey_EmptyPayload tests encryption of empty payload
+// TestEncryptPayloadUsingKey_EmptyPayload tests encryption of empty payload.
 func TestEncryptPayloadUsingKey_EmptyPayload(t *testing.T) {
 	t.Parallel()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
@@ -201,7 +201,7 @@ func TestEncryptPayloadUsingKey_EmptyPayload(t *testing.T) {
 	assert.Empty(t, encrypted)
 }
 
-// TestEncryptPayloadUsingKey_MissingKey tests error when encryption key is missing
+// TestEncryptPayloadUsingKey_MissingKey tests error when encryption key is missing.
 func TestEncryptPayloadUsingKey_MissingKey(t *testing.T) {
 	t.Parallel()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
@@ -214,7 +214,7 @@ func TestEncryptPayloadUsingKey_MissingKey(t *testing.T) {
 	assert.ErrorAs(t, err, new(*APIError))
 }
 
-// TestDecryptPayloadUsingKey_MissingKey tests error when decryption key is missing
+// TestDecryptPayloadUsingKey_MissingKey tests error when decryption key is missing.
 func TestDecryptPayloadUsingKey_MissingKey(t *testing.T) {
 	t.Parallel()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
@@ -238,13 +238,13 @@ func TestAPIRequest_TokenExpiredRetry(t *testing.T) {
 
 // TestAPIRequest_MultipleEncryptionKeyRetries tests multiple encryption key refresh attempts
 // This test is already covered by TestAPIRequest_RetryOnEncryptionError, so skip this more
-// complex version to avoid test failures due to checkVersion encryption complexity
+// complex version to avoid test failures due to checkVersion encryption complexity.
 func TestAPIRequest_MultipleEncryptionKeyRetries(t *testing.T) {
 	t.Parallel()
 	t.Skip("Skipping - encryption key retry is already tested in TestAPIRequest_RetryOnEncryptionError")
 }
 
-// TestAPIRequest_ContextCancellation tests that context cancellation stops the request
+// TestAPIRequest_ContextCancellation tests that context cancellation stops the request.
 func TestAPIRequest_ContextCancellation(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -270,7 +270,7 @@ func TestAPIRequest_ContextCancellation(t *testing.T) {
 	assert.Equalf(t, context.Canceled, err, "Expected context.Canceled error, got: %v", err)
 }
 
-// TestAPIRequest_ComplexDataTypes tests request/response with various data types
+// TestAPIRequest_ComplexDataTypes tests request/response with various data types.
 func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -328,7 +328,7 @@ func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 	assert.EqualValues(t, "value", nestedObj["key"], "Expected nestedObject.key 'value'")
 }
 
-// TestAPIRequest_RequestInProgressRetry tests handling of request in progress error without retry
+// TestAPIRequest_RequestInProgressRetry tests handling of request in progress error without retry.
 func TestAPIRequest_RequestInProgressRetry(t *testing.T) {
 	t.Parallel()
 	server := setupErrorServer(t, 920000, "400S01", "Request in progress")
@@ -344,7 +344,7 @@ func TestAPIRequest_RequestInProgressRetry(t *testing.T) {
 	assert.ErrorAs(t, err, new(*RequestInProgressError))
 }
 
-// TestAPIRequestJSON_FullFlow tests the JSON request flow (returns raw bytes instead of parsed map)
+// TestAPIRequestJSON_FullFlow tests the JSON request flow (returns raw bytes instead of parsed map).
 func TestAPIRequestJSON_FullFlow(t *testing.T) {
 	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

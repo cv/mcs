@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewStartCmd creates the start command
+// NewStartCmd creates the start command.
 func NewStartCmd() *cobra.Command {
 	return buildConfirmableCommand(CommandSpec{
 		Use:   "start",
@@ -41,7 +41,7 @@ func NewStartCmd() *cobra.Command {
 	})
 }
 
-// NewStopCmd creates the stop command
+// NewStopCmd creates the stop command.
 func NewStopCmd() *cobra.Command {
 	return buildConfirmableCommand(CommandSpec{
 		Use:   "stop",

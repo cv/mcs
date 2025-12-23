@@ -9,7 +9,7 @@ import (
 )
 
 // TestUndisplayedFieldsInVehicleStatus verifies that undisplayed fields from GetVehicleStatus
-// can be parsed correctly from the API response structure
+// can be parsed correctly from the API response structure.
 func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	t.Parallel()
 	// Create a comprehensive mock response with ALL fields we want to verify
@@ -188,7 +188,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 }
 
 // TestUndisplayedFieldsInEVVehicleStatus verifies that undisplayed fields from GetEVVehicleStatus
-// can be parsed correctly from the API response structure
+// can be parsed correctly from the API response structure.
 func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	t.Parallel()
 	// Create a comprehensive mock response with ALL fields we want to verify
@@ -346,7 +346,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	})
 }
 
-// TestVehicleStatusWithVariedValues tests that fields can handle different values
+// TestVehicleStatusWithVariedValues tests that fields can handle different values.
 func TestVehicleStatusWithVariedValues(t *testing.T) {
 	t.Parallel()
 	// Test with hood open, fuel lid open, windows partially open, hazard on
@@ -454,7 +454,7 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 
 }
 
-// TestEVVehicleStatusWithVariedValues tests EV fields with different values
+// TestEVVehicleStatusWithVariedValues tests EV fields with different values.
 func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 	t.Parallel()
 	// Test with battery heater on, different temps

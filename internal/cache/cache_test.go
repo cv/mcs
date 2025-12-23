@@ -171,7 +171,7 @@ func TestIsTokenValid(t *testing.T) {
 	}
 }
 
-// TestCachePersistence_MultipleSaveLoad tests save and load cycle multiple times
+// TestCachePersistence_MultipleSaveLoad tests save and load cycle multiple times.
 func TestCachePersistence_MultipleSaveLoad(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -210,7 +210,7 @@ func TestCachePersistence_MultipleSaveLoad(t *testing.T) {
 	assert.NotEqual(t, "token-1", loaded2.AccessToken, "Old cache values should be overwritten")
 }
 
-// TestCachePersistence_ConcurrentAccess tests concurrent save/load operations
+// TestCachePersistence_ConcurrentAccess tests concurrent save/load operations.
 func TestCachePersistence_ConcurrentAccess(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -242,7 +242,7 @@ func TestCachePersistence_ConcurrentAccess(t *testing.T) {
 	}
 }
 
-// TestCachePersistence_CorruptedData tests handling of corrupted cache file
+// TestCachePersistence_CorruptedData tests handling of corrupted cache file.
 func TestCachePersistence_CorruptedData(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -262,7 +262,7 @@ func TestCachePersistence_CorruptedData(t *testing.T) {
 	require.Error(t, err, "Expected error when loading corrupted cache")
 }
 
-// TestCachePersistence_PartialData tests cache with missing fields
+// TestCachePersistence_PartialData tests cache with missing fields.
 func TestCachePersistence_PartialData(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -288,7 +288,7 @@ func TestCachePersistence_PartialData(t *testing.T) {
 	// The actual validation happens when the CLI tries to use the credentials
 }
 
-// TestCacheValidation_EdgeCases tests edge cases in cache validation
+// TestCacheValidation_EdgeCases tests edge cases in cache validation.
 func TestCacheValidation_EdgeCases(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -366,7 +366,7 @@ func TestCacheValidation_EdgeCases(t *testing.T) {
 	}
 }
 
-// TestCachePersistence_FilePermissions tests that cache file has correct permissions
+// TestCachePersistence_FilePermissions tests that cache file has correct permissions.
 func TestCachePersistence_FilePermissions(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -389,7 +389,7 @@ func TestCachePersistence_FilePermissions(t *testing.T) {
 	assert.Equal(t, os.FileMode(0600), info.Mode().Perm(), "Cache file has incorrect permissions")
 }
 
-// TestCachePersistence_DirectoryCreation tests that cache directory is created if it doesn't exist
+// TestCachePersistence_DirectoryCreation tests that cache directory is created if it doesn't exist.
 func TestCachePersistence_DirectoryCreation(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -413,7 +413,7 @@ func TestCachePersistence_DirectoryCreation(t *testing.T) {
 	assert.DirExists(t, cachePath)
 }
 
-// TestCachePersistence_EmptyHomeDir tests behavior when HOME is not set
+// TestCachePersistence_EmptyHomeDir tests behavior when HOME is not set.
 func TestCachePersistence_EmptyHomeDir(t *testing.T) {
 	// Note: This test may not work on all systems
 	// We can't truly unset HOME in Go tests, so we set it to empty

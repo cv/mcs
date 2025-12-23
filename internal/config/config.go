@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Config holds the application configuration
+// Config holds the application configuration.
 type Config struct {
 	Email    string
 	Password string
@@ -19,7 +19,7 @@ type Config struct {
 
 // Load loads configuration from file and environment variables
 // Environment variables take precedence over file values
-// configPath can be empty to use default location (~/.config/mcs/config.toml)
+// configPath can be empty to use default location (~/.config/mcs/config.toml).
 func Load(configPath string) (*Config, error) {
 	v := viper.New()
 
@@ -71,7 +71,7 @@ func Load(configPath string) (*Config, error) {
 	return cfg, nil
 }
 
-// Validate checks if the configuration is valid
+// Validate checks if the configuration is valid.
 func (c *Config) Validate() error {
 	if c.Email == "" {
 		return errors.New("email is required")
@@ -82,14 +82,16 @@ func (c *Config) Validate() error {
 	if !c.Region.IsValid() {
 		return fmt.Errorf("invalid region: %s (must be one of: MNAO, MME, MJO)", c.Region)
 	}
+
 	return nil
 }
 
-// DefaultConfigPath returns the default configuration file path
+// DefaultConfigPath returns the default configuration file path.
 func DefaultConfigPath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
+
 	return filepath.Join(homeDir, ".config", "mcs", "config.toml"), nil
 }

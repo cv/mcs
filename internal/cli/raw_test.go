@@ -12,21 +12,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestRawCommand tests the raw command
+// TestRawCommand tests the raw command.
 func TestRawCommand(t *testing.T) {
 	t.Parallel()
 	cmd := NewRawCmd()
 	assertCommandBasics(t, cmd, "raw")
 }
 
-// TestRawCommand_Subcommands tests raw subcommands
+// TestRawCommand_Subcommands tests raw subcommands.
 func TestRawCommand_Subcommands(t *testing.T) {
 	t.Parallel()
 	cmd := NewRawCmd()
 	assertSubcommandsExist(t, cmd, []string{"status", "ev", "vehicle"})
 }
 
-// TestRawCommand_SubcommandStructure tests structure of each raw subcommand using table-driven pattern
+// TestRawCommand_SubcommandStructure tests structure of each raw subcommand using table-driven pattern.
 func TestRawCommand_SubcommandStructure(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -76,7 +76,7 @@ func TestRawCommand_SubcommandStructure(t *testing.T) {
 	}
 }
 
-// TestRawCommand_SubcommandSilenceUsage tests that raw subcommands silence usage on errors
+// TestRawCommand_SubcommandSilenceUsage tests that raw subcommands silence usage on errors.
 func TestRawCommand_SubcommandSilenceUsage(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -101,7 +101,7 @@ func TestRawCommand_SubcommandSilenceUsage(t *testing.T) {
 	}
 }
 
-// TestRunRawStatus_OutputFormat tests that runRawStatus would produce valid JSON
+// TestRunRawStatus_OutputFormat tests that runRawStatus would produce valid JSON.
 func TestRunRawStatus_OutputFormat(t *testing.T) {
 	t.Parallel()
 	// This test verifies the JSON marshaling logic without needing a real API client
@@ -151,7 +151,7 @@ func TestRunRawStatus_OutputFormat(t *testing.T) {
 	}
 }
 
-// TestRunRawEV_OutputFormat tests that runRawEV would produce valid JSON
+// TestRunRawEV_OutputFormat tests that runRawEV would produce valid JSON.
 func TestRunRawEV_OutputFormat(t *testing.T) {
 	t.Parallel()
 	// This test verifies the JSON marshaling logic without needing a real API client
@@ -197,7 +197,7 @@ func TestRunRawEV_OutputFormat(t *testing.T) {
 	}
 }
 
-// TestRunRawVehicle_OutputFormat tests that runRawVehicle would produce valid JSON
+// TestRunRawVehicle_OutputFormat tests that runRawVehicle would produce valid JSON.
 func TestRunRawVehicle_OutputFormat(t *testing.T) {
 	t.Parallel()
 	// This test verifies the JSON marshaling logic without needing a real API client
@@ -288,7 +288,7 @@ func TestRunRawVehicle_OutputFormat(t *testing.T) {
 	}
 }
 
-// TestRawHandlers_ErrorContext tests that error messages include proper context
+// TestRawHandlers_ErrorContext tests that error messages include proper context.
 func TestRawHandlers_ErrorContext(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

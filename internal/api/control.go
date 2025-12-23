@@ -6,7 +6,7 @@ import (
 	"maps"
 )
 
-// Control endpoint constants
+// Control endpoint constants.
 const (
 	EndpointDoorLock             = "remoteServices/doorLock/v4"
 	EndpointDoorUnlock           = "remoteServices/doorUnlock/v4"
@@ -22,11 +22,12 @@ const (
 	EndpointUpdateHVACSetting    = "remoteServices/updateHVACSetting/v4"
 )
 
-// boolToInt converts a boolean to an integer (true=1, false=0)
+// boolToInt converts a boolean to an integer (true=1, false=0).
 func boolToInt(b bool) int {
 	if b {
 		return 1
 	}
+
 	return 0
 }
 
@@ -59,62 +60,62 @@ func (c *Client) executeControl(ctx context.Context, endpoint, actionDesc, inter
 	return c.controlEndpoint(ctx, endpoint, actionDesc, internalVIN, nil)
 }
 
-// DoorLock locks the vehicle doors
+// DoorLock locks the vehicle doors.
 func (c *Client) DoorLock(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointDoorLock, "lock doors", internalVIN)
 }
 
-// DoorUnlock unlocks the vehicle doors
+// DoorUnlock unlocks the vehicle doors.
 func (c *Client) DoorUnlock(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointDoorUnlock, "unlock doors", internalVIN)
 }
 
-// LightsOn turns the vehicle hazard lights on
+// LightsOn turns the vehicle hazard lights on.
 func (c *Client) LightsOn(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointLightOn, "turn lights on", internalVIN)
 }
 
-// LightsOff turns the vehicle hazard lights off
+// LightsOff turns the vehicle hazard lights off.
 func (c *Client) LightsOff(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointLightOff, "turn lights off", internalVIN)
 }
 
-// EngineStart starts the vehicle engine remotely
+// EngineStart starts the vehicle engine remotely.
 func (c *Client) EngineStart(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointEngineStart, "start engine", internalVIN)
 }
 
-// EngineStop stops the vehicle engine remotely
+// EngineStop stops the vehicle engine remotely.
 func (c *Client) EngineStop(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointEngineStop, "stop engine", internalVIN)
 }
 
-// ChargeStart starts charging the vehicle (EV/PHEV only)
+// ChargeStart starts charging the vehicle (EV/PHEV only).
 func (c *Client) ChargeStart(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointChargeStart, "start charging", internalVIN)
 }
 
-// ChargeStop stops charging the vehicle (EV/PHEV only)
+// ChargeStop stops charging the vehicle (EV/PHEV only).
 func (c *Client) ChargeStop(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointChargeStop, "stop charging", internalVIN)
 }
 
-// HVACOn turns the vehicle HVAC system on
+// HVACOn turns the vehicle HVAC system on.
 func (c *Client) HVACOn(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointHVACOn, "turn HVAC on", internalVIN)
 }
 
-// HVACOff turns the vehicle HVAC system off
+// HVACOff turns the vehicle HVAC system off.
 func (c *Client) HVACOff(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointHVACOff, "turn HVAC off", internalVIN)
 }
 
-// RefreshVehicleStatus requests the vehicle to refresh its status (PHEV/EV only)
+// RefreshVehicleStatus requests the vehicle to refresh its status (PHEV/EV only).
 func (c *Client) RefreshVehicleStatus(ctx context.Context, internalVIN string) error {
 	return c.executeControl(ctx, EndpointRefreshVehicleStatus, "refresh vehicle status", internalVIN)
 }
 
-// SetHVACSetting sets HVAC temperature and defroster settings
+// SetHVACSetting sets HVAC temperature and defroster settings.
 func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, temperature float64, tempUnit TemperatureUnit, frontDefroster, rearDefroster bool) error {
 	// The API expects HVAC settings to be nested under "hvacsettings"
 	additionalParams := map[string]any{

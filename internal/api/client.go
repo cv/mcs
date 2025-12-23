@@ -14,22 +14,23 @@ import (
 )
 
 const (
-	// MaxRetries is the maximum number of retries for API requests
+	// MaxRetries is the maximum number of retries for API requests.
 	MaxRetries = 4
 )
 
 // calculateBackoff returns the backoff duration for a given retry count.
-// Uses exponential backoff: 1s, 2s, 4s, 8s
+// Uses exponential backoff: 1s, 2s, 4s, 8s.
 func calculateBackoff(retryCount int) time.Duration {
 	if retryCount <= 0 {
 		return 0
 	}
 	// 2^(retryCount-1) seconds, capped at 8 seconds
 	backoffSeconds := min(1<<(retryCount-1), 8)
+
 	return time.Duration(backoffSeconds) * time.Second
 }
 
-// sleepWithContext sleeps for the specified duration, but returns early if context is cancelled
+// sleepWithContext sleeps for the specified duration, but returns early if context is cancelled.
 func sleepWithContext(ctx context.Context, duration time.Duration) error {
 	if duration <= 0 {
 		return nil
@@ -45,17 +46,17 @@ func sleepWithContext(ctx context.Context, duration time.Duration) error {
 	}
 }
 
-// APIRequest makes an API request with proper encryption, signing, and error handling
+// APIRequest makes an API request with proper encryption, signing, and error handling.
 func (c *Client) APIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsKeys, needsAuth bool) (map[string]any, error) {
 	return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, 0)
 }
 
-// APIRequestJSON makes an API request and returns the raw decrypted JSON bytes
+// APIRequestJSON makes an API request and returns the raw decrypted JSON bytes.
 func (c *Client) APIRequestJSON(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsKeys, needsAuth bool) ([]byte, error) {
 	return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, 0)
 }
 
-// retryFunc is the type for functions that can be retried
+// retryFunc is the type for functions that can be retried.
 type retryFunc[T any] func(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsKeys, needsAuth bool) (T, error)
 
 // genericRetry implements the retry logic with exponential backoff for API requests.
@@ -108,6 +109,7 @@ func genericRetry[T any](
 			if err := c.sleepFunc(ctx, backoff); err != nil {
 				return zero, err
 			}
+
 			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
 		} else if errors.As(err, &tokenErr) {
 			// Login again and retry
@@ -119,8 +121,10 @@ func genericRetry[T any](
 			if err := c.sleepFunc(ctx, backoff); err != nil {
 				return zero, err
 			}
+
 			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
 		}
+
 		return zero, err
 	}
 
@@ -314,23 +318,25 @@ func (c *Client) sendAPIRequestJSON(ctx context.Context, method, uri string, que
 	return c.decryptPayloadBytes(encryptedPayload)
 }
 
-// ensureKeysPresent ensures encryption keys are available
+// ensureKeysPresent ensures encryption keys are available.
 func (c *Client) ensureKeysPresent(ctx context.Context) error {
 	if c.Keys.EncKey == "" || c.Keys.SignKey == "" {
 		return c.GetEncryptionKeys(ctx)
 	}
+
 	return nil
 }
 
-// ensureTokenValid ensures access token is valid
+// ensureTokenValid ensures access token is valid.
 func (c *Client) ensureTokenValid(ctx context.Context) error {
 	if !c.IsTokenValid() {
 		return c.Login(ctx)
 	}
+
 	return nil
 }
 
-// encryptPayloadUsingKey encrypts a payload using the client's encryption key
+// encryptPayloadUsingKey encrypts a payload using the client's encryption key.
 func (c *Client) encryptPayloadUsingKey(payload string) (string, error) {
 	if c.Keys.EncKey == "" {
 		return "", NewAPIError("Missing encryption key")
@@ -338,10 +344,11 @@ func (c *Client) encryptPayloadUsingKey(payload string) (string, error) {
 	if payload == "" {
 		return "", nil
 	}
+
 	return EncryptAES128CBC([]byte(payload), c.Keys.EncKey, IV)
 }
 
-// decryptPayloadUsingKey decrypts a payload using the client's encryption key
+// decryptPayloadUsingKey decrypts a payload using the client's encryption key.
 func (c *Client) decryptPayloadUsingKey(payload string) (map[string]any, error) {
 	if c.Keys.EncKey == "" {
 		return nil, NewAPIError("Missing encryption key")
@@ -360,7 +367,7 @@ func (c *Client) decryptPayloadUsingKey(payload string) (map[string]any, error) 
 	return result, nil
 }
 
-// decryptPayloadBytes decrypts a payload and returns raw JSON bytes
+// decryptPayloadBytes decrypts a payload and returns raw JSON bytes.
 func (c *Client) decryptPayloadBytes(payload string) ([]byte, error) {
 	if c.Keys.EncKey == "" {
 		return nil, NewAPIError("Missing encryption key")
@@ -374,7 +381,7 @@ func (c *Client) decryptPayloadBytes(payload string) ([]byte, error) {
 	return decrypted, nil
 }
 
-// getSignFromPayloadAndTimestamp generates a signature from payload and timestamp
+// getSignFromPayloadAndTimestamp generates a signature from payload and timestamp.
 func (c *Client) getSignFromPayloadAndTimestamp(payload, timestamp string) string {
 	if timestamp == "" {
 		return ""
@@ -390,7 +397,7 @@ func (c *Client) getSignFromPayloadAndTimestamp(payload, timestamp string) strin
 	return SignWithSHA256(dataToSign)
 }
 
-// logRequest logs request details when debug mode is enabled
+// logRequest logs request details when debug mode is enabled.
 func (c *Client) logRequest(method, url string, headers map[string]string, body string) {
 	if !c.debug {
 		return
@@ -410,7 +417,7 @@ func (c *Client) logRequest(method, url string, headers map[string]string, body 
 	}
 }
 
-// logResponse logs response details when debug mode is enabled
+// logResponse logs response details when debug mode is enabled.
 func (c *Client) logResponse(statusCode int, body []byte) {
 	if !c.debug {
 		return

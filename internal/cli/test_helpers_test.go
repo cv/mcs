@@ -18,6 +18,7 @@ func findSubcommand(cmd *cobra.Command, name string) *cobra.Command {
 			return subCmd
 		}
 	}
+
 	return nil
 }
 
@@ -145,6 +146,7 @@ func boolToDoorState(isOpen bool) float64 {
 	if isOpen {
 		return float64(api.DoorOpen)
 	}
+
 	return float64(api.DoorClosed)
 }
 
@@ -153,6 +155,7 @@ func boolToLockState(isLocked bool) float64 {
 	if isLocked {
 		return float64(api.DoorLocked)
 	}
+
 	return float64(api.DoorUnlocked)
 }
 
@@ -197,6 +200,7 @@ func (b *MockEVVehicleStatusBuilder) WithHVAC(on bool) *MockEVVehicleStatusBuild
 	} else {
 		b.response.ResultData[0].PlusBInformation.VehicleInfo.RemoteHvacInfo.HVAC = float64(api.HVACStatusOff)
 	}
+
 	return b
 }
 
@@ -236,12 +240,14 @@ func (b *MockEVVehicleStatusBuilder) WithCharging(charging bool) *MockEVVehicleS
 	} else {
 		chargeInfo.ChargeStatusSub = 0
 	}
+
 	return b
 }
 
 // WithoutHVAC sets the RemoteHvacInfo to nil (simulates vehicle without HVAC data).
 func (b *MockEVVehicleStatusBuilder) WithoutHVAC() *MockEVVehicleStatusBuilder {
 	b.response.ResultData[0].PlusBInformation.VehicleInfo.RemoteHvacInfo = nil
+
 	return b
 }
 

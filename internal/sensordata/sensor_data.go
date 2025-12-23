@@ -22,7 +22,7 @@ const (
 	rsaPublicKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4sA7vA7N/t1SRBS8tugM2X4bByl0jaCZLqxPOql+qZ3sP4UFayqJTvXjd7eTjMwg1T70PnmPWyh1hfQr4s12oSVphTKAjPiWmEBvcpnPPMjr5fGgv0w6+KM9DLTxcktThPZAGoVcoyM/cTO/YsAMIxlmTzpXBaxddHRwi8S2NvwIDAQAB"
 )
 
-// SensorDataBuilder builds sensor data for anti-bot protection
+// SensorDataBuilder builds sensor data for anti-bot protection.
 type SensorDataBuilder struct {
 	sensorCollectionStartTimestamp time.Time
 	deviceInfoTime                 int
@@ -33,7 +33,7 @@ type SensorDataBuilder struct {
 	performanceTestResults         *PerformanceTestResults
 }
 
-// NewSensorDataBuilder creates a new sensor data builder
+// NewSensorDataBuilder creates a new sensor data builder.
 func NewSensorDataBuilder() *SensorDataBuilder {
 	builder := &SensorDataBuilder{
 		sensorCollectionStartTimestamp: time.Now().UTC(),
@@ -51,7 +51,7 @@ func NewSensorDataBuilder() *SensorDataBuilder {
 	return builder
 }
 
-// GenerateSensorData generates the sensor data string
+// GenerateSensorData generates the sensor data string.
 func (b *SensorDataBuilder) GenerateSensorData() (string, error) {
 	b.touchEventList.Randomize(b.sensorCollectionStartTimestamp)
 	b.keyEventList.Randomize(b.sensorCollectionStartTimestamp)
@@ -229,6 +229,7 @@ func countSeparators(s string) int {
 			count++
 		}
 	}
+
 	return count
 }
 
@@ -252,7 +253,7 @@ func timestampToMillis(t time.Time) int64 {
 //   - lower32Bits: Low-order 32 bits of input (typically event count)
 //   - key: Shared secret for round function (typically time since collection start)
 //
-// Returns: 64-bit obfuscated value combining transformed upper and lower halves
+// Returns: 64-bit obfuscated value combining transformed upper and lower halves.
 func feistelCipher(upper32Bits, lower32Bits, key int) int64 {
 	// toInt32 safely converts int64 to int32, truncating to 32 bits
 	toInt32 := func(n int64) int32 {

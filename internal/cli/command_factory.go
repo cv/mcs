@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// CommandSpec holds the specification for building a confirmable command
+// CommandSpec holds the specification for building a confirmable command.
 type CommandSpec struct {
 	// Command metadata
 	Use     string

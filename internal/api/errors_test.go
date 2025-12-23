@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestCheckResultCode tests the checkResultCode helper function
+// TestCheckResultCode tests the checkResultCode helper function.
 func TestCheckResultCode(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -65,7 +65,7 @@ func TestCheckResultCode(t *testing.T) {
 	}
 }
 
-// TestCheckResultCode_ReturnType tests that checkResultCode returns ResultCodeError
+// TestCheckResultCode_ReturnType tests that checkResultCode returns ResultCodeError.
 func TestCheckResultCode_ReturnType(t *testing.T) {
 	t.Parallel()
 	err := checkResultCode("500E00", "test operation")
@@ -80,7 +80,7 @@ func TestCheckResultCode_ReturnType(t *testing.T) {
 	assert.Equalf(t, "test operation", resultCodeErr.Operation, "Expected Operation 'test operation', got '%s'", resultCodeErr.Operation)
 }
 
-// TestNewResultCodeError tests the ResultCodeError constructor
+// TestNewResultCodeError tests the ResultCodeError constructor.
 func TestNewResultCodeError(t *testing.T) {
 	t.Parallel()
 	err := NewResultCodeError("400E01", "unlock doors")

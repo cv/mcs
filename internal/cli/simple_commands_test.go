@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TestSimpleCommands tests basic properties of simple control commands
+// TestSimpleCommands tests basic properties of simple control commands.
 func TestSimpleCommands(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -29,7 +29,7 @@ func TestSimpleCommands(t *testing.T) {
 	}
 }
 
-// TestSimpleCommands_NoArgs tests that simple control commands reject arguments
+// TestSimpleCommands_NoArgs tests that simple control commands reject arguments.
 func TestSimpleCommands_NoArgs(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

@@ -15,10 +15,11 @@ func appendFormattedSection(output *string, formatter func() (string, error)) er
 		return err
 	}
 	*output += result + "\n"
+
 	return nil
 }
 
-// displayAllStatus displays all status information
+// displayAllStatus displays all status information.
 func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
 		hazardsOn, _ := vehicleStatus.GetHazardInfo()
@@ -38,6 +39,7 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 		if err != nil {
 			return "", fmt.Errorf("failed to marshal JSON: %w", err)
 		}
+
 		return string(jsonBytes), nil
 	}
 

@@ -14,10 +14,11 @@ func extractWithGetter[T any](getter func() (T, error), converter func(T) map[st
 	if err != nil {
 		return map[string]any{}
 	}
+
 	return converter(info)
 }
 
-// extractVehicleInfoData extracts vehicle info for JSON output
+// extractVehicleInfoData extracts vehicle info for JSON output.
 func extractVehicleInfoData(vehicleInfo VehicleInfo) map[string]any {
 	return map[string]any{
 		"vin":        vehicleInfo.VIN,
@@ -27,7 +28,7 @@ func extractVehicleInfoData(vehicleInfo VehicleInfo) map[string]any {
 	}
 }
 
-// batteryInfoToMap converts BatteryInfo to a map for JSON output
+// batteryInfoToMap converts BatteryInfo to a map for JSON output.
 func batteryInfoToMap(batteryInfo api.BatteryInfo) map[string]any {
 	data := map[string]any{
 		"battery_level": batteryInfo.BatteryLevel,
@@ -41,15 +42,16 @@ func batteryInfoToMap(batteryInfo api.BatteryInfo) map[string]any {
 		data["charge_time_ac_minutes"] = batteryInfo.ChargeTimeACMin
 		data["charge_time_qbc_minutes"] = batteryInfo.ChargeTimeQBCMin
 	}
+
 	return data
 }
 
-// extractBatteryData extracts battery data for JSON output
+// extractBatteryData extracts battery data for JSON output.
 func extractBatteryData(evStatus *api.EVVehicleStatusResponse) map[string]any {
 	return extractWithGetter(evStatus.GetBatteryInfo, batteryInfoToMap)
 }
 
-// fuelInfoToMap converts FuelInfo to a map for JSON output
+// fuelInfoToMap converts FuelInfo to a map for JSON output.
 func fuelInfoToMap(fuelInfo api.FuelInfo) map[string]any {
 	return map[string]any{
 		"fuel_level": fuelInfo.FuelLevel,
@@ -57,14 +59,15 @@ func fuelInfoToMap(fuelInfo api.FuelInfo) map[string]any {
 	}
 }
 
-// extractFuelData extracts fuel data for JSON output
+// extractFuelData extracts fuel data for JSON output.
 func extractFuelData(vehicleStatus *api.VehicleStatusResponse) map[string]any {
 	return extractWithGetter(vehicleStatus.GetFuelInfo, fuelInfoToMap)
 }
 
-// locationInfoToMap converts LocationInfo to a map for JSON output
+// locationInfoToMap converts LocationInfo to a map for JSON output.
 func locationInfoToMap(locationInfo api.LocationInfo) map[string]any {
 	mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", locationInfo.Latitude, locationInfo.Longitude)
+
 	return map[string]any{
 		"latitude":  locationInfo.Latitude,
 		"longitude": locationInfo.Longitude,
@@ -73,12 +76,12 @@ func locationInfoToMap(locationInfo api.LocationInfo) map[string]any {
 	}
 }
 
-// extractLocationData extracts location data for JSON output
+// extractLocationData extracts location data for JSON output.
 func extractLocationData(vehicleStatus *api.VehicleStatusResponse) map[string]any {
 	return extractWithGetter(vehicleStatus.GetLocationInfo, locationInfoToMap)
 }
 
-// tireInfoToMap converts TireInfo to a map for JSON output
+// tireInfoToMap converts TireInfo to a map for JSON output.
 func tireInfoToMap(tireInfo api.TireInfo) map[string]any {
 	return map[string]any{
 		"front_left_psi":  tireInfo.FrontLeftPsi,
@@ -88,12 +91,12 @@ func tireInfoToMap(tireInfo api.TireInfo) map[string]any {
 	}
 }
 
-// extractTiresData extracts tire data for JSON output
+// extractTiresData extracts tire data for JSON output.
 func extractTiresData(vehicleStatus *api.VehicleStatusResponse) map[string]any {
 	return extractWithGetter(vehicleStatus.GetTiresInfo, tireInfoToMap)
 }
 
-// doorStatusToMap converts DoorStatus to a map for JSON output
+// doorStatusToMap converts DoorStatus to a map for JSON output.
 func doorStatusToMap(doorStatus api.DoorStatus) map[string]any {
 	return map[string]any{
 		"all_locked":        doorStatus.AllLocked,
@@ -111,24 +114,24 @@ func doorStatusToMap(doorStatus api.DoorStatus) map[string]any {
 	}
 }
 
-// extractDoorsData extracts door data for JSON output
+// extractDoorsData extracts door data for JSON output.
 func extractDoorsData(vehicleStatus *api.VehicleStatusResponse) map[string]any {
 	return extractWithGetter(vehicleStatus.GetDoorsInfo, doorStatusToMap)
 }
 
-// odometerInfoToMap converts OdometerInfo to a map for JSON output
+// odometerInfoToMap converts OdometerInfo to a map for JSON output.
 func odometerInfoToMap(odometerInfo api.OdometerInfo) map[string]any {
 	return map[string]any{
 		"odometer_km": odometerInfo.OdometerKm,
 	}
 }
 
-// extractOdometerData extracts odometer data for JSON output
+// extractOdometerData extracts odometer data for JSON output.
 func extractOdometerData(vehicleStatus *api.VehicleStatusResponse) map[string]any {
 	return extractWithGetter(vehicleStatus.GetOdometerInfo, odometerInfoToMap)
 }
 
-// hvacInfoToMap converts HVACInfo to a map for JSON output
+// hvacInfoToMap converts HVACInfo to a map for JSON output.
 func hvacInfoToMap(hvacInfo api.HVACInfo) map[string]any {
 	return map[string]any{
 		"hvac_on":                hvacInfo.HVACOn,
@@ -139,12 +142,12 @@ func hvacInfoToMap(hvacInfo api.HVACInfo) map[string]any {
 	}
 }
 
-// extractHvacData extracts HVAC data for JSON output
+// extractHvacData extracts HVAC data for JSON output.
 func extractHvacData(evStatus *api.EVVehicleStatusResponse) map[string]any {
 	return extractWithGetter(evStatus.GetHvacInfo, hvacInfoToMap)
 }
 
-// windowStatusToMap converts WindowStatus to a map for JSON output
+// windowStatusToMap converts WindowStatus to a map for JSON output.
 func windowStatusToMap(windowsInfo api.WindowStatus) map[string]any {
 	return map[string]any{
 		"driver_position":     windowsInfo.DriverPosition,
@@ -154,7 +157,7 @@ func windowStatusToMap(windowsInfo api.WindowStatus) map[string]any {
 	}
 }
 
-// extractWindowsData extracts window data for JSON output
+// extractWindowsData extracts window data for JSON output.
 func extractWindowsData(vehicleStatus *api.VehicleStatusResponse) map[string]any {
 	return extractWithGetter(vehicleStatus.GetWindowsInfo, windowStatusToMap)
 }

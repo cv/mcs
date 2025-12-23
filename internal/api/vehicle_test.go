@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestGetVecBaseInfos tests getting vehicle base information
+// TestGetVecBaseInfos tests getting vehicle base information.
 func TestGetVecBaseInfos(t *testing.T) {
 	t.Parallel()
 	responseData := map[string]any{
@@ -42,7 +42,7 @@ func TestGetVecBaseInfos(t *testing.T) {
 	assert.Lenf(t, result.VecBaseInfos, 1, "Expected 1 vehicle, got %d", len(result.VecBaseInfos))
 }
 
-// TestGetVehicleStatus tests getting vehicle status
+// TestGetVehicleStatus tests getting vehicle status.
 func TestGetVehicleStatus(t *testing.T) {
 	t.Parallel()
 	responseData := map[string]any{
@@ -88,7 +88,7 @@ func TestGetVehicleStatus(t *testing.T) {
 	assert.Lenf(t, result.RemoteInfos, 1, "Expected 1 remote info, got %d", len(result.RemoteInfos))
 }
 
-// TestGetVehicleStatus_Error tests error handling
+// TestGetVehicleStatus_Error tests error handling.
 func TestGetVehicleStatus_Error(t *testing.T) {
 	t.Parallel()
 	server := createErrorServer(t, "500E00", "Internal error")
@@ -103,7 +103,7 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 	assert.Equal(t, expectedError, err.Error())
 }
 
-// TestGetEVVehicleStatus tests getting EV vehicle status
+// TestGetEVVehicleStatus tests getting EV vehicle status.
 func TestGetEVVehicleStatus(t *testing.T) {
 	t.Parallel()
 	responseData := map[string]any{
@@ -149,7 +149,7 @@ func TestGetEVVehicleStatus(t *testing.T) {
 	assert.InDelta(t, float64(1), chargeInfo.ChargerConnectorFitting, 0.0001)
 }
 
-// TestGetEVVehicleStatus_Error tests error handling
+// TestGetEVVehicleStatus_Error tests error handling.
 func TestGetEVVehicleStatus_Error(t *testing.T) {
 	t.Parallel()
 	server := createErrorServer(t, "500E00", "Internal error")

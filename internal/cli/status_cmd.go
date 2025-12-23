@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// StatusType represents the type of status information to display
+// StatusType represents the type of status information to display.
 type StatusType string
 
 const (
@@ -24,7 +24,7 @@ const (
 	StatusHVAC     StatusType = "hvac"
 )
 
-// NewStatusCmd creates the status command
+// NewStatusCmd creates the status command.
 func NewStatusCmd() *cobra.Command {
 	var jsonOutput bool
 	var refresh bool
@@ -222,7 +222,7 @@ func NewStatusCmd() *cobra.Command {
 	return statusCmd
 }
 
-// runStatus executes the status command
+// runStatus executes the status command.
 func runStatus(cmd *cobra.Command, jsonOutput bool, statusType StatusType, refresh bool, refreshWait int) error {
 	return withVehicleClientEx(cmd.Context(), func(ctx context.Context, client *api.Client, vehicleInfo VehicleInfo) error {
 		// Get initial EV status (needed for refresh comparison and final display)
@@ -249,11 +249,12 @@ func runStatus(cmd *cobra.Command, jsonOutput bool, statusType StatusType, refre
 		if err := displayStatusWithVehicle(cmd, statusType, vehicleStatus, evStatus, vehicleInfo, jsonOutput); err != nil {
 			return err
 		}
+
 		return nil
 	})
 }
 
-// refreshAndWaitForStatus triggers a status refresh and polls until the timestamp changes
+// refreshAndWaitForStatus triggers a status refresh and polls until the timestamp changes.
 func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *api.Client, internalVIN api.InternalVIN, evStatus *api.EVVehicleStatusResponse, refreshWait int) (*api.EVVehicleStatusResponse, error) {
 	initialTimestamp, err := evStatus.GetOccurrenceDate()
 	if err != nil {
@@ -296,20 +297,23 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 			}
 			if newTimestamp != initialTimestamp {
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Got fresh status from: %s\n", formatTimestamp(newTimestamp))
+
 				return newEvStatus, nil
 			}
 
 		case <-timeoutCtx.Done():
 			if timeoutCtx.Err() == context.DeadlineExceeded {
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Warning: status did not update within timeout period")
+
 				return evStatus, nil
 			}
+
 			return nil, timeoutCtx.Err()
 		}
 	}
 }
 
-// displayStatusWithVehicle outputs the status based on type, including vehicle info for "all"
+// displayStatusWithVehicle outputs the status based on type, including vehicle info for "all".
 func displayStatusWithVehicle(cmd *cobra.Command, statusType StatusType, vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) error {
 	var output string
 	var err error
@@ -349,5 +353,6 @@ func displayStatusWithVehicle(cmd *cobra.Command, statusType StatusType, vehicle
 
 	// Writing to stdout rarely fails, so we ignore the error here
 	_, _ = fmt.Fprintln(cmd.OutOrStdout(), output)
+
 	return nil
 }

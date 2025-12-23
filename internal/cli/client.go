@@ -10,7 +10,7 @@ import (
 	"github.com/cv/mcs/internal/config"
 )
 
-// createAPIClient creates an API client with cached credentials if available
+// createAPIClient creates an API client with cached credentials if available.
 func createAPIClient() (*api.Client, error) {
 	// Load configuration
 	cfg, err := config.Load(ConfigFile)
@@ -44,7 +44,7 @@ func createAPIClient() (*api.Client, error) {
 	return client, nil
 }
 
-// saveClientCache saves the client's current credentials to cache
+// saveClientCache saves the client's current credentials to cache.
 func saveClientCache(client *api.Client) {
 	accessToken, expirationTs, encKey, signKey := client.GetCredentials()
 
@@ -67,7 +67,7 @@ func saveClientCache(client *api.Client) {
 	}
 }
 
-// VehicleInfo contains identification information about a vehicle
+// VehicleInfo contains identification information about a vehicle.
 type VehicleInfo struct {
 	InternalVIN api.InternalVIN
 	VIN         string

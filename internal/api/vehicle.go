@@ -6,14 +6,14 @@ import (
 	"fmt"
 )
 
-// Vehicle information endpoint constants
+// Vehicle information endpoint constants.
 const (
 	EndpointGetVecBaseInfos    = "remoteServices/getVecBaseInfos/v4"
 	EndpointGetVehicleStatus   = "remoteServices/getVehicleStatus/v4"
 	EndpointGetEVVehicleStatus = "remoteServices/getEVVehicleStatus/v4"
 )
 
-// GetVecBaseInfos retrieves the base information for all vehicles associated with the account
+// GetVecBaseInfos retrieves the base information for all vehicles associated with the account.
 func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, error) {
 	bodyParams := map[string]any{
 		"internaluserid": InternalUserID,
@@ -32,7 +32,7 @@ func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, er
 	return &typed, nil
 }
 
-// buildVehicleStatusParams creates the standard body parameters for vehicle status requests
+// buildVehicleStatusParams creates the standard body parameters for vehicle status requests.
 func buildVehicleStatusParams(internalVIN string) map[string]any {
 	return map[string]any{
 		"internaluserid": InternalUserID,
@@ -43,7 +43,7 @@ func buildVehicleStatusParams(internalVIN string) map[string]any {
 	}
 }
 
-// GetVehicleStatus retrieves the current status of a vehicle
+// GetVehicleStatus retrieves the current status of a vehicle.
 func (c *Client) GetVehicleStatus(ctx context.Context, internalVIN string) (*VehicleStatusResponse, error) {
 	bodyParams := buildVehicleStatusParams(internalVIN)
 
@@ -65,7 +65,7 @@ func (c *Client) GetVehicleStatus(ctx context.Context, internalVIN string) (*Veh
 	return &typed, nil
 }
 
-// GetEVVehicleStatus retrieves the current EV status of a vehicle (battery, charging, HVAC)
+// GetEVVehicleStatus retrieves the current EV status of a vehicle (battery, charging, HVAC).
 func (c *Client) GetEVVehicleStatus(ctx context.Context, internalVIN string) (*EVVehicleStatusResponse, error) {
 	bodyParams := buildVehicleStatusParams(internalVIN)
 

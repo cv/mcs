@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestCreateAPIClient_WithValidConfig tests creating an API client with valid config
+// TestCreateAPIClient_WithValidConfig tests creating an API client with valid config.
 func TestCreateAPIClient_WithValidConfig(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -31,7 +31,7 @@ func TestCreateAPIClient_WithValidConfig(t *testing.T) {
 	require.NotNil(t, client, "Expected client to be created, got nil")
 }
 
-// TestCreateAPIClient_WithInvalidRegion tests error handling for invalid region
+// TestCreateAPIClient_WithInvalidRegion tests error handling for invalid region.
 func TestCreateAPIClient_WithInvalidRegion(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -48,7 +48,7 @@ func TestCreateAPIClient_WithInvalidRegion(t *testing.T) {
 	require.Error(t, err, "Expected error with invalid region, got nil")
 }
 
-// TestCreateAPIClient_WithConfigFile tests loading config from file
+// TestCreateAPIClient_WithConfigFile tests loading config from file.
 func TestCreateAPIClient_WithConfigFile(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -77,7 +77,7 @@ region = "MNAO"
 	require.NotNil(t, client, "Expected client to be created, got nil")
 }
 
-// TestCreateAPIClient_WithCachedCredentials tests using cached credentials
+// TestCreateAPIClient_WithCachedCredentials tests using cached credentials.
 func TestCreateAPIClient_WithCachedCredentials(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -112,7 +112,7 @@ func TestCreateAPIClient_WithCachedCredentials(t *testing.T) {
 	assert.Equalf(t, "cached-sign-key", signKey, "Expected cached sign key, got %s", signKey)
 }
 
-// TestCreateAPIClient_WithExpiredCache tests that expired cache is ignored
+// TestCreateAPIClient_WithExpiredCache tests that expired cache is ignored.
 func TestCreateAPIClient_WithExpiredCache(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -144,7 +144,7 @@ func TestCreateAPIClient_WithExpiredCache(t *testing.T) {
 	assert.NotEqual(t, "expired-token", accessToken, "Expired cache should not be loaded")
 }
 
-// TestSaveClientCache_ValidCredentials tests that client credentials are saved to cache
+// TestSaveClientCache_ValidCredentials tests that client credentials are saved to cache.
 func TestSaveClientCache_ValidCredentials(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -174,7 +174,7 @@ func TestSaveClientCache_ValidCredentials(t *testing.T) {
 	assert.Equalf(t, "testsignkey12345", loadedCache.SignKey, "Expected sign key 'testsignkey12345', got %s", loadedCache.SignKey)
 }
 
-// TestSaveClientCache_EmptyCredentials tests that empty credentials are not saved
+// TestSaveClientCache_EmptyCredentials tests that empty credentials are not saved.
 func TestSaveClientCache_EmptyCredentials(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -194,7 +194,7 @@ func TestSaveClientCache_EmptyCredentials(t *testing.T) {
 	assert.Nil(t, loadedCache)
 }
 
-// TestSaveClientCache_PartialCredentials tests that partial credentials are not saved
+// TestSaveClientCache_PartialCredentials tests that partial credentials are not saved.
 func TestSaveClientCache_PartialCredentials(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -218,7 +218,7 @@ func TestSaveClientCache_PartialCredentials(t *testing.T) {
 	assert.Nil(t, loadedCache)
 }
 
-// TestCreateAPIClient_EnvVarOverridesFile tests that env vars override config file
+// TestCreateAPIClient_EnvVarOverridesFile tests that env vars override config file.
 func TestCreateAPIClient_EnvVarOverridesFile(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -249,7 +249,7 @@ region = "MME"
 	assert.NotNil(t, client)
 }
 
-// TestCreateAPIClient_MissingCredentials tests error when credentials are missing
+// TestCreateAPIClient_MissingCredentials tests error when credentials are missing.
 func TestCreateAPIClient_MissingCredentials(t *testing.T) {
 	// Setup: Create temporary environment
 	tmpDir := t.TempDir()
@@ -266,7 +266,7 @@ func TestCreateAPIClient_MissingCredentials(t *testing.T) {
 	require.Error(t, err, "Expected error with missing credentials, got nil")
 }
 
-// TestVehicleInfo_InternalVINType tests that VehicleInfo.InternalVIN uses api.InternalVIN type
+// TestVehicleInfo_InternalVINType tests that VehicleInfo.InternalVIN uses api.InternalVIN type.
 func TestVehicleInfo_InternalVINType(t *testing.T) {
 	t.Parallel()
 	// This test verifies compile-time type safety for InternalVIN

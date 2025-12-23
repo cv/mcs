@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewChargeCmd creates the charge command
+// NewChargeCmd creates the charge command.
 func NewChargeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "charge",
@@ -28,7 +28,7 @@ func NewChargeCmd() *cobra.Command {
 	return cmd
 }
 
-// NewChargeStartCmd creates the charge start subcommand
+// NewChargeStartCmd creates the charge start subcommand.
 func NewChargeStartCmd() *cobra.Command {
 	return buildConfirmableCommand(CommandSpec{
 		Use:   "start",
@@ -63,7 +63,7 @@ func NewChargeStartCmd() *cobra.Command {
 	})
 }
 
-// NewChargeStopCmd creates the charge stop subcommand
+// NewChargeStopCmd creates the charge stop subcommand.
 func NewChargeStopCmd() *cobra.Command {
 	return buildConfirmableCommand(CommandSpec{
 		Use:   "stop",

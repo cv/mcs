@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/message"
 )
 
-// formatVehicleHeader formats vehicle identification for display
+// formatVehicleHeader formats vehicle identification for display.
 func formatVehicleHeader(vehicleInfo VehicleInfo) string {
 	var header string
 
@@ -39,16 +39,17 @@ func formatVehicleHeader(vehicleInfo VehicleInfo) string {
 	return header
 }
 
-// toJSON converts a map to formatted JSON string
+// toJSON converts a map to formatted JSON string.
 func toJSON(data map[string]any) (string, error) {
 	jsonBytes, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal JSON: %w", err)
 	}
+
 	return string(jsonBytes), nil
 }
 
-// buildBatteryStatusFlags builds the status flags for battery display
+// buildBatteryStatusFlags builds the status flags for battery display.
 func buildBatteryStatusFlags(batteryInfo api.BatteryInfo) []string {
 	var flags []string
 
@@ -80,7 +81,7 @@ func buildBatteryStatusFlags(batteryInfo api.BatteryInfo) []string {
 	return flags
 }
 
-// formatBatteryStatus formats battery status for display
+// formatBatteryStatus formats battery status for display.
 func formatBatteryStatus(batteryInfo api.BatteryInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
 		return toJSON(batteryInfoToMap(batteryInfo))
@@ -100,17 +101,18 @@ func formatBatteryStatus(batteryInfo api.BatteryInfo, jsonOutput bool) (string, 
 	return status, nil
 }
 
-// formatFuelStatus formats fuel status for display
+// formatFuelStatus formats fuel status for display.
 func formatFuelStatus(fuelInfo api.FuelInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
 		return toJSON(fuelInfoToMap(fuelInfo))
 	}
 
 	progressBar := ProgressBar(fuelInfo.FuelLevel, 10)
+
 	return fmt.Sprintf("FUEL: %s (%.1f km range)", progressBar, fuelInfo.RangeKm), nil
 }
 
-// formatBatteryStatusCompact formats battery status without range (for combined view)
+// formatBatteryStatusCompact formats battery status without range (for combined view).
 func formatBatteryStatusCompact(batteryInfo api.BatteryInfo) string {
 	progressBar := ProgressBar(batteryInfo.BatteryLevel, 10)
 	status := "BATTERY: " + progressBar
@@ -127,7 +129,7 @@ func formatBatteryStatusCompact(batteryInfo api.BatteryInfo) string {
 
 // formatFuelStatusWithRange formats fuel status with range display for PHEVs
 // For PHEVs: RemDrvDistDActlKm (fuel API) = total range, SmaphRemDrvDistKm (EV API) = fuel-only range
-// EV range = total - fuel-only
+// EV range = total - fuel-only.
 func formatFuelStatusWithRange(fuelInfo api.FuelInfo, batteryInfo api.BatteryInfo) string {
 	progressBar := ProgressBar(fuelInfo.FuelLevel, 10)
 	// Calculate EV range as difference between total and fuel-only
@@ -137,10 +139,11 @@ func formatFuelStatusWithRange(fuelInfo api.FuelInfo, batteryInfo api.BatteryInf
 		return fmt.Sprintf("FUEL: %s (%.0f km EV + %.0f km fuel = %.0f km total)",
 			progressBar, evRange, batteryInfo.RangeKm, fuelInfo.RangeKm)
 	}
+
 	return fmt.Sprintf("FUEL: %s (%.1f km range)", progressBar, fuelInfo.RangeKm)
 }
 
-// formatLocationStatus formats location status for display
+// formatLocationStatus formats location status for display.
 func formatLocationStatus(locationInfo api.LocationInfo, jsonOutput bool) (string, error) {
 	mapsURL := fmt.Sprintf("https://maps.google.com/?q=%f,%f", locationInfo.Latitude, locationInfo.Longitude)
 	if jsonOutput {
@@ -150,7 +153,7 @@ func formatLocationStatus(locationInfo api.LocationInfo, jsonOutput bool) (strin
 	return fmt.Sprintf("LOCATION: %.6f, %.6f\n  %s", locationInfo.Latitude, locationInfo.Longitude, mapsURL), nil
 }
 
-// formatTiresStatus formats tire status for display
+// formatTiresStatus formats tire status for display.
 func formatTiresStatus(tireInfo api.TireInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
 		return toJSON(tireInfoToMap(tireInfo))
@@ -166,7 +169,7 @@ func formatTiresStatus(tireInfo api.TireInfo, jsonOutput bool) (string, error) {
 	return fmt.Sprintf("TIRES: FL:%s FR:%s RL:%s RR:%s PSI", fl, fr, rl, rr), nil
 }
 
-// doorPosition describes a single door position for status checking
+// doorPosition describes a single door position for status checking.
 type doorPosition struct {
 	name     string
 	isOpen   bool
@@ -174,7 +177,7 @@ type doorPosition struct {
 	hasLock  bool // trunk/hood/fuel lid don't have locks
 }
 
-// formatDoorsStatus formats door status for display
+// formatDoorsStatus formats door status for display.
 func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, error) {
 	if jsonOutput {
 		return toJSON(doorStatusToMap(doorStatus))
@@ -218,7 +221,7 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, erro
 	return "DOORS: " + strings.Join(issues, ", "), nil
 }
 
-// formatOdometerStatus formats odometer status for display
+// formatOdometerStatus formats odometer status for display.
 func formatOdometerStatus(odometerInfo api.OdometerInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
 		return toJSON(odometerInfoToMap(odometerInfo))
@@ -227,7 +230,7 @@ func formatOdometerStatus(odometerInfo api.OdometerInfo, jsonOutput bool) (strin
 	return fmt.Sprintf("ODOMETER: %s km", formatThousands(odometerInfo.OdometerKm)), nil
 }
 
-// formatHvacStatus formats HVAC status for display
+// formatHvacStatus formats HVAC status for display.
 func formatHvacStatus(hvacInfo api.HVACInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
 		return toJSON(hvacInfoToMap(hvacInfo))
@@ -263,7 +266,7 @@ func formatHvacStatus(hvacInfo api.HVACInfo, jsonOutput bool) (string, error) {
 	return status, nil
 }
 
-// formatRelativeTime returns a human-friendly relative time string
+// formatRelativeTime returns a human-friendly relative time string.
 func formatRelativeTime(t time.Time) string {
 	now := time.Now()
 	diff := now.Sub(t)
@@ -287,16 +290,18 @@ func formatRelativeTime(t time.Time) string {
 		if hours == 1 {
 			return "1 hour ago"
 		}
+
 		return fmt.Sprintf("%d hours ago", hours)
 	default:
 		if days == 1 {
 			return "1 day ago"
 		}
+
 		return fmt.Sprintf("%d days ago", days)
 	}
 }
 
-// formatTimestamp converts timestamp from API format to readable format with relative time
+// formatTimestamp converts timestamp from API format to readable format with relative time.
 func formatTimestamp(timestamp string) string {
 	// API returns timestamp in format: YYYYMMDDHHmmss
 	// Convert to: YYYY-MM-DD HH:mm:ss (X ago)
@@ -312,13 +317,14 @@ func formatTimestamp(timestamp string) string {
 	return fmt.Sprintf("%s (%s)", t.Format("2006-01-02 15:04:05"), formatRelativeTime(t))
 }
 
-// formatThousands formats a float with comma separators for thousands
+// formatThousands formats a float with comma separators for thousands.
 func formatThousands(value float64) string {
 	p := message.NewPrinter(language.English)
+
 	return p.Sprintf("%.1f", value)
 }
 
-// formatChargeTime formats charging time estimates for display
+// formatChargeTime formats charging time estimates for display.
 func formatChargeTime(acMinutes, qbcMinutes float64) string {
 	// If both are zero or negative, no charging time info available
 	if acMinutes <= 0 && qbcMinutes <= 0 {
@@ -336,8 +342,10 @@ func formatChargeTime(acMinutes, qbcMinutes float64) string {
 			if mins > 0 {
 				return fmt.Sprintf("%dh %dm", hours, mins)
 			}
+
 			return fmt.Sprintf("%dh", hours)
 		}
+
 		return fmt.Sprintf("%dm", mins)
 	}
 
@@ -345,6 +353,7 @@ func formatChargeTime(acMinutes, qbcMinutes float64) string {
 	if qbcMinutes > 0 && acMinutes > 0 && qbcMinutes != acMinutes {
 		qbcStr := formatMinutes(qbcMinutes)
 		acStr := formatMinutes(acMinutes)
+
 		return fmt.Sprintf("~%s quick / ~%s AC", qbcStr, acStr)
 	}
 
@@ -359,7 +368,7 @@ func formatChargeTime(acMinutes, qbcMinutes float64) string {
 	return ""
 }
 
-// formatWindowsStatus formats window status for display
+// formatWindowsStatus formats window status for display.
 func formatWindowsStatus(windowsInfo api.WindowStatus, jsonOutput bool) (string, error) {
 	if jsonOutput {
 		return toJSON(windowStatusToMap(windowsInfo))

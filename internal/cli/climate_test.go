@@ -6,14 +6,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestClimateCommand tests the climate command
+// TestClimateCommand tests the climate command.
 func TestClimateCommand(t *testing.T) {
 	t.Parallel()
 	cmd := NewClimateCmd()
 	assertCommandBasics(t, cmd, "climate")
 }
 
-// TestClimateCommand_Subcommands tests climate subcommands
+// TestClimateCommand_Subcommands tests climate subcommands.
 func TestClimateCommand_Subcommands(t *testing.T) {
 	t.Parallel()
 	cmd := NewClimateCmd()
@@ -27,7 +27,7 @@ func TestClimateCommand_Subcommands(t *testing.T) {
 	})
 }
 
-// TestClimateCommand_SetSubcommand_Flags tests climate set subcommand flags
+// TestClimateCommand_SetSubcommand_Flags tests climate set subcommand flags.
 func TestClimateCommand_SetSubcommand_Flags(t *testing.T) {
 	t.Parallel()
 	cmd := NewClimateCmd()

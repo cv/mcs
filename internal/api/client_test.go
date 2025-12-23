@@ -14,19 +14,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// setupTestClient creates a client with test credentials and encryption keys
+// setupTestClient creates a client with test credentials and encryption keys.
 func setupTestClient(t *testing.T) *Client {
 	t.Helper()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	require.NoError(t, err, "Failed to create client: %v")
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
+
 	return client
 }
 
-// setupErrorServer creates a mock server that returns the specified API error response
+// setupErrorServer creates a mock server that returns the specified API error response.
 func setupErrorServer(t *testing.T, errorCode int, extraCode, message string) *httptest.Server {
 	t.Helper()
+
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]any{
 			"state":     "E",
@@ -41,7 +43,7 @@ func setupErrorServer(t *testing.T, errorCode int, extraCode, message string) *h
 	}))
 }
 
-// TestAPIRequest_Success tests successful API request with encryption
+// TestAPIRequest_Success tests successful API request with encryption.
 func TestAPIRequest_Success(t *testing.T) {
 	t.Parallel()
 	// Create a mock server
@@ -89,7 +91,7 @@ func TestAPIRequest_Success(t *testing.T) {
 	assert.EqualValuesf(t, "Success", result["message"], "Expected message Success, got %v", result["message"])
 }
 
-// TestAPIRequest_EncryptionError tests handling of encryption error response
+// TestAPIRequest_EncryptionError tests handling of encryption error response.
 func TestAPIRequest_EncryptionError(t *testing.T) {
 	t.Parallel()
 	server := setupErrorServer(t, 600001, "", "Encryption error")
@@ -106,7 +108,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 	require.ErrorContains(t, err, "failed to retrieve encryption keys")
 }
 
-// TestAPIRequest_TokenExpired tests handling of expired token error
+// TestAPIRequest_TokenExpired tests handling of expired token error.
 func TestAPIRequest_TokenExpired(t *testing.T) {
 	t.Parallel()
 	server := setupErrorServer(t, 600002, "", "Token expired")
@@ -123,7 +125,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 	require.ErrorContains(t, err, "failed to login")
 }
 
-// TestAPIRequest_RequestInProgress tests handling of request in progress error
+// TestAPIRequest_RequestInProgress tests handling of request in progress error.
 func TestAPIRequest_RequestInProgress(t *testing.T) {
 	t.Parallel()
 	server := setupErrorServer(t, 920000, "400S01", "Request in progress")
@@ -139,7 +141,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 	assert.ErrorAs(t, err, new(*RequestInProgressError))
 }
 
-// TestEncryptPayloadUsingKey tests payload encryption
+// TestEncryptPayloadUsingKey tests payload encryption.
 func TestEncryptPayloadUsingKey(t *testing.T) {
 	t.Parallel()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
@@ -164,7 +166,7 @@ func TestEncryptPayloadUsingKey(t *testing.T) {
 	assert.NotEmpty(t, encrypted, "Encrypted payload should not be empty")
 }
 
-// TestDecryptPayloadUsingKey tests payload decryption
+// TestDecryptPayloadUsingKey tests payload decryption.
 func TestDecryptPayloadUsingKey(t *testing.T) {
 	t.Parallel()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
@@ -193,7 +195,7 @@ func TestDecryptPayloadUsingKey(t *testing.T) {
 	assert.EqualValuesf(t, "bar", decrypted["foo"], "Expected foo=bar, got foo=%v", decrypted["foo"])
 }
 
-// TestGetSignFromPayloadAndTimestamp tests signature generation
+// TestGetSignFromPayloadAndTimestamp tests signature generation.
 func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
 	t.Parallel()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
@@ -212,7 +214,7 @@ func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
 	assert.Lenf(t, sign, 64, "Expected signature length of 64, got %d", len(sign))
 }
 
-// TestAPIRequest_MissingKeys tests that APIRequest attempts to get keys when missing
+// TestAPIRequest_MissingKeys tests that APIRequest attempts to get keys when missing.
 func TestAPIRequest_MissingKeys(t *testing.T) {
 	t.Parallel()
 	// Create a server that returns error for checkVersion (key retrieval)
@@ -237,7 +239,7 @@ func TestAPIRequest_MissingKeys(t *testing.T) {
 	require.Error(t, err, "Expected error when keys are missing, got nil")
 }
 
-// TestAPIRequest_POST_WithBody tests POST request with body encryption
+// TestAPIRequest_POST_WithBody tests POST request with body encryption.
 func TestAPIRequest_POST_WithBody(t *testing.T) {
 	t.Parallel()
 	requestReceived := false
@@ -282,7 +284,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
 }
 
-// TestAPIRequest_GET_WithQuery tests GET request with query parameter encryption
+// TestAPIRequest_GET_WithQuery tests GET request with query parameter encryption.
 func TestAPIRequest_GET_WithQuery(t *testing.T) {
 	t.Parallel()
 	requestReceived := false
@@ -327,7 +329,7 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
 }
 
-// TestCalculateBackoff tests the backoff calculation
+// TestCalculateBackoff tests the backoff calculation.
 func TestCalculateBackoff(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -352,7 +354,7 @@ func TestCalculateBackoff(t *testing.T) {
 	}
 }
 
-// TestSleepWithContext_Completes tests that sleep completes normally
+// TestSleepWithContext_Completes tests that sleep completes normally.
 func TestSleepWithContext_Completes(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -370,7 +372,7 @@ func TestSleepWithContext_Completes(t *testing.T) {
 
 }
 
-// TestSleepWithContext_Cancelled tests that sleep returns early on context cancellation
+// TestSleepWithContext_Cancelled tests that sleep returns early on context cancellation.
 func TestSleepWithContext_Cancelled(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -394,7 +396,7 @@ func TestSleepWithContext_Cancelled(t *testing.T) {
 	assert.LessOrEqual(t, elapsed, 1*time.Second)
 }
 
-// TestSleepWithContext_ZeroDuration tests that zero duration returns immediately
+// TestSleepWithContext_ZeroDuration tests that zero duration returns immediately.
 func TestSleepWithContext_ZeroDuration(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -408,7 +410,7 @@ func TestSleepWithContext_ZeroDuration(t *testing.T) {
 	assert.LessOrEqual(t, elapsed, 10*time.Millisecond)
 }
 
-// TestAPIRequest_RetryWithContextCancellation tests that context cancellation during backoff returns immediately
+// TestAPIRequest_RetryWithContextCancellation tests that context cancellation during backoff returns immediately.
 func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 	t.Parallel()
 	callCount := 0

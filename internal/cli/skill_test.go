@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestGetSkillPath tests that getSkillPath returns the correct path
+// TestGetSkillPath tests that getSkillPath returns the correct path.
 func TestGetSkillPath(t *testing.T) {
 	t.Parallel()
 	path, err := getSkillPath()
@@ -27,7 +27,7 @@ func TestGetSkillPath(t *testing.T) {
 	assert.Equal(t, skill.SkillName, filepath.Base(path))
 }
 
-// TestUninstallSkill tests the uninstallSkill function
+// TestUninstallSkill tests the uninstallSkill function.
 func TestUninstallSkill(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -85,21 +85,21 @@ func TestUninstallSkill(t *testing.T) {
 	}
 }
 
-// TestSkillCommand tests the skill parent command
+// TestSkillCommand tests the skill parent command.
 func TestSkillCommand(t *testing.T) {
 	t.Parallel()
 	cmd := NewSkillCmd()
 	assertCommandBasics(t, cmd, "skill")
 }
 
-// TestSkillCommand_Subcommands tests that skill subcommands exist
+// TestSkillCommand_Subcommands tests that skill subcommands exist.
 func TestSkillCommand_Subcommands(t *testing.T) {
 	t.Parallel()
 	cmd := NewSkillCmd()
 	assertSubcommandsExist(t, cmd, []string{"install", "uninstall", "path"})
 }
 
-// TestSkillInstallCommand tests the skill install subcommand
+// TestSkillInstallCommand tests the skill install subcommand.
 func TestSkillInstallCommand(t *testing.T) {
 	t.Parallel()
 	cmd := NewSkillInstallCmd()
@@ -107,7 +107,7 @@ func TestSkillInstallCommand(t *testing.T) {
 	assertNoArgsCommand(t, cmd)
 }
 
-// TestSkillInstallCommand_Execute tests executing the install command
+// TestSkillInstallCommand_Execute tests executing the install command.
 func TestSkillInstallCommand_Execute(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
@@ -147,7 +147,7 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 	}
 }
 
-// TestSkillInstallCommand_ReinstallRemovesOld tests that reinstalling removes old files
+// TestSkillInstallCommand_ReinstallRemovesOld tests that reinstalling removes old files.
 func TestSkillInstallCommand_ReinstallRemovesOld(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
@@ -178,7 +178,7 @@ func TestSkillInstallCommand_ReinstallRemovesOld(t *testing.T) {
 	assert.FileExists(t, newFilePath)
 }
 
-// TestSkillUninstallCommand tests the skill uninstall subcommand
+// TestSkillUninstallCommand tests the skill uninstall subcommand.
 func TestSkillUninstallCommand(t *testing.T) {
 	t.Parallel()
 	cmd := NewSkillUninstallCmd()
@@ -186,7 +186,7 @@ func TestSkillUninstallCommand(t *testing.T) {
 	assertNoArgsCommand(t, cmd)
 }
 
-// TestSkillUninstallCommand_Execute tests executing the uninstall command
+// TestSkillUninstallCommand_Execute tests executing the uninstall command.
 func TestSkillUninstallCommand_Execute(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -246,7 +246,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 	}
 }
 
-// TestSkillPathCommand tests the skill path subcommand
+// TestSkillPathCommand tests the skill path subcommand.
 func TestSkillPathCommand(t *testing.T) {
 	t.Parallel()
 	cmd := NewSkillPathCmd()
@@ -254,7 +254,7 @@ func TestSkillPathCommand(t *testing.T) {
 	assertNoArgsCommand(t, cmd)
 }
 
-// TestSkillPathCommand_Execute tests executing the path command
+// TestSkillPathCommand_Execute tests executing the path command.
 func TestSkillPathCommand_Execute(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
@@ -274,7 +274,7 @@ func TestSkillPathCommand_Execute(t *testing.T) {
 	assert.Equal(t, expectedPath, output)
 }
 
-// TestSkillPathCommand_OutputFormat tests that path output is just the path
+// TestSkillPathCommand_OutputFormat tests that path output is just the path.
 func TestSkillPathCommand_OutputFormat(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
@@ -300,7 +300,7 @@ func TestSkillPathCommand_OutputFormat(t *testing.T) {
 	assert.Truef(t, filepath.IsAbs(pathStr), "Expected absolute path, got '%s'", pathStr)
 }
 
-// TestSkillInstallCommand_WritesVersionFile tests that install creates a version file
+// TestSkillInstallCommand_WritesVersionFile tests that install creates a version file.
 func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
@@ -324,7 +324,7 @@ func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
 	assert.Equal(t, Version, string(content))
 }
 
-// TestCheckSkillVersion tests the CheckSkillVersion function
+// TestCheckSkillVersion tests the CheckSkillVersion function.
 func TestCheckSkillVersion(t *testing.T) {
 	tests := []struct {
 		name            string

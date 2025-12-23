@@ -9,7 +9,7 @@ import (
 	"github.com/cv/mcs/internal/api"
 )
 
-// confirmationResult holds the result of a confirmation poll
+// confirmationResult holds the result of a confirmation poll.
 type confirmationResult struct {
 	success bool
 	err     error
@@ -67,6 +67,7 @@ func pollUntilCondition(
 			if met {
 				// Clear the progress line and move to new line
 				_, _ = fmt.Fprint(out, "\r                                        \r")
+
 				return confirmationResult{success: true, err: nil}
 			}
 
@@ -75,22 +76,24 @@ func pollUntilCondition(
 			_, _ = fmt.Fprint(out, "\r                                        \r")
 			if timeoutCtx.Err() == context.DeadlineExceeded {
 				_, _ = fmt.Fprintf(out, "Warning: %s not confirmed within timeout period\n", actionName)
+
 				return confirmationResult{success: false, err: nil}
 			}
+
 			return confirmationResult{success: false, err: timeoutCtx.Err()}
 		}
 	}
 }
 
 // vehicleStatusGetter is an interface for getting vehicle status
-// This allows for easier testing by mocking the API client
+// This allows for easier testing by mocking the API client.
 type vehicleStatusGetter interface {
 	GetVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error)
 	GetEVVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error)
 	RefreshVehicleStatus(ctx context.Context, internalVIN api.InternalVIN) error
 }
 
-// clientAdapter adapts api.Client to vehicleStatusGetter by converting InternalVIN to string
+// clientAdapter adapts api.Client to vehicleStatusGetter by converting InternalVIN to string.
 type clientAdapter struct {
 	*api.Client
 }
@@ -121,7 +124,7 @@ func (c *clientAdapter) RefreshVehicleStatus(ctx context.Context, internalVIN ap
 //   - pollInterval: time between status checks
 //   - actionName: name of the action being confirmed (for error messages)
 //
-// Returns: confirmationResult with success flag and any error encountered
+// Returns: confirmationResult with success flag and any error encountered.
 func waitForCondition(
 	ctx context.Context,
 	out io.Writer,
@@ -160,7 +163,7 @@ func waitForCondition(
 	return pollUntilCondition(ctx, out, checkFunc, timeout, pollInterval, actionName)
 }
 
-// waitForDoorsLocked polls the vehicle status until all doors are locked or timeout occurs
+// waitForDoorsLocked polls the vehicle status until all doors are locked or timeout occurs.
 func waitForDoorsLocked(
 	ctx context.Context,
 	out io.Writer,
@@ -175,13 +178,14 @@ func waitForDoorsLocked(
 		if err != nil {
 			return false, err
 		}
+
 		return doorStatus.AllLocked, nil
 	}
 
 	return waitForCondition(ctx, out, client, internalVIN, false, conditionChecker, timeout, pollInterval, "door lock")
 }
 
-// waitForDoorsUnlocked polls the vehicle status until all doors are unlocked or timeout occurs
+// waitForDoorsUnlocked polls the vehicle status until all doors are unlocked or timeout occurs.
 func waitForDoorsUnlocked(
 	ctx context.Context,
 	out io.Writer,
@@ -203,7 +207,7 @@ func waitForDoorsUnlocked(
 	return waitForCondition(ctx, out, client, internalVIN, false, conditionChecker, timeout, pollInterval, "door unlock")
 }
 
-// waitForEngineRunning polls the vehicle status until the engine is running or timeout occurs
+// waitForEngineRunning polls the vehicle status until the engine is running or timeout occurs.
 func waitForEngineRunning(
 	ctx context.Context,
 	out io.Writer,
@@ -218,13 +222,14 @@ func waitForEngineRunning(
 		if err != nil {
 			return false, err
 		}
+
 		return hvacInfo.HVACOn, nil
 	}
 
 	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "engine start")
 }
 
-// waitForEngineStopped polls the vehicle status until the engine is stopped or timeout occurs
+// waitForEngineStopped polls the vehicle status until the engine is stopped or timeout occurs.
 func waitForEngineStopped(
 	ctx context.Context,
 	out io.Writer,
@@ -239,13 +244,14 @@ func waitForEngineStopped(
 		if err != nil {
 			return false, err
 		}
+
 		return !hvacInfo.HVACOn, nil
 	}
 
 	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "engine stop")
 }
 
-// waitForCharging polls the vehicle status until charging is active or timeout occurs
+// waitForCharging polls the vehicle status until charging is active or timeout occurs.
 func waitForCharging(
 	ctx context.Context,
 	out io.Writer,
@@ -260,13 +266,14 @@ func waitForCharging(
 		if err != nil {
 			return false, err
 		}
+
 		return batteryInfo.Charging, nil
 	}
 
 	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "charging start")
 }
 
-// waitForNotCharging polls the vehicle status until charging is inactive or timeout occurs
+// waitForNotCharging polls the vehicle status until charging is inactive or timeout occurs.
 func waitForNotCharging(
 	ctx context.Context,
 	out io.Writer,
@@ -281,6 +288,7 @@ func waitForNotCharging(
 		if err != nil {
 			return false, err
 		}
+
 		return !batteryInfo.Charging, nil
 	}
 
@@ -291,7 +299,7 @@ func waitForNotCharging(
 // Commands take time to propagate to the server before status is updated.
 const ConfirmationInitialDelay = 20 * time.Second
 
-// waitForHvacOn polls the vehicle status until HVAC is on or timeout occurs
+// waitForHvacOn polls the vehicle status until HVAC is on or timeout occurs.
 func waitForHvacOn(
 	ctx context.Context,
 	out io.Writer,
@@ -306,13 +314,14 @@ func waitForHvacOn(
 		if err != nil {
 			return false, err
 		}
+
 		return hvacInfo.HVACOn, nil
 	}
 
 	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "HVAC on")
 }
 
-// waitForHvacOff polls the vehicle status until HVAC is off or timeout occurs
+// waitForHvacOff polls the vehicle status until HVAC is off or timeout occurs.
 func waitForHvacOff(
 	ctx context.Context,
 	out io.Writer,
@@ -327,13 +336,14 @@ func waitForHvacOff(
 		if err != nil {
 			return false, err
 		}
+
 		return !hvacInfo.HVACOn, nil
 	}
 
 	return waitForCondition(ctx, out, client, internalVIN, true, conditionChecker, timeout, pollInterval, "HVAC off")
 }
 
-// waitForHvacSettings polls the vehicle status until HVAC settings match the requested values or timeout occurs
+// waitForHvacSettings polls the vehicle status until HVAC settings match the requested values or timeout occurs.
 func waitForHvacSettings(
 	ctx context.Context,
 	out io.Writer,
@@ -370,7 +380,7 @@ func waitForHvacSettings(
 // DefaultPollInterval is the default time between status checks during confirmation polling.
 const DefaultPollInterval = 5 * time.Second
 
-// ConfirmableCommandConfig holds the configuration for a confirmable command
+// ConfirmableCommandConfig holds the configuration for a confirmable command.
 type ConfirmableCommandConfig struct {
 	// ActionFunc performs the API action (e.g., lock doors, start engine)
 	ActionFunc func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error
@@ -394,7 +404,7 @@ type ConfirmableCommandConfig struct {
 	TimeoutSuffix string // Suffix for timeout message (e.g., "confirmation timeout")
 }
 
-// executeConfirmableCommand executes a confirmable command with the given configuration
+// executeConfirmableCommand executes a confirmable command with the given configuration.
 func executeConfirmableCommand(
 	ctx context.Context,
 	out io.Writer,
@@ -412,6 +422,7 @@ func executeConfirmableCommand(
 	// If confirmation disabled, return immediately
 	if !confirm || config.WaitFunc == nil {
 		_, _ = fmt.Fprintln(out, config.SuccessMsg)
+
 		return nil
 	}
 

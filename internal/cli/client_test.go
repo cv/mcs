@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockAPIClientSetup is a helper that sets up environment for API client creation tests
+// mockAPIClientSetup is a helper that sets up environment for API client creation tests.
 func mockAPIClientSetup(t *testing.T) string {
 	t.Helper()
 	tmpDir := t.TempDir()
@@ -21,10 +21,11 @@ func mockAPIClientSetup(t *testing.T) string {
 	t.Setenv("MCS_PASSWORD", "test-password")
 	t.Setenv("MCS_REGION", "MNAO")
 	ConfigFile = ""
+
 	return tmpDir
 }
 
-// TestSetupVehicleClient_Success tests successful vehicle client setup
+// TestSetupVehicleClient_Success tests successful vehicle client setup.
 func TestSetupVehicleClient_Success(t *testing.T) {
 	t.Parallel()
 	// This is an integration test that requires real API interaction
@@ -44,7 +45,7 @@ func TestSetupVehicleClient_Success(t *testing.T) {
 	assert.NotEmpty(t, vehicleInfo.InternalVIN, "Expected InternalVIN to be set")
 }
 
-// TestSetupVehicleClient_ConfigError tests error handling when config is invalid
+// TestSetupVehicleClient_ConfigError tests error handling when config is invalid.
 func TestSetupVehicleClient_ConfigError(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -61,7 +62,7 @@ func TestSetupVehicleClient_ConfigError(t *testing.T) {
 	require.Error(t, err, "Expected error with invalid config, got nil")
 }
 
-// TestSetupVehicleClient_MissingConfig tests error when config file doesn't exist
+// TestSetupVehicleClient_MissingConfig tests error when config file doesn't exist.
 func TestSetupVehicleClient_MissingConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -96,7 +97,7 @@ func TestSetupVehicleClient_ContextCancellation(t *testing.T) {
 	require.Error(t, err, "Expected error with cancelled context, got nil")
 }
 
-// TestWithVehicleClient_CallbackExecuted tests that callback is executed with client
+// TestWithVehicleClient_CallbackExecuted tests that callback is executed with client.
 func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
@@ -112,6 +113,7 @@ func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 		callbackExecuted = true
 		receivedClient = client
 		receivedVIN = vin
+
 		return nil
 	})
 
@@ -124,7 +126,7 @@ func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 	assert.NotEmpty(t, receivedVIN, "Expected VIN to be passed to callback")
 }
 
-// TestWithVehicleClient_CallbackError tests that callback errors are propagated
+// TestWithVehicleClient_CallbackError tests that callback errors are propagated.
 func TestWithVehicleClient_CallbackError(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
@@ -141,7 +143,7 @@ func TestWithVehicleClient_CallbackError(t *testing.T) {
 	assert.Equalf(t, expectedErr, err, "Expected error to be propagated, got: %v", err)
 }
 
-// TestWithVehicleClient_SetupError tests that setup errors are propagated
+// TestWithVehicleClient_SetupError tests that setup errors are propagated.
 func TestWithVehicleClient_SetupError(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -156,6 +158,7 @@ func TestWithVehicleClient_SetupError(t *testing.T) {
 
 	err := withVehicleClient(ctx, func(ctx context.Context, client *api.Client, vin api.InternalVIN) error {
 		callbackExecuted = true
+
 		return nil
 	})
 
@@ -164,7 +167,7 @@ func TestWithVehicleClient_SetupError(t *testing.T) {
 	assert.False(t, callbackExecuted)
 }
 
-// TestWithVehicleClientEx_CallbackExecuted tests extended callback execution
+// TestWithVehicleClientEx_CallbackExecuted tests extended callback execution.
 func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
@@ -180,6 +183,7 @@ func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 		callbackExecuted = true
 		receivedClient = client
 		receivedInfo = info
+
 		return nil
 	})
 
@@ -193,7 +197,7 @@ func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 	assert.NotEmpty(t, receivedInfo.InternalVIN, "Expected InternalVIN to be set")
 }
 
-// TestWithVehicleClientEx_CallbackError tests error propagation
+// TestWithVehicleClientEx_CallbackError tests error propagation.
 func TestWithVehicleClientEx_CallbackError(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
@@ -210,7 +214,7 @@ func TestWithVehicleClientEx_CallbackError(t *testing.T) {
 	assert.Equalf(t, expectedErr, err, "Expected error to be propagated, got: %v", err)
 }
 
-// TestWithVehicleClientEx_SetupError tests setup error propagation
+// TestWithVehicleClientEx_SetupError tests setup error propagation.
 func TestWithVehicleClientEx_SetupError(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
@@ -225,6 +229,7 @@ func TestWithVehicleClientEx_SetupError(t *testing.T) {
 
 	err := withVehicleClientEx(ctx, func(ctx context.Context, client *api.Client, info VehicleInfo) error {
 		callbackExecuted = true
+
 		return nil
 	})
 
@@ -233,7 +238,7 @@ func TestWithVehicleClientEx_SetupError(t *testing.T) {
 	assert.False(t, callbackExecuted)
 }
 
-// TestVehicleInfo_StructFields tests VehicleInfo struct field types
+// TestVehicleInfo_StructFields tests VehicleInfo struct field types.
 func TestVehicleInfo_StructFields(t *testing.T) {
 	t.Parallel()
 	// Test that VehicleInfo struct has correct field types
@@ -264,7 +269,7 @@ func TestVehicleInfo_StructFields(t *testing.T) {
 	assert.Equalf(t, "2024", info.ModelYear, "Expected ModelYear to be '2024', got '%s'", info.ModelYear)
 }
 
-// TestSetupVehicleClient_ConfigFromFile tests config loading from file
+// TestSetupVehicleClient_ConfigFromFile tests config loading from file.
 func TestSetupVehicleClient_ConfigFromFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)

@@ -7,17 +7,18 @@ import (
 	"fmt"
 )
 
-// PKCS7Pad applies PKCS7 padding to data
+// PKCS7Pad applies PKCS7 padding to data.
 func PKCS7Pad(data []byte, blockSize int) []byte {
 	padding := blockSize - len(data)%blockSize
 	padtext := make([]byte, padding)
 	for i := range padtext {
 		padtext[i] = byte(padding)
 	}
+
 	return append(data, padtext...)
 }
 
-// PKCS7Unpad removes PKCS7 padding from data
+// PKCS7Unpad removes PKCS7 padding from data.
 func PKCS7Unpad(data []byte) ([]byte, error) {
 	length := len(data)
 	if length == 0 {
@@ -39,7 +40,7 @@ func PKCS7Unpad(data []byte) ([]byte, error) {
 	return data[:length-padding], nil
 }
 
-// EncryptAES128CBC encrypts data using AES-128-CBC
+// EncryptAES128CBC encrypts data using AES-128-CBC.
 func EncryptAES128CBC(data, key, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -56,7 +57,7 @@ func EncryptAES128CBC(data, key, iv []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-// DecryptAES128CBC decrypts AES-128-CBC encrypted data
+// DecryptAES128CBC decrypts AES-128-CBC encrypted data.
 func DecryptAES128CBC(encrypted, key, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {

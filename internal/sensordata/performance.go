@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// PerformanceTestResults represents performance test results
+// PerformanceTestResults represents performance test results.
 type PerformanceTestResults struct {
 	modTestResult   int
 	modTestIters    int
@@ -19,12 +19,12 @@ type PerformanceTestResults struct {
 	loopTestResult  int
 }
 
-// NewPerformanceTestResults creates a new PerformanceTestResults
+// NewPerformanceTestResults creates a new PerformanceTestResults.
 func NewPerformanceTestResults() *PerformanceTestResults {
 	return &PerformanceTestResults{}
 }
 
-// Randomize generates random performance test results
+// Randomize generates random performance test results.
 func (p *PerformanceTestResults) Randomize() {
 	numIterations1 := (mathrand.Intn(250)*100 + 350*100) - 1
 	p.modTestResult = 16
@@ -45,7 +45,7 @@ func (p *PerformanceTestResults) Randomize() {
 	p.loopTestResult = mathrand.Intn(7500) + 8500
 }
 
-// ToString converts PerformanceTestResults to string format
+// ToString converts PerformanceTestResults to string format.
 func (p *PerformanceTestResults) ToString() string {
 	values := []string{
 		strconv.Itoa(p.modTestResult),
@@ -58,5 +58,6 @@ func (p *PerformanceTestResults) ToString() string {
 		strconv.Itoa(p.trigTestIters),
 		strconv.Itoa(p.loopTestResult),
 	}
+
 	return strings.Join(values, ",")
 }

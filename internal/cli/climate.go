@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewClimateCmd creates the climate command
+// NewClimateCmd creates the climate command.
 func NewClimateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "climate",
@@ -33,7 +33,7 @@ func NewClimateCmd() *cobra.Command {
 	return cmd
 }
 
-// newClimateOnCmd creates the climate on subcommand
+// newClimateOnCmd creates the climate on subcommand.
 func newClimateOnCmd() *cobra.Command {
 	return buildConfirmableCommand(CommandSpec{
 		Use:   "on",
@@ -68,7 +68,7 @@ func newClimateOnCmd() *cobra.Command {
 	})
 }
 
-// newClimateOffCmd creates the climate off subcommand
+// newClimateOffCmd creates the climate off subcommand.
 func newClimateOffCmd() *cobra.Command {
 	return buildConfirmableCommand(CommandSpec{
 		Use:   "off",
@@ -103,7 +103,7 @@ func newClimateOffCmd() *cobra.Command {
 	})
 }
 
-// newClimateSetCmd creates the climate set subcommand
+// newClimateSetCmd creates the climate set subcommand.
 func newClimateSetCmd() *cobra.Command {
 	var temperature float64
 	var tempUnit string
@@ -176,6 +176,7 @@ func newClimateSetCmd() *cobra.Command {
 					ConfirmName:   "HVAC settings",
 					TimeoutSuffix: "confirmation timeout",
 				}
+
 				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
 			})
 		},

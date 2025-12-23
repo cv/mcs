@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestControlEndpoints tests all simple control endpoints using table-driven approach
+// TestControlEndpoints tests all simple control endpoints using table-driven approach.
 func TestControlEndpoints(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -89,7 +89,7 @@ func TestControlEndpoints(t *testing.T) {
 	}
 }
 
-// TestSetHVACSetting tests setting HVAC settings
+// TestSetHVACSetting tests setting HVAC settings.
 func TestSetHVACSetting(t *testing.T) {
 	t.Parallel()
 	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4")
@@ -101,7 +101,7 @@ func TestSetHVACSetting(t *testing.T) {
 	require.NoError(t, err, "SetHVACSetting failed: %v")
 }
 
-// TestSetHVACSetting_Fahrenheit tests setting HVAC with Fahrenheit
+// TestSetHVACSetting_Fahrenheit tests setting HVAC with Fahrenheit.
 func TestSetHVACSetting_Fahrenheit(t *testing.T) {
 	t.Parallel()
 	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4")
@@ -113,7 +113,7 @@ func TestSetHVACSetting_Fahrenheit(t *testing.T) {
 	require.NoError(t, err, "SetHVACSetting failed: %v")
 }
 
-// TestControlError tests error handling for control endpoints
+// TestControlError tests error handling for control endpoints.
 func TestControlError(t *testing.T) {
 	t.Parallel()
 	server := createErrorServer(t, "500E00", "Internal error")
@@ -128,7 +128,7 @@ func TestControlError(t *testing.T) {
 	assert.Equal(t, expectedError, err.Error())
 }
 
-// TestBoolToInt tests the boolToInt helper function
+// TestBoolToInt tests the boolToInt helper function.
 func TestBoolToInt(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestBatteryInfoToMap tests batteryInfoToMap conversion
+// TestBatteryInfoToMap tests batteryInfoToMap conversion.
 func TestBatteryInfoToMap(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -82,7 +82,7 @@ func TestBatteryInfoToMap(t *testing.T) {
 	}
 }
 
-// TestFuelInfoToMap tests fuelInfoToMap conversion
+// TestFuelInfoToMap tests fuelInfoToMap conversion.
 func TestFuelInfoToMap(t *testing.T) {
 	t.Parallel()
 	fuelInfo := api.FuelInfo{
@@ -96,7 +96,7 @@ func TestFuelInfoToMap(t *testing.T) {
 	assertMapValue(t, data, "range_km", 630.0)
 }
 
-// TestLocationInfoToMap tests locationInfoToMap conversion
+// TestLocationInfoToMap tests locationInfoToMap conversion.
 func TestLocationInfoToMap(t *testing.T) {
 	t.Parallel()
 	locationInfo := api.LocationInfo{
@@ -117,7 +117,7 @@ func TestLocationInfoToMap(t *testing.T) {
 	assert.Equal(t, expectedURL, mapsURL)
 }
 
-// TestTireInfoToMap tests tireInfoToMap conversion
+// TestTireInfoToMap tests tireInfoToMap conversion.
 func TestTireInfoToMap(t *testing.T) {
 	t.Parallel()
 	tireInfo := api.TireInfo{
@@ -135,7 +135,7 @@ func TestTireInfoToMap(t *testing.T) {
 	assertMapValue(t, data, "rear_right_psi", 31.8)
 }
 
-// TestDoorStatusToMap tests doorStatusToMap conversion
+// TestDoorStatusToMap tests doorStatusToMap conversion.
 func TestDoorStatusToMap(t *testing.T) {
 	t.Parallel()
 	doorStatus := api.DoorStatus{
@@ -160,7 +160,7 @@ func TestDoorStatusToMap(t *testing.T) {
 	assertMapValue(t, data, "driver_locked", true)
 }
 
-// TestOdometerInfoToMap tests odometerInfoToMap conversion
+// TestOdometerInfoToMap tests odometerInfoToMap conversion.
 func TestOdometerInfoToMap(t *testing.T) {
 	t.Parallel()
 	odometerInfo := api.OdometerInfo{OdometerKm: 12345.6}
@@ -170,7 +170,7 @@ func TestOdometerInfoToMap(t *testing.T) {
 	assertMapValue(t, data, "odometer_km", 12345.6)
 }
 
-// TestHvacInfoToMap tests hvacInfoToMap conversion
+// TestHvacInfoToMap tests hvacInfoToMap conversion.
 func TestHvacInfoToMap(t *testing.T) {
 	t.Parallel()
 	hvacInfo := api.HVACInfo{
@@ -190,7 +190,7 @@ func TestHvacInfoToMap(t *testing.T) {
 	assertMapValue(t, data, "target_temperature_c", float64(22))
 }
 
-// TestWindowStatusToMap tests windowStatusToMap conversion
+// TestWindowStatusToMap tests windowStatusToMap conversion.
 func TestWindowStatusToMap(t *testing.T) {
 	t.Parallel()
 	windowStatus := api.WindowStatus{
@@ -208,7 +208,7 @@ func TestWindowStatusToMap(t *testing.T) {
 	assertMapValue(t, data, "rear_right_position", float64(100))
 }
 
-// TestExtractVehicleInfoDataHelper tests vehicle info extraction
+// TestExtractVehicleInfoDataHelper tests vehicle info extraction.
 func TestExtractVehicleInfoDataHelper(t *testing.T) {
 	t.Parallel()
 	info := VehicleInfo{
@@ -226,7 +226,7 @@ func TestExtractVehicleInfoDataHelper(t *testing.T) {
 	assertMapValue(t, data, "model_year", "2024")
 }
 
-// TestExtractWithGetter tests the generic extraction helper
+// TestExtractWithGetter tests the generic extraction helper.
 func TestExtractWithGetter(t *testing.T) {
 	t.Parallel()
 	// Test with fuel info
@@ -251,7 +251,7 @@ func TestExtractWithGetter(t *testing.T) {
 	assertMapValue(t, data, "range_km", 630.0)
 }
 
-// TestExtractWithGetterError tests the generic extraction helper with an error case
+// TestExtractWithGetterError tests the generic extraction helper with an error case.
 func TestExtractWithGetterError(t *testing.T) {
 	t.Parallel()
 	// Test with empty response that will cause an error

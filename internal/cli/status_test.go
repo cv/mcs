@@ -19,7 +19,7 @@ func withColorsDisabled(t *testing.T) {
 	SetColorEnabled(false)
 }
 
-// TestStatusCommand tests the status command
+// TestStatusCommand tests the status command.
 func TestStatusCommand(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -51,7 +51,7 @@ func TestStatusCommand(t *testing.T) {
 	}
 }
 
-// TestStatusCommand_NoSubcommand tests status command without subcommand
+// TestStatusCommand_NoSubcommand tests status command without subcommand.
 func TestStatusCommand_NoSubcommand(t *testing.T) {
 	t.Parallel()
 	// This should show all status information
@@ -65,7 +65,7 @@ func TestStatusCommand_NoSubcommand(t *testing.T) {
 
 }
 
-// TestStatusCommand_Subcommands tests all status subcommands using table-driven pattern
+// TestStatusCommand_Subcommands tests all status subcommands using table-driven pattern.
 func TestStatusCommand_Subcommands(t *testing.T) {
 	t.Parallel()
 	subcommands := []string{"battery", "fuel", "location", "tires", "doors"}
@@ -83,7 +83,7 @@ func TestStatusCommand_Subcommands(t *testing.T) {
 	}
 }
 
-// TestStatusCommand_JSONFlag tests the JSON output flag
+// TestStatusCommand_JSONFlag tests the JSON output flag.
 func TestStatusCommand_JSONFlag(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -118,7 +118,7 @@ func TestStatusCommand_JSONFlag(t *testing.T) {
 	}
 }
 
-// TestFormatBatteryStatus tests battery status formatting
+// TestFormatBatteryStatus tests battery status formatting.
 func TestFormatBatteryStatus(t *testing.T) {
 	t.Parallel()
 	withColorsDisabled(t)
@@ -204,7 +204,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 	}
 }
 
-// TestFormatBatteryStatus_JSON tests battery status JSON formatting
+// TestFormatBatteryStatus_JSON tests battery status JSON formatting.
 func TestFormatBatteryStatus_JSON(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -249,7 +249,7 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 	}
 }
 
-// TestFormatBatteryStatus_WithHeater tests battery heater display
+// TestFormatBatteryStatus_WithHeater tests battery heater display.
 func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 	t.Parallel()
 	withColorsDisabled(t)
@@ -326,7 +326,7 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 	}
 }
 
-// TestFormatFuelStatus tests fuel status formatting
+// TestFormatFuelStatus tests fuel status formatting.
 func TestFormatFuelStatus(t *testing.T) {
 	t.Parallel()
 	withColorsDisabled(t)
@@ -379,7 +379,7 @@ func TestFormatFuelStatus(t *testing.T) {
 	}
 }
 
-// TestFormatDoorsStatus tests doors status formatting
+// TestFormatDoorsStatus tests doors status formatting.
 func TestFormatDoorsStatus(t *testing.T) {
 	t.Parallel()
 	withColorsDisabled(t)
@@ -468,7 +468,7 @@ func TestFormatDoorsStatus(t *testing.T) {
 	}
 }
 
-// TestFormatTiresStatus tests tire status formatting
+// TestFormatTiresStatus tests tire status formatting.
 func TestFormatTiresStatus(t *testing.T) {
 	t.Parallel()
 	colorTestMutex.Lock()
@@ -509,7 +509,7 @@ func TestFormatTiresStatus(t *testing.T) {
 	}
 }
 
-// TestFormatLocationStatus tests location status formatting
+// TestFormatLocationStatus tests location status formatting.
 func TestFormatLocationStatus(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -550,7 +550,7 @@ func TestFormatLocationStatus(t *testing.T) {
 	}
 }
 
-// TestGetInternalVIN tests getting internal VIN from vehicle base info
+// TestGetInternalVIN tests getting internal VIN from vehicle base info.
 func TestGetInternalVIN(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -601,7 +601,7 @@ func TestGetInternalVIN(t *testing.T) {
 	}
 }
 
-// TestRunStatus_Integration tests the full status command integration
+// TestRunStatus_Integration tests the full status command integration.
 func TestRunStatus_Integration(t *testing.T) {
 	t.Parallel()
 	// This would require mocking the API client
@@ -617,7 +617,7 @@ func TestRunStatus_Integration(t *testing.T) {
 	// The actual execution tests would be in integration tests
 }
 
-// TestFormatHvacStatus tests HVAC status formatting
+// TestFormatHvacStatus tests HVAC status formatting.
 func TestFormatHvacStatus(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -702,7 +702,7 @@ func TestFormatHvacStatus(t *testing.T) {
 	}
 }
 
-// TestFormatHvacStatus_JSON tests HVAC status JSON formatting
+// TestFormatHvacStatus_JSON tests HVAC status JSON formatting.
 func TestFormatHvacStatus_JSON(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -743,7 +743,7 @@ func TestFormatHvacStatus_JSON(t *testing.T) {
 	}
 }
 
-// TestGetHvacInfo tests extracting HVAC info from EV status
+// TestGetHvacInfo tests extracting HVAC info from EV status.
 func TestGetHvacInfo(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -824,7 +824,7 @@ func TestGetHvacInfo(t *testing.T) {
 	}
 }
 
-// TestExtractHvacData tests extracting HVAC data for JSON output
+// TestExtractHvacData tests extracting HVAC data for JSON output.
 func TestExtractHvacData(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -876,7 +876,7 @@ func TestExtractHvacData(t *testing.T) {
 	}
 }
 
-// TestFormatOdometerStatus tests odometer status formatting
+// TestFormatOdometerStatus tests odometer status formatting.
 func TestFormatOdometerStatus(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -917,7 +917,7 @@ func TestFormatOdometerStatus(t *testing.T) {
 	}
 }
 
-// TestFormatOdometerStatus_JSON tests odometer status JSON formatting
+// TestFormatOdometerStatus_JSON tests odometer status JSON formatting.
 func TestFormatOdometerStatus_JSON(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -949,7 +949,7 @@ func TestFormatOdometerStatus_JSON(t *testing.T) {
 	}
 }
 
-// TestGetOdometerInfo tests extracting odometer info from vehicle status
+// TestGetOdometerInfo tests extracting odometer info from vehicle status.
 func TestGetOdometerInfo(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -984,7 +984,7 @@ func TestGetOdometerInfo(t *testing.T) {
 	}
 }
 
-// TestExtractOdometerData tests extracting odometer data for JSON output
+// TestExtractOdometerData tests extracting odometer data for JSON output.
 func TestExtractOdometerData(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -1022,7 +1022,7 @@ func TestExtractOdometerData(t *testing.T) {
 	}
 }
 
-// TestFormatChargeTime tests charge time formatting
+// TestFormatChargeTime tests charge time formatting.
 func TestFormatChargeTime(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -1084,7 +1084,7 @@ func TestFormatChargeTime(t *testing.T) {
 	}
 }
 
-// TestFormatVehicleHeader tests vehicle header formatting
+// TestFormatVehicleHeader tests vehicle header formatting.
 func TestFormatVehicleHeader(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -1150,7 +1150,7 @@ func TestFormatVehicleHeader(t *testing.T) {
 	}
 }
 
-// TestExtractVehicleInfoData tests vehicle info extraction for JSON
+// TestExtractVehicleInfoData tests vehicle info extraction for JSON.
 func TestExtractVehicleInfoData(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -1187,7 +1187,7 @@ func TestExtractVehicleInfoData(t *testing.T) {
 	}
 }
 
-// TestFormatRelativeTime tests the formatRelativeTime function
+// TestFormatRelativeTime tests the formatRelativeTime function.
 func TestFormatRelativeTime(t *testing.T) {
 	t.Parallel()
 	now := time.Now()
@@ -1267,7 +1267,7 @@ func TestFormatRelativeTime(t *testing.T) {
 	}
 }
 
-// TestFormatTimestamp tests the formatTimestamp function
+// TestFormatTimestamp tests the formatTimestamp function.
 func TestFormatTimestamp(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -1329,7 +1329,7 @@ func TestFormatTimestamp(t *testing.T) {
 	}
 }
 
-// TestFormatWindowsStatus tests the formatWindowsStatus function
+// TestFormatWindowsStatus tests the formatWindowsStatus function.
 func TestFormatWindowsStatus(t *testing.T) {
 	t.Parallel()
 	colorTestMutex.Lock()
@@ -1429,7 +1429,7 @@ func TestFormatWindowsStatus(t *testing.T) {
 	}
 }
 
-// TestDisplayStatusWithVehicle tests the displayStatusWithVehicle function
+// TestDisplayStatusWithVehicle tests the displayStatusWithVehicle function.
 func TestDisplayStatusWithVehicle(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -1585,7 +1585,7 @@ func TestDisplayStatusWithVehicle(t *testing.T) {
 	}
 }
 
-// TestDisplayAllStatus tests the displayAllStatus function
+// TestDisplayAllStatus tests the displayAllStatus function.
 func TestDisplayAllStatus(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -1763,7 +1763,7 @@ func TestDisplayAllStatus(t *testing.T) {
 	}
 }
 
-// TestDisplayAllStatus_ErrorHandling tests error cases in displayAllStatus
+// TestDisplayAllStatus_ErrorHandling tests error cases in displayAllStatus.
 func TestDisplayAllStatus_ErrorHandling(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

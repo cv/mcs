@@ -11,13 +11,13 @@ import (
 )
 
 var (
-	// Version is set at build time
+	// Version is set at build time.
 	Version = "dev"
 
-	// ConfigFile is the path to the config file
+	// ConfigFile is the path to the config file.
 	ConfigFile string
 
-	// NoColor disables color output
+	// NoColor disables color output.
 	NoColor bool
 )
 
@@ -42,7 +42,7 @@ func checkSkillVersionMismatch(cmd *cobra.Command) {
 	}
 }
 
-// NewRootCmd creates the root command
+// NewRootCmd creates the root command.
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "mcs",
@@ -119,7 +119,7 @@ Example config.toml:
 	return rootCmd
 }
 
-// Execute runs the root command with signal-aware context
+// Execute runs the root command with signal-aware context.
 func Execute() error {
 	// Create context that cancels on SIGINT or SIGTERM
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

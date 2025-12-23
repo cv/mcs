@@ -17,8 +17,13 @@ linters:
     - gosec              # Security issues
 
     # Code quality
+    - cyclop             # Cyclomatic complexity
     - dupl               # Duplicated code blocks
+    - gochecknoglobals   # Disallow global variables
     - gochecknoinits     # Disallow init functions
+    - godot              # Check comment ending with period
+    - nestif             # Deeply nested if statements
+    - nlreturn           # Newline before return
     - canonicalheader    # HTTP header canonicalization
     - dupword            # Duplicate words (typos)
     - exhaustive         # Exhaustive switch statements
@@ -69,3 +74,16 @@ linters:
       - path: _test\.go
         linters:
           - goconst
+      # TODO(mcs-e0yb): Temporarily exclude new linters until refactored
+      # Cyclomatic complexity - 12 functions need refactoring
+      - path: \.go
+        linters:
+          - cyclop
+      # Global variables - 9 globals need evaluation
+      - path: \.go
+        linters:
+          - gochecknoglobals
+      # Nested if complexity - 2 functions need refactoring
+      - path: \.go
+        linters:
+          - nestif

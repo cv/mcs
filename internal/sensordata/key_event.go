@@ -7,34 +7,35 @@ import (
 	"time"
 )
 
-// KeyEvent represents a key event
+// KeyEvent represents a key event.
 type KeyEvent struct {
 	time             int
 	idCharCodeSum    int
 	longerThanBefore bool
 }
 
-// ToString converts KeyEvent to string format
+// ToString converts KeyEvent to string format.
 func (k *KeyEvent) ToString() string {
 	if k.longerThanBefore {
 		return fmt.Sprintf("2,%d,%d,1;", k.time, k.idCharCodeSum)
 	}
+
 	return fmt.Sprintf("2,%d,%d;", k.time, k.idCharCodeSum)
 }
 
-// KeyEventList manages a list of key events
+// KeyEventList manages a list of key events.
 type KeyEventList struct {
 	keyEvents []*KeyEvent
 }
 
-// NewKeyEventList creates a new KeyEventList
+// NewKeyEventList creates a new KeyEventList.
 func NewKeyEventList() *KeyEventList {
 	return &KeyEventList{
 		keyEvents: []*KeyEvent{},
 	}
 }
 
-// Randomize generates random key events
+// Randomize generates random key events.
 func (k *KeyEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 	k.keyEvents = []*KeyEvent{}
 
@@ -68,16 +69,17 @@ func (k *KeyEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 	}
 }
 
-// ToString converts KeyEventList to string format
+// ToString converts KeyEventList to string format.
 func (k *KeyEventList) ToString() string {
 	var sb strings.Builder
 	for _, event := range k.keyEvents {
 		sb.WriteString(event.ToString())
 	}
+
 	return sb.String()
 }
 
-// GetSum calculates the sum of event values
+// GetSum calculates the sum of event values.
 func (k *KeyEventList) GetSum() int {
 	sum := 0
 	for _, event := range k.keyEvents {
@@ -85,5 +87,6 @@ func (k *KeyEventList) GetSum() int {
 		sum += event.time
 		sum += 2
 	}
+
 	return sum
 }

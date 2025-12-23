@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-// ANSI color codes
+// ANSI color codes.
 const (
 	colorReset  = "\033[0m"
 	colorRed    = "\033[31m"
@@ -24,21 +24,22 @@ var (
 	colorMu      sync.RWMutex
 )
 
-// SetColorEnabled sets whether color output is enabled
+// SetColorEnabled sets whether color output is enabled.
 func SetColorEnabled(enabled bool) {
 	colorMu.Lock()
 	defer colorMu.Unlock()
 	colorEnabled = enabled
 }
 
-// IsColorEnabled returns whether color output is enabled
+// IsColorEnabled returns whether color output is enabled.
 func IsColorEnabled() bool {
 	colorMu.RLock()
 	defer colorMu.RUnlock()
+
 	return colorEnabled
 }
 
-// IsTTY checks if the given writer is a terminal
+// IsTTY checks if the given writer is a terminal.
 func IsTTY(w io.Writer) bool {
 	if f, ok := w.(*os.File); ok {
 		// Check if file descriptor refers to a terminal
@@ -50,10 +51,11 @@ func IsTTY(w io.Writer) bool {
 		// Check if it's a character device (terminal)
 		return (fileInfo.Mode() & os.ModeCharDevice) != 0
 	}
+
 	return false
 }
 
-// colorize wraps text in ANSI color codes if colors are enabled
+// colorize wraps text in ANSI color codes if colors are enabled.
 func colorize(color, text string) string {
 	colorMu.RLock()
 	enabled := colorEnabled
@@ -61,34 +63,35 @@ func colorize(color, text string) string {
 	if !enabled {
 		return text
 	}
+
 	return color + text + colorReset
 }
 
-// Red returns text in red
+// Red returns text in red.
 func Red(text string) string {
 	return colorize(colorRed, text)
 }
 
-// Green returns text in green
+// Green returns text in green.
 func Green(text string) string {
 	return colorize(colorGreen, text)
 }
 
-// Yellow returns text in yellow
+// Yellow returns text in yellow.
 func Yellow(text string) string {
 	return colorize(colorYellow, text)
 }
 
-// Bold returns text in bold
+// Bold returns text in bold.
 func Bold(text string) string {
 	return colorize(colorBold, text)
 }
 
-// Default recommended tire pressure (PSI) - Mazda CX-90 MHEV
+// Default recommended tire pressure (PSI) - Mazda CX-90 MHEV.
 const defaultTargetPressurePSI = 36.0
 
 // ColorPressure returns a colored pressure string based on deviation from target
-// Green: within ±3 PSI, Yellow: 4-6 PSI off, Red: >6 PSI off
+// Green: within ±3 PSI, Yellow: 4-6 PSI off, Red: >6 PSI off.
 func ColorPressure(pressure float64, targetPSI float64) string {
 	text := fmt.Sprintf("%.1f", pressure)
 	deviation := pressure - targetPSI
@@ -107,7 +110,7 @@ func ColorPressure(pressure float64, targetPSI float64) string {
 }
 
 // ProgressBar creates a simple ASCII progress bar
-// Example: [████████░░] 80%
+// Example: [████████░░] 80%.
 func ProgressBar(percent float64, width int) string {
 	if width <= 0 {
 		width = 10

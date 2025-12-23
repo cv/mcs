@@ -7,30 +7,30 @@ import (
 	"time"
 )
 
-// BackgroundEvent represents a background event
+// BackgroundEvent represents a background event.
 type BackgroundEvent struct {
 	eventType int
 	timestamp int64
 }
 
-// ToString converts BackgroundEvent to string format
+// ToString converts BackgroundEvent to string format.
 func (b *BackgroundEvent) ToString() string {
 	return fmt.Sprintf("%d,%d", b.eventType, b.timestamp)
 }
 
-// BackgroundEventList manages a list of background events
+// BackgroundEventList manages a list of background events.
 type BackgroundEventList struct {
 	backgroundEvents []*BackgroundEvent
 }
 
-// NewBackgroundEventList creates a new BackgroundEventList
+// NewBackgroundEventList creates a new BackgroundEventList.
 func NewBackgroundEventList() *BackgroundEventList {
 	return &BackgroundEventList{
 		backgroundEvents: []*BackgroundEvent{},
 	}
 }
 
-// Randomize generates random background events
+// Randomize generates random background events.
 func (b *BackgroundEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 	b.backgroundEvents = []*BackgroundEvent{}
 
@@ -59,11 +59,12 @@ func (b *BackgroundEventList) Randomize(sensorCollectionStartTimestamp time.Time
 	})
 }
 
-// ToString converts BackgroundEventList to string format
+// ToString converts BackgroundEventList to string format.
 func (b *BackgroundEventList) ToString() string {
 	var sb strings.Builder
 	for _, event := range b.backgroundEvents {
 		sb.WriteString(event.ToString())
 	}
+
 	return sb.String()
 }

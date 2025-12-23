@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewRawCmd creates the raw command for debugging
+// NewRawCmd creates the raw command for debugging.
 func NewRawCmd() *cobra.Command {
 	rawCmd := &cobra.Command{
 		Use:   "raw",
@@ -85,7 +85,7 @@ func NewRawCmd() *cobra.Command {
 	return rawCmd
 }
 
-// runRawStatus executes the raw status command
+// runRawStatus executes the raw status command.
 func runRawStatus(cmd *cobra.Command) error {
 	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 		vehicleStatus, err := client.GetVehicleStatus(ctx, string(internalVIN))
@@ -99,11 +99,12 @@ func runRawStatus(cmd *cobra.Command) error {
 		}
 
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+
 		return nil
 	})
 }
 
-// runRawEV executes the raw ev command
+// runRawEV executes the raw ev command.
 func runRawEV(cmd *cobra.Command) error {
 	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
 		evStatus, err := client.GetEVVehicleStatus(ctx, string(internalVIN))
@@ -117,11 +118,12 @@ func runRawEV(cmd *cobra.Command) error {
 		}
 
 		_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+
 		return nil
 	})
 }
 
-// runRawVehicle executes the raw vehicle command
+// runRawVehicle executes the raw vehicle command.
 func runRawVehicle(cmd *cobra.Command) error {
 	client, err := createAPIClient()
 	if err != nil {
@@ -140,5 +142,6 @@ func runRawVehicle(cmd *cobra.Command) error {
 	}
 
 	_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+
 	return nil
 }

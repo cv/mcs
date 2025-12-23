@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewLockCmd creates the lock command
+// NewLockCmd creates the lock command.
 func NewLockCmd() *cobra.Command {
 	return buildConfirmableCommand(CommandSpec{
 		Use:   "lock",
@@ -44,7 +44,7 @@ func NewLockCmd() *cobra.Command {
 	})
 }
 
-// NewUnlockCmd creates the unlock command
+// NewUnlockCmd creates the unlock command.
 func NewUnlockCmd() *cobra.Command {
 	return buildConfirmableCommand(CommandSpec{
 		Use:   "unlock",

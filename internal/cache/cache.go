@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// TokenCache represents cached authentication credentials
+// TokenCache represents cached authentication credentials.
 type TokenCache struct {
 	AccessToken             string `json:"access_token"`
 	AccessTokenExpirationTs int64  `json:"access_token_expiration_ts"`
@@ -28,15 +28,16 @@ func IsTokenValid(accessToken string, accessTokenExpirationTs int64) bool {
 	if accessTokenExpirationTs <= time.Now().Unix() {
 		return false
 	}
+
 	return true
 }
 
-// IsValid checks if the cached token is still valid
+// IsValid checks if the cached token is still valid.
 func (tc *TokenCache) IsValid() bool {
 	return IsTokenValid(tc.AccessToken, tc.AccessTokenExpirationTs)
 }
 
-// Load reads the token cache from disk
+// Load reads the token cache from disk.
 func Load() (*TokenCache, error) {
 	path, err := getCachePath()
 	if err != nil {
@@ -48,6 +49,7 @@ func Load() (*TokenCache, error) {
 		if os.IsNotExist(err) {
 			return nil, nil // No cache file exists yet
 		}
+
 		return nil, fmt.Errorf("failed to read cache file: %w", err)
 	}
 
@@ -59,7 +61,7 @@ func Load() (*TokenCache, error) {
 	return &cache, nil
 }
 
-// Save writes the token cache to disk
+// Save writes the token cache to disk.
 func Save(cache *TokenCache) error {
 	path, err := getCachePath()
 	if err != nil {
@@ -85,11 +87,12 @@ func Save(cache *TokenCache) error {
 	return nil
 }
 
-// getCachePath returns the path to the token cache file
+// getCachePath returns the path to the token cache file.
 func getCachePath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
+
 	return filepath.Join(homeDir, ".cache", "mcs", "token.json"), nil
 }

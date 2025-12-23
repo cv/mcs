@@ -72,6 +72,7 @@ func TestExecute_SignalHandling(t *testing.T) {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Wait for context to be cancelled
 			<-cmd.Context().Done()
+
 			return cmd.Context().Err()
 		},
 	}

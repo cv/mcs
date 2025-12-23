@@ -25,7 +25,7 @@ var androidVersionToSDK = map[string]int{
 	"7.0":   24,
 }
 
-// SystemInfo represents Android system information
+// SystemInfo represents Android system information.
 type SystemInfo struct {
 	screenHeight            int
 	screenWidth             int
@@ -59,12 +59,12 @@ type SystemInfo struct {
 	buildID                 string
 }
 
-// NewSystemInfo creates a new SystemInfo
+// NewSystemInfo creates a new SystemInfo.
 func NewSystemInfo() *SystemInfo {
 	return &SystemInfo{}
 }
 
-// Randomize generates random system information
+// Randomize generates random system information.
 func (s *SystemInfo) Randomize() {
 	// Simplified - just use Pixel 3a with Android 11
 	deviceModel := "Pixel 3a"
@@ -116,7 +116,7 @@ func (s *SystemInfo) Randomize() {
 	s.buildID = buildID
 }
 
-// ToString converts SystemInfo to string format
+// ToString converts SystemInfo to string format.
 func (s *SystemInfo) ToString() string {
 	batteryChargingStr := "0"
 	if s.batteryCharging {
@@ -171,7 +171,7 @@ func (s *SystemInfo) ToString() string {
 	return strings.Join(parts, ",")
 }
 
-// GetCharCodeSum calculates the sum of character codes
+// GetCharCodeSum calculates the sum of character codes.
 func (s *SystemInfo) GetCharCodeSum() int {
 	return sumCharCodes(s.ToString())
 }
@@ -189,6 +189,7 @@ func percentEncode(str string) string {
 			sb.WriteString("%" + strings.ToUpper(strconv.FormatUint(uint64(b), 16)))
 		}
 	}
+
 	return sb.String()
 }
 
@@ -199,5 +200,6 @@ func sumCharCodes(str string) int {
 			sum += int(b)
 		}
 	}
+
 	return sum
 }

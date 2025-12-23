@@ -19,84 +19,86 @@ import (
 )
 
 const (
-	// AuthRequestTimeout is the timeout for authentication-related API requests
+	// AuthRequestTimeout is the timeout for authentication-related API requests.
 	AuthRequestTimeout = 15 * time.Second
 
-	// IV is the initialization vector for AES encryption
+	// IV is the initialization vector for AES encryption.
 	IV = "0102030405060708"
 
-	// SignatureMD5 is used for key derivation
+	// SignatureMD5 is used for key derivation.
 	SignatureMD5 = "C383D8C4D279B78130AD52DC71D95CAA"
 
-	// AppPackageID identifies the mobile app package
+	// AppPackageID identifies the mobile app package.
 	AppPackageID = "com.interrait.mymazda"
 
-	// UserAgentBaseAPI is the User-Agent for base API requests
+	// UserAgentBaseAPI is the User-Agent for base API requests.
 	UserAgentBaseAPI = "MyMazda-Android/9.0.5"
 
-	// UserAgentUsherAPI is the User-Agent for Usher API requests
+	// UserAgentUsherAPI is the User-Agent for Usher API requests.
 	UserAgentUsherAPI = "MyMazda/9.0.5 (Google Pixel 3a; Android 11)"
 
-	// AppOS identifies the operating system
+	// AppOS identifies the operating system.
 	AppOS = "Android"
 
-	// AppVersion is the mobile app version
+	// AppVersion is the mobile app version.
 	AppVersion = "9.0.5"
 
-	// UsherSDKVersion is the Usher SDK version
+	// UsherSDKVersion is the Usher SDK version.
 	UsherSDKVersion = "11.3.0700.001"
 
-	// InternalUserID is a placeholder used in API requests
+	// InternalUserID is a placeholder used in API requests.
 	InternalUserID = "__INTERNAL_ID__"
 )
 
-// Authentication endpoint constants
+// Authentication endpoint constants.
 const (
 	EndpointCheckVersion  = "service/checkVersion"
 	EndpointEncryptionKey = "system/encryptionKey"
 	EndpointLogin         = "user/login"
 )
 
-// Region represents a valid geographic region
+// Region represents a valid geographic region.
 type Region string
 
 const (
-	// RegionMNAO represents Mazda North American Operations
+	// RegionMNAO represents Mazda North American Operations.
 	RegionMNAO Region = "MNAO"
-	// RegionMME represents Mazda Europe
+	// RegionMME represents Mazda Europe.
 	RegionMME Region = "MME"
-	// RegionMJO represents Mazda Japan
+	// RegionMJO represents Mazda Japan.
 	RegionMJO Region = "MJO"
 )
 
-// String returns the string representation of the region
+// String returns the string representation of the region.
 func (r Region) String() string {
 	return string(r)
 }
 
-// IsValid checks if the region is valid
+// IsValid checks if the region is valid.
 func (r Region) IsValid() bool {
 	_, ok := RegionConfigs[string(r)]
+
 	return ok
 }
 
-// ParseRegion parses a string into a Region, returning an error if invalid
+// ParseRegion parses a string into a Region, returning an error if invalid.
 func ParseRegion(s string) (Region, error) {
 	r := Region(s)
 	if !r.IsValid() {
 		return "", fmt.Errorf("invalid region: %s (must be one of: MNAO, MME, MJO)", s)
 	}
+
 	return r, nil
 }
 
-// RegionConfig holds configuration for a specific region
+// RegionConfig holds configuration for a specific region.
 type RegionConfig struct {
 	AppCode  string
 	BaseURL  string
 	UsherURL string
 }
 
-// RegionConfigs maps region codes to their configurations
+// RegionConfigs maps region codes to their configurations.
 var RegionConfigs = map[string]RegionConfig{
 	"MNAO": {
 		AppCode:  "202007270941270111799",
@@ -115,7 +117,7 @@ var RegionConfigs = map[string]RegionConfig{
 	},
 }
 
-// Client represents an API client
+// Client represents an API client.
 type Client struct {
 	email    string
 	password string
@@ -138,7 +140,7 @@ type Client struct {
 	sleepFunc         func(context.Context, time.Duration) error
 }
 
-// NewClient creates a new API client
+// NewClient creates a new API client.
 func NewClient(email, password string, region Region) (*Client, error) {
 	if !region.IsValid() {
 		return nil, fmt.Errorf("invalid region: %s", region)
@@ -162,12 +164,12 @@ func NewClient(email, password string, region Region) (*Client, error) {
 	}, nil
 }
 
-// SetDebug enables or disables debug logging
+// SetDebug enables or disables debug logging.
 func (c *Client) SetDebug(debug bool) {
 	c.debug = debug
 }
 
-// SetCachedCredentials sets the client's cached authentication credentials
+// SetCachedCredentials sets the client's cached authentication credentials.
 func (c *Client) SetCachedCredentials(accessToken string, accessTokenExpirationTs int64, encKey, signKey string) {
 	c.accessToken = accessToken
 	c.accessTokenExpirationTs = accessTokenExpirationTs
@@ -175,12 +177,12 @@ func (c *Client) SetCachedCredentials(accessToken string, accessTokenExpirationT
 	c.Keys.SignKey = signKey
 }
 
-// GetCredentials returns the current authentication credentials for caching
+// GetCredentials returns the current authentication credentials for caching.
 func (c *Client) GetCredentials() (accessToken string, accessTokenExpirationTs int64, encKey, signKey string) {
 	return c.accessToken, c.accessTokenExpirationTs, c.Keys.EncKey, c.Keys.SignKey
 }
 
-// GetEncryptionKeys retrieves the encryption and signing keys from the API
+// GetEncryptionKeys retrieves the encryption and signing keys from the API.
 func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 	// Ensure we have a timeout for the request
 	ctx, cancel := context.WithTimeout(ctx, AuthRequestTimeout)
@@ -245,7 +247,7 @@ func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 	return nil
 }
 
-// GetUsherEncryptionKey retrieves the RSA public key from Usher API
+// GetUsherEncryptionKey retrieves the RSA public key from Usher API.
 func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, error) {
 	// Ensure we have a timeout for the request
 	ctx, cancel := context.WithTimeout(ctx, AuthRequestTimeout)
@@ -287,7 +289,7 @@ func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, err
 	return response.Data.PublicKey, response.Data.VersionPrefix, nil
 }
 
-// Login authenticates with the API and retrieves an access token
+// Login authenticates with the API and retrieves an access token.
 func (c *Client) Login(ctx context.Context) error {
 	// Ensure we have a timeout for the request
 	ctx, cancel := context.WithTimeout(ctx, AuthRequestTimeout)
@@ -364,7 +366,7 @@ func (c *Client) Login(ctx context.Context) error {
 	return nil
 }
 
-// IsTokenValid checks if the access token is present and not expired
+// IsTokenValid checks if the access token is present and not expired.
 func (c *Client) IsTokenValid() bool {
 	return cache.IsTokenValid(c.accessToken, c.accessTokenExpirationTs)
 }
@@ -382,22 +384,25 @@ func (c *Client) getSignFromTimestamp(timestamp string) string {
 
 	timestampExtended := strings.ToUpper(timestamp + timestamp[6:] + timestamp[3:])
 	temporarySignKey := c.getTemporarySignKeyFromAppCode()
+
 	return SignWithSHA256(timestampExtended + temporarySignKey)
 }
 
 func (c *Client) getTemporarySignKeyFromAppCode() string {
 	val1 := SignWithMD5(c.appCode + AppPackageID)
 	val2 := strings.ToLower(SignWithMD5(val1 + SignatureMD5))
+
 	return val2[20:32] + val2[0:10] + val2[4:6]
 }
 
 func (c *Client) getDecryptionKeyFromAppCode() string {
 	val1 := SignWithMD5(c.appCode + AppPackageID)
 	val2 := strings.ToLower(SignWithMD5(val1 + SignatureMD5))
+
 	return val2[4:20]
 }
 
-// decryptCheckVersionPayload decrypts and parses the checkVersion response payload
+// decryptCheckVersionPayload decrypts and parses the checkVersion response payload.
 func (c *Client) decryptCheckVersionPayload(payload string) (*CheckVersionResponse, error) {
 	key := c.getDecryptionKeyFromAppCode()
 	decrypted, err := DecryptAES128CBC(payload, key, IV)

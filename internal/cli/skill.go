@@ -20,6 +20,7 @@ func getSkillPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
+
 	return filepath.Join(home, ".claude", "skills", skill.SkillName), nil
 }
 
@@ -42,7 +43,7 @@ func uninstallSkill() error {
 	return nil
 }
 
-// NewSkillCmd creates the skill command
+// NewSkillCmd creates the skill command.
 func NewSkillCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "skill",
@@ -65,7 +66,7 @@ func NewSkillCmd() *cobra.Command {
 	return cmd
 }
 
-// NewSkillInstallCmd creates the skill install subcommand
+// NewSkillInstallCmd creates the skill install subcommand.
 func NewSkillInstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install",
@@ -140,6 +141,7 @@ For example, you can say "warm up the car" and Claude will run "mcs climate on".
 			}
 
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Skill installed to %s\n", skillPath)
+
 			return nil
 		},
 		SilenceUsage: true,
@@ -191,7 +193,7 @@ func CheckSkillVersion() (SkillVersionStatus, string) {
 	return SkillVersionMismatch, installedVersion
 }
 
-// NewSkillUninstallCmd creates the skill uninstall subcommand
+// NewSkillUninstallCmd creates the skill uninstall subcommand.
 func NewSkillUninstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "uninstall",
@@ -207,6 +209,7 @@ func NewSkillUninstallCmd() *cobra.Command {
 			// Check if skill exists
 			if _, err := os.Stat(skillPath); os.IsNotExist(err) {
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Skill not installed at %s\n", skillPath)
+
 				return nil
 			}
 
@@ -215,6 +218,7 @@ func NewSkillUninstallCmd() *cobra.Command {
 			}
 
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Skill uninstalled from %s\n", skillPath)
+
 			return nil
 		},
 		SilenceUsage: true,
@@ -223,7 +227,7 @@ func NewSkillUninstallCmd() *cobra.Command {
 	return cmd
 }
 
-// NewSkillPathCmd creates the skill path subcommand
+// NewSkillPathCmd creates the skill path subcommand.
 func NewSkillPathCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "path",
@@ -237,6 +241,7 @@ func NewSkillPathCmd() *cobra.Command {
 			}
 
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), skillPath)
+
 			return nil
 		},
 		SilenceUsage: true,

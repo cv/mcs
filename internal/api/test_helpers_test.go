@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// testEncKey is the encryption key used in tests (must be 16 bytes for AES-128)
+// testEncKey is the encryption key used in tests (must be 16 bytes for AES-128).
 const testEncKey = "testenckey123456"
 
-// testSignKey is the signing key used in tests
+// testSignKey is the signing key used in tests.
 const testSignKey = "testsignkey12345"
 
-// createTestClient creates a test API client with mock credentials
+// createTestClient creates a test API client with mock credentials.
 func createTestClient(t *testing.T, serverURL string) *Client {
 	t.Helper()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
@@ -27,34 +27,35 @@ func createTestClient(t *testing.T, serverURL string) *Client {
 	client.Keys.SignKey = testSignKey
 	client.accessToken = "test-token"
 	client.accessTokenExpirationTs = 9999999999
+
 	return client
 }
 
-// testServerOptions configures the behavior of a test server
+// testServerOptions configures the behavior of a test server.
 type testServerOptions struct {
 	expectedPath   string
 	expectedMethod string
 	validateBody   bool
 }
 
-// TestServerOption is a functional option for configuring test servers
+// TestServerOption is a functional option for configuring test servers.
 type TestServerOption func(*testServerOptions)
 
-// WithPath validates that the request path matches the expected value
+// WithPath validates that the request path matches the expected value.
 func WithPath(path string) TestServerOption {
 	return func(opts *testServerOptions) {
 		opts.expectedPath = path
 	}
 }
 
-// WithMethod validates that the request method matches the expected value
+// WithMethod validates that the request method matches the expected value.
 func WithMethod(method string) TestServerOption {
 	return func(opts *testServerOptions) {
 		opts.expectedMethod = method
 	}
 }
 
-// WithBodyValidation ensures the request has a non-empty body
+// WithBodyValidation ensures the request has a non-empty body.
 func WithBodyValidation() TestServerOption {
 	return func(opts *testServerOptions) {
 		opts.validateBody = true
@@ -62,7 +63,7 @@ func WithBodyValidation() TestServerOption {
 }
 
 // createTestServer creates a flexible test server that returns encrypted JSON responses
-// Use the functional options to configure path, method, and body validation
+// Use the functional options to configure path, method, and body validation.
 func createTestServer(t *testing.T, responseData map[string]any, options ...TestServerOption) *httptest.Server {
 	t.Helper()
 
@@ -105,14 +106,15 @@ func createTestServer(t *testing.T, responseData map[string]any, options ...Test
 
 // createSuccessServer creates a test server that returns an encrypted success response with path validation
 // This is a convenience wrapper around createTestServer for simple GET/retrieve endpoints
-// For control endpoints (POST with body validation), use createControlTestServer instead
+// For control endpoints (POST with body validation), use createControlTestServer instead.
 func createSuccessServer(t *testing.T, expectedPath string, responseData map[string]any) *httptest.Server {
 	t.Helper()
+
 	return createTestServer(t, responseData, WithPath(expectedPath))
 }
 
 // createErrorServer creates a test server that returns an encrypted error response
-// Optionally accepts HTTP status code as third parameter (defaults to 200)
+// Optionally accepts HTTP status code as third parameter (defaults to 200).
 func createErrorServer(t *testing.T, resultCode, message string, httpStatusCode ...int) *httptest.Server {
 	t.Helper()
 	errorResponse := map[string]any{
@@ -143,7 +145,7 @@ func createErrorServer(t *testing.T, resultCode, message string, httpStatusCode 
 }
 
 // createControlTestServer creates a test server for control endpoints
-// All control endpoints expect POST requests with non-empty bodies and return standard success responses
+// All control endpoints expect POST requests with non-empty bodies and return standard success responses.
 func createControlTestServer(t *testing.T, expectedPath string) *httptest.Server {
 	t.Helper()
 	successResponse := map[string]any{

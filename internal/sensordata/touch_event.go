@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// TouchEvent represents a touch event
+// TouchEvent represents a touch event.
 type TouchEvent struct {
 	eventType    int
 	time         int
@@ -15,24 +15,24 @@ type TouchEvent struct {
 	toolType     int
 }
 
-// ToString converts TouchEvent to string format
+// ToString converts TouchEvent to string format.
 func (t *TouchEvent) ToString() string {
 	return fmt.Sprintf("%d,%d,0,0,%d,1,%d,-1;", t.eventType, t.time, t.pointerCount, t.toolType)
 }
 
-// TouchEventList manages a list of touch events
+// TouchEventList manages a list of touch events.
 type TouchEventList struct {
 	touchEvents []*TouchEvent
 }
 
-// NewTouchEventList creates a new TouchEventList
+// NewTouchEventList creates a new TouchEventList.
 func NewTouchEventList() *TouchEventList {
 	return &TouchEventList{
 		touchEvents: []*TouchEvent{},
 	}
 }
 
-// Randomize generates random touch events
+// Randomize generates random touch events.
 func (t *TouchEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 	t.touchEvents = []*TouchEvent{}
 
@@ -68,26 +68,28 @@ func (t *TouchEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 	}
 }
 
-// ToString converts TouchEventList to string format
+// ToString converts TouchEventList to string format.
 func (t *TouchEventList) ToString() string {
 	var sb strings.Builder
 	for _, event := range t.touchEvents {
 		sb.WriteString(event.ToString())
 	}
+
 	return sb.String()
 }
 
-// GetSum calculates the sum of event types and times
+// GetSum calculates the sum of event types and times.
 func (t *TouchEventList) GetSum() int {
 	sum := 0
 	for _, event := range t.touchEvents {
 		sum += event.eventType
 		sum += event.time
 	}
+
 	return sum
 }
 
-// addTouchSequence adds a complete touch sequence (down, moves, up) starting at the given time
+// addTouchSequence adds a complete touch sequence (down, moves, up) starting at the given time.
 func (t *TouchEventList) addTouchSequence(downTime int) {
 	// down event
 	t.touchEvents = append(t.touchEvents, &TouchEvent{
