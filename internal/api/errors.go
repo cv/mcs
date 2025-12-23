@@ -29,6 +29,11 @@ type APIError struct {
 	Message string
 }
 
+// NewAPIError creates a new API error
+func NewAPIError(message string) *APIError {
+	return &APIError{Message: message}
+}
+
 func (e *APIError) Error() string {
 	return e.Message
 }
@@ -51,11 +56,6 @@ type RequestInProgressError struct {
 // EngineStartLimitError represents an engine start limit error (error code 920000, extraCode 400S11)
 type EngineStartLimitError struct {
 	APIError
-}
-
-// NewAPIError creates a new API error
-func NewAPIError(message string) *APIError {
-	return &APIError{Message: message}
 }
 
 // NewEncryptionError creates a new encryption error
@@ -81,6 +81,7 @@ func NewEngineStartLimitError() *EngineStartLimitError {
 // ResultCodeError represents an error due to an unsuccessful result code
 type ResultCodeError struct {
 	APIError
+
 	ResultCode string
 	Operation  string
 }

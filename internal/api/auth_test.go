@@ -31,7 +31,7 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 		assert.NotEmpty(t, r.Header.Get("App-Code"), "Expected app-code header")
 
 		// Mock response - encrypt a simple JSON payload
-		response := map[string]interface{}{
+		response := map[string]any{
 			"encKey":  "test-enc-key-123",
 			"signKey": "test-sign-key-456",
 		}
@@ -41,7 +41,7 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 		encrypted, _ := EncryptAES128CBC(responseJSON, decryptionKey, "0102030405060708")
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"state":   "S",
 			"payload": encrypted,
 		})
@@ -77,8 +77,8 @@ func TestClient_GetUsherEncryptionKey(t *testing.T) {
 		assert.Equalf(t, "MazdaApp", appId, "Expected appId=MazdaApp, got %s", appId)
 
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"data": map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{
 				"publicKey":     "test-public-key",
 				"versionPrefix": "v1:",
 			},
@@ -106,8 +106,8 @@ func TestClient_Login(t *testing.T) {
 		switch r.URL.Path {
 		case "/appapi/v1/" + EndpointEncryptionKey:
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"data": map[string]any{
 					"publicKey":     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlVKZRa1pkk88B1ydifsFNEv/pOf854egpFu1HHf1wr3YKqmLSG1p39YhNqGLQzIDit1jTLz3MYAOeWiFQSz7h5hvMNccq76zh3Hsg93LurcKA9EmYoj9VsqUetk0evXoqOSGKXPgZosbGT0t8AW2CC7s8FeSPz2tH9T7zjvKQvdyS0BFrVFo1EUBa1UEdMfYW0jLsvLOCYP911X1zTlewV/sTQnAtiTHCrd3jfH2of8PYtTOsmfqCDdL476yGMgeHJ+ZXA/IX2beSrHXU0gCNc/agD+ScCZgpRjfptSbRtBHqtmU4IyF0eqQXCCcrcutjzSHg+3ppmB9x/YvhJvmGQIDAQAB",
 					"versionPrefix": "v1:",
 				},
@@ -115,7 +115,7 @@ func TestClient_Login(t *testing.T) {
 
 		case "/appapi/v1/" + EndpointLogin:
 			// Parse request body
-			var loginReq map[string]interface{}
+			var loginReq map[string]any
 			_ = json.NewDecoder(r.Body).Decode(&loginReq)
 
 			// Verify request structure
@@ -123,9 +123,9 @@ func TestClient_Login(t *testing.T) {
 			assert.EqualValuesf(t, "test@example.com", loginReq["userId"], "Expected userId=test@example.com, got %s", loginReq["userId"])
 
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"status": "OK",
-				"data": map[string]interface{}{
+				"data": map[string]any{
 					"accessToken":             "test-access-token-12345",
 					"accessTokenExpirationTs": time.Now().Unix() + 3600,
 				},

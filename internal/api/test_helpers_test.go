@@ -63,7 +63,7 @@ func WithBodyValidation() TestServerOption {
 
 // createTestServer creates a flexible test server that returns encrypted JSON responses
 // Use the functional options to configure path, method, and body validation
-func createTestServer(t *testing.T, responseData map[string]interface{}, options ...TestServerOption) *httptest.Server {
+func createTestServer(t *testing.T, responseData map[string]any, options ...TestServerOption) *httptest.Server {
 	t.Helper()
 
 	opts := &testServerOptions{}
@@ -92,7 +92,7 @@ func createTestServer(t *testing.T, responseData map[string]interface{}, options
 		responseJSON, _ := json.Marshal(responseData)
 		encrypted, _ := EncryptAES128CBC(responseJSON, testEncKey, IV)
 
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":   "S",
 			"payload": encrypted,
 		}
@@ -106,7 +106,7 @@ func createTestServer(t *testing.T, responseData map[string]interface{}, options
 // createSuccessServer creates a test server that returns an encrypted success response with path validation
 // This is a convenience wrapper around createTestServer for simple GET/retrieve endpoints
 // For control endpoints (POST with body validation), use createControlTestServer instead
-func createSuccessServer(t *testing.T, expectedPath string, responseData map[string]interface{}) *httptest.Server {
+func createSuccessServer(t *testing.T, expectedPath string, responseData map[string]any) *httptest.Server {
 	t.Helper()
 	return createTestServer(t, responseData, WithPath(expectedPath))
 }
@@ -115,7 +115,7 @@ func createSuccessServer(t *testing.T, expectedPath string, responseData map[str
 // Optionally accepts HTTP status code as third parameter (defaults to 200)
 func createErrorServer(t *testing.T, resultCode, message string, httpStatusCode ...int) *httptest.Server {
 	t.Helper()
-	errorResponse := map[string]interface{}{
+	errorResponse := map[string]any{
 		"resultCode": resultCode,
 		"message":    message,
 	}
@@ -130,7 +130,7 @@ func createErrorServer(t *testing.T, resultCode, message string, httpStatusCode 
 		responseJSON, _ := json.Marshal(errorResponse)
 		encrypted, _ := EncryptAES128CBC(responseJSON, testEncKey, IV)
 
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":   "S",
 			"payload": encrypted,
 		}
@@ -146,7 +146,7 @@ func createErrorServer(t *testing.T, resultCode, message string, httpStatusCode 
 // All control endpoints expect POST requests with non-empty bodies and return standard success responses
 func createControlTestServer(t *testing.T, expectedPath string) *httptest.Server {
 	t.Helper()
-	successResponse := map[string]interface{}{
+	successResponse := map[string]any{
 		"resultCode": "200S00",
 		"message":    "Success",
 	}

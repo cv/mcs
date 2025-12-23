@@ -18,15 +18,15 @@ func TestWaitForCondition(t *testing.T) {
 	tests := []struct {
 		name          string
 		useEVStatus   bool
-		statusValues  []interface{} // Either []api.DoorStatus or []bool
-		conditionFunc func(interface{}) (bool, error)
+		statusValues  []any // Either []api.DoorStatus or []bool
+		conditionFunc func(any) (bool, error)
 		expectError   bool
 		expectMet     bool
 	}{
 		{
 			name:        "regular status - condition met immediately",
 			useEVStatus: false,
-			statusValues: []interface{}{
+			statusValues: []any{
 				api.DoorStatus{
 					AllLocked:       true,
 					DriverLocked:    true,
@@ -35,7 +35,7 @@ func TestWaitForCondition(t *testing.T) {
 					RearRightLocked: true,
 				},
 			},
-			conditionFunc: func(status interface{}) (bool, error) {
+			conditionFunc: func(status any) (bool, error) {
 				vStatus := status.(*api.VehicleStatusResponse)
 				doorInfo, err := vStatus.GetDoorsInfo()
 				if err != nil {
@@ -49,7 +49,7 @@ func TestWaitForCondition(t *testing.T) {
 		{
 			name:        "regular status - condition met after one check",
 			useEVStatus: false,
-			statusValues: []interface{}{
+			statusValues: []any{
 				api.DoorStatus{
 					AllLocked:       false,
 					DriverLocked:    false,
@@ -65,7 +65,7 @@ func TestWaitForCondition(t *testing.T) {
 					RearRightLocked: true,
 				},
 			},
-			conditionFunc: func(status interface{}) (bool, error) {
+			conditionFunc: func(status any) (bool, error) {
 				vStatus := status.(*api.VehicleStatusResponse)
 				doorInfo, err := vStatus.GetDoorsInfo()
 				if err != nil {
@@ -79,10 +79,10 @@ func TestWaitForCondition(t *testing.T) {
 		{
 			name:        "EV status - condition met immediately",
 			useEVStatus: true,
-			statusValues: []interface{}{
+			statusValues: []any{
 				true, // HVAC on
 			},
-			conditionFunc: func(status interface{}) (bool, error) {
+			conditionFunc: func(status any) (bool, error) {
 				evStatus := status.(*api.EVVehicleStatusResponse)
 				hvacInfo, err := evStatus.GetHvacInfo()
 				if err != nil {
@@ -96,11 +96,11 @@ func TestWaitForCondition(t *testing.T) {
 		{
 			name:        "EV status - condition met after one check",
 			useEVStatus: true,
-			statusValues: []interface{}{
+			statusValues: []any{
 				false, // HVAC off
 				true,  // HVAC on
 			},
-			conditionFunc: func(status interface{}) (bool, error) {
+			conditionFunc: func(status any) (bool, error) {
 				evStatus := status.(*api.EVVehicleStatusResponse)
 				hvacInfo, err := evStatus.GetHvacInfo()
 				if err != nil {
@@ -114,12 +114,12 @@ func TestWaitForCondition(t *testing.T) {
 		{
 			name:        "condition never met - timeout",
 			useEVStatus: true,
-			statusValues: []interface{}{
+			statusValues: []any{
 				false,
 				false,
 				false,
 			},
-			conditionFunc: func(status interface{}) (bool, error) {
+			conditionFunc: func(status any) (bool, error) {
 				evStatus := status.(*api.EVVehicleStatusResponse)
 				hvacInfo, err := evStatus.GetHvacInfo()
 				if err != nil {
@@ -1240,7 +1240,7 @@ func TestWaitForConditionRefreshesStatus(t *testing.T) {
 		},
 	}
 
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		evStatus := status.(*api.EVVehicleStatusResponse)
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"maps"
 )
 
 // Control endpoint constants
@@ -31,16 +32,14 @@ func boolToInt(b bool) int {
 
 // controlEndpoint sends a control command to the vehicle with optional additional parameters.
 // This is the generic method that all control endpoints use internally.
-func (c *Client) controlEndpoint(ctx context.Context, endpoint, actionDesc, internalVIN string, additionalParams map[string]interface{}) error {
-	bodyParams := map[string]interface{}{
+func (c *Client) controlEndpoint(ctx context.Context, endpoint, actionDesc, internalVIN string, additionalParams map[string]any) error {
+	bodyParams := map[string]any{
 		"internaluserid": InternalUserID,
 		"internalvin":    internalVIN,
 	}
 
 	// Merge additional parameters if provided
-	for k, v := range additionalParams {
-		bodyParams[k] = v
-	}
+	maps.Copy(bodyParams, additionalParams)
 
 	response, err := c.APIRequest(ctx, "POST", endpoint, nil, bodyParams, true, true)
 	if err != nil {
@@ -118,8 +117,8 @@ func (c *Client) RefreshVehicleStatus(ctx context.Context, internalVIN string) e
 // SetHVACSetting sets HVAC temperature and defroster settings
 func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, temperature float64, tempUnit TemperatureUnit, frontDefroster, rearDefroster bool) error {
 	// The API expects HVAC settings to be nested under "hvacsettings"
-	additionalParams := map[string]interface{}{
-		"hvacsettings": map[string]interface{}{
+	additionalParams := map[string]any{
+		"hvacsettings": map[string]any{
 			"Temperature":     temperature,
 			"TemperatureType": int(tempUnit),
 			"FrontDefroster":  boolToInt(frontDefroster),

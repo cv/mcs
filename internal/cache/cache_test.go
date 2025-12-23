@@ -223,7 +223,7 @@ func TestCachePersistence_ConcurrentAccess(t *testing.T) {
 
 	// Try concurrent loads (should all succeed)
 	done := make(chan bool, 3)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		go func(id int) {
 			cache, err := Load()
 			assert.NoErrorf(t, err, "Concurrent load %d failed: %v", id, err)
@@ -233,7 +233,7 @@ func TestCachePersistence_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Wait for all loads to complete
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		<-done
 	}
 }

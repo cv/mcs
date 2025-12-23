@@ -286,7 +286,7 @@ func feistelCipher(upper32Bits, lower32Bits, key int) int64 {
 	// Each round:
 	//   1. Apply round function: newLeft = right ^ F(left, key, round)
 	//   2. Swap halves: (left, right) = (newLeft, left)
-	for round := 0; round < 16; round++ {
+	for round := range 16 {
 		newLeft := rightHalf ^ roundFunction(leftHalf, int32(key), int32(round))
 		// Swap: old left becomes new right, new left becomes new left
 		oldLeft := leftHalf

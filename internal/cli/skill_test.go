@@ -65,16 +65,8 @@ func TestUninstallSkill(t *testing.T) {
 			tempDir := t.TempDir()
 			tt.setupFunc(t, tempDir)
 
-			// Temporarily override the home directory
-			originalHome := os.Getenv("HOME")
-			t.Cleanup(func() {
-				if originalHome != "" {
-					_ = os.Setenv("HOME", originalHome)
-				} else {
-					_ = os.Unsetenv("HOME")
-				}
-			})
-			_ = os.Setenv("HOME", tempDir)
+			// Override the home directory (t.Setenv auto-restores)
+			t.Setenv("HOME", tempDir)
 
 			// Run uninstall
 			err := uninstallSkill()
@@ -101,7 +93,7 @@ func TestSkillCommand(t *testing.T) {
 // TestSkillCommand_Subcommands tests that skill subcommands exist
 func TestSkillCommand_Subcommands(t *testing.T) {
 	cmd := NewSkillCmd()
-	assertSubcommandsExist(t, cmd, []string{"install", "uninstall", "path"}, true)
+	assertSubcommandsExist(t, cmd, []string{"install", "uninstall", "path"})
 }
 
 // TestSkillInstallCommand tests the skill install subcommand
@@ -115,17 +107,7 @@ func TestSkillInstallCommand(t *testing.T) {
 func TestSkillInstallCommand_Execute(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
-
-	// Temporarily override the home directory
-	originalHome := os.Getenv("HOME")
-	t.Cleanup(func() {
-		if originalHome != "" {
-			_ = os.Setenv("HOME", originalHome)
-		} else {
-			_ = os.Unsetenv("HOME")
-		}
-	})
-	_ = os.Setenv("HOME", tempDir)
+	t.Setenv("HOME", tempDir)
 
 	// Execute install command
 	cmd := NewSkillInstallCmd()
@@ -165,17 +147,7 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 func TestSkillInstallCommand_ReinstallRemovesOld(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
-
-	// Temporarily override the home directory
-	originalHome := os.Getenv("HOME")
-	t.Cleanup(func() {
-		if originalHome != "" {
-			_ = os.Setenv("HOME", originalHome)
-		} else {
-			_ = os.Unsetenv("HOME")
-		}
-	})
-	_ = os.Setenv("HOME", tempDir)
+	t.Setenv("HOME", tempDir)
 
 	skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 
@@ -245,17 +217,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 			// Create temp directory for test
 			tempDir := t.TempDir()
 			tt.setupFunc(t, tempDir)
-
-			// Temporarily override the home directory
-			originalHome := os.Getenv("HOME")
-			t.Cleanup(func() {
-				if originalHome != "" {
-					_ = os.Setenv("HOME", originalHome)
-				} else {
-					_ = os.Unsetenv("HOME")
-				}
-			})
-			_ = os.Setenv("HOME", tempDir)
+			t.Setenv("HOME", tempDir)
 
 			// Execute uninstall command
 			cmd := NewSkillUninstallCmd()
@@ -290,17 +252,7 @@ func TestSkillPathCommand(t *testing.T) {
 func TestSkillPathCommand_Execute(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
-
-	// Temporarily override the home directory
-	originalHome := os.Getenv("HOME")
-	t.Cleanup(func() {
-		if originalHome != "" {
-			_ = os.Setenv("HOME", originalHome)
-		} else {
-			_ = os.Unsetenv("HOME")
-		}
-	})
-	_ = os.Setenv("HOME", tempDir)
+	t.Setenv("HOME", tempDir)
 
 	// Execute path command
 	cmd := NewSkillPathCmd()
@@ -320,17 +272,7 @@ func TestSkillPathCommand_Execute(t *testing.T) {
 func TestSkillPathCommand_OutputFormat(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
-
-	// Temporarily override the home directory
-	originalHome := os.Getenv("HOME")
-	t.Cleanup(func() {
-		if originalHome != "" {
-			_ = os.Setenv("HOME", originalHome)
-		} else {
-			_ = os.Unsetenv("HOME")
-		}
-	})
-	_ = os.Setenv("HOME", tempDir)
+	t.Setenv("HOME", tempDir)
 
 	// Execute path command
 	cmd := NewSkillPathCmd()
@@ -356,17 +298,7 @@ func TestSkillPathCommand_OutputFormat(t *testing.T) {
 func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
-
-	// Temporarily override the home directory
-	originalHome := os.Getenv("HOME")
-	t.Cleanup(func() {
-		if originalHome != "" {
-			_ = os.Setenv("HOME", originalHome)
-		} else {
-			_ = os.Unsetenv("HOME")
-		}
-	})
-	_ = os.Setenv("HOME", tempDir)
+	t.Setenv("HOME", tempDir)
 
 	// Execute install command
 	cmd := NewSkillInstallCmd()
@@ -472,17 +404,7 @@ func TestCheckSkillVersion(t *testing.T) {
 			// Create temp directory for test
 			tempDir := t.TempDir()
 			tt.setupFunc(t, tempDir)
-
-			// Temporarily override the home directory
-			originalHome := os.Getenv("HOME")
-			t.Cleanup(func() {
-				if originalHome != "" {
-					_ = os.Setenv("HOME", originalHome)
-				} else {
-					_ = os.Unsetenv("HOME")
-				}
-			})
-			_ = os.Setenv("HOME", tempDir)
+			t.Setenv("HOME", tempDir)
 
 			status, version := CheckSkillVersion()
 

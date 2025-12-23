@@ -195,7 +195,7 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 	tests := []struct {
 		name         string
 		batteryInfo  api.BatteryInfo
-		expectedJSON map[string]interface{}
+		expectedJSON map[string]any
 	}{
 		{
 			name: "battery status JSON format",
@@ -209,7 +209,7 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 				HeaterOn:         false,
 				HeaterAuto:       false,
 			},
-			expectedJSON: map[string]interface{}{
+			expectedJSON: map[string]any{
 				"battery_level":           float64(66),
 				"range_km":                245.5,
 				"plugged_in":              true,
@@ -315,7 +315,7 @@ func TestFormatFuelStatus(t *testing.T) {
 		rangeKm        float64
 		asJSON         bool
 		expectedOutput string
-		expectedJSON   map[string]interface{}
+		expectedJSON   map[string]any
 	}{
 		{
 			name:           "fuel status text format",
@@ -329,7 +329,7 @@ func TestFormatFuelStatus(t *testing.T) {
 			fuelLevel: 92,
 			rangeKm:   630.0,
 			asJSON:    true,
-			expectedJSON: map[string]interface{}{
+			expectedJSON: map[string]any{
 				"fuel_level": float64(92),
 				"range_km":   630.0,
 			},
@@ -670,7 +670,7 @@ func TestFormatHvacStatus_JSON(t *testing.T) {
 	tests := []struct {
 		name         string
 		hvacInfo     api.HVACInfo
-		expectedJSON map[string]interface{}
+		expectedJSON map[string]any
 	}{
 		{
 			name: "HVAC status JSON format",
@@ -681,7 +681,7 @@ func TestFormatHvacStatus_JSON(t *testing.T) {
 				InteriorTempC:  21,
 				TargetTempC:    22,
 			},
-			expectedJSON: map[string]interface{}{
+			expectedJSON: map[string]any{
 				"hvac_on":                true,
 				"front_defroster":        true,
 				"rear_defroster":         false,
@@ -788,7 +788,7 @@ func TestExtractHvacData(t *testing.T) {
 	tests := []struct {
 		name         string
 		response     *api.EVVehicleStatusResponse
-		expectedData map[string]interface{}
+		expectedData map[string]any
 	}{
 		{
 			name: "HVAC data extraction",
@@ -812,7 +812,7 @@ func TestExtractHvacData(t *testing.T) {
 					},
 				},
 			},
-			expectedData: map[string]interface{}{
+			expectedData: map[string]any{
 				"hvac_on":                true,
 				"front_defroster":        false,
 				"rear_defroster":         true,
@@ -877,12 +877,12 @@ func TestFormatOdometerStatus_JSON(t *testing.T) {
 	tests := []struct {
 		name         string
 		odometerKm   float64
-		expectedJSON map[string]interface{}
+		expectedJSON map[string]any
 	}{
 		{
 			name:       "odometer JSON format",
 			odometerKm: 12345.6,
-			expectedJSON: map[string]interface{}{
+			expectedJSON: map[string]any{
 				"odometer_km": 12345.6,
 			},
 		},
@@ -940,7 +940,7 @@ func TestExtractOdometerData(t *testing.T) {
 	tests := []struct {
 		name         string
 		response     *api.VehicleStatusResponse
-		expectedData map[string]interface{}
+		expectedData map[string]any
 	}{
 		{
 			name: "odometer data extraction",
@@ -954,7 +954,7 @@ func TestExtractOdometerData(t *testing.T) {
 					},
 				},
 			},
-			expectedData: map[string]interface{}{
+			expectedData: map[string]any{
 				"odometer_km": 12345.6,
 			},
 		},
@@ -1100,7 +1100,7 @@ func TestExtractVehicleInfoData(t *testing.T) {
 	tests := []struct {
 		name         string
 		vehicleInfo  VehicleInfo
-		expectedData map[string]interface{}
+		expectedData map[string]any
 	}{
 		{
 			name: "complete vehicle info extraction",
@@ -1110,7 +1110,7 @@ func TestExtractVehicleInfoData(t *testing.T) {
 				ModelName: "CX-90 PHEV",
 				ModelYear: "2024",
 			},
-			expectedData: map[string]interface{}{
+			expectedData: map[string]any{
 				"vin":        "JM3KKEHC1R0123456",
 				"nickname":   "My CX-90",
 				"model_name": "CX-90 PHEV",

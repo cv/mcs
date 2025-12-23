@@ -37,8 +37,9 @@ func checkSkillVersionMismatch(cmd *cobra.Command) {
 	case SkillVersionUnknown:
 		_, _ = fmt.Fprintf(os.Stderr, "Warning: Claude Code skill may be outdated (no version info)\n")
 		_, _ = fmt.Fprintf(os.Stderr, "Run 'mcs skill install' to update the skill.\n\n")
+	case SkillNotInstalled, SkillVersionMatch:
+		// No warning needed
 	}
-	// SkillNotInstalled and SkillVersionMatch - no warning needed
 }
 
 // NewRootCmd creates the root command

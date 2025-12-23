@@ -5,6 +5,7 @@ linters:
     # Bug finders
     - bodyclose          # HTTP response body closure
     - durationcheck      # Duration multiplication bugs
+    - embeddedstructfieldcheck # Embedded struct field access issues
     - errorlint          # Error wrapping issues
     - errchkjson         # JSON encoding error checks
     - fatcontext         # Context misuse in loops
@@ -18,19 +19,26 @@ linters:
     # Code quality
     - canonicalheader    # HTTP header canonicalization
     - dupword            # Duplicate words (typos)
+    - exhaustive         # Exhaustive switch statements
+    - funcorder          # Function declaration order
     - goconst            # Repeated strings that could be constants
     - gocritic           # Bugs, performance, style issues
+    - intrange           # Use range over integers (Go 1.22+)
     - mirror             # bytes/strings usage patterns
     - misspell           # Typos
+    - modernize          # Suggest modern Go idioms
     - perfsprint         # Faster alternatives to fmt.Sprintf
     - predeclared        # Shadowing predeclared identifiers
     - unconvert          # Unnecessary type conversions
+    - unparam            # Unused function parameters
     - usestdlibvars      # Use stdlib constants
     - wastedassign       # Wasted assignments
 
     # Test quality
+    - paralleltest       # Parallel test best practices
     - testifylint        # Testify usage
     - thelper            # Test helper best practices
+    - usetesting         # Use testing package features
 
   settings:
     goconst:

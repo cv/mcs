@@ -27,14 +27,14 @@ func TestAPIRequest_Success(t *testing.T) {
 
 		// Return success response with encrypted payload
 		// Encrypt a simple JSON response
-		testResponse := map[string]interface{}{
+		testResponse := map[string]any{
 			"resultCode": "200S00",
 			"message":    "Success",
 		}
 		responseJSON, _ := json.Marshal(testResponse)
 		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
 
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":   "S",
 			"payload": encrypted,
 		}
@@ -54,7 +54,7 @@ func TestAPIRequest_Success(t *testing.T) {
 	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request
-	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
+	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
@@ -64,7 +64,7 @@ func TestAPIRequest_Success(t *testing.T) {
 // TestAPIRequest_EncryptionError tests handling of encryption error response
 func TestAPIRequest_EncryptionError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":     "E",
 			"errorCode": 600001,
 			"message":   "Encryption error",
@@ -81,7 +81,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error, got nil")
 
 	// APIRequest retries on EncryptionError by fetching new keys
@@ -92,7 +92,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 // TestAPIRequest_TokenExpired tests handling of expired token error
 func TestAPIRequest_TokenExpired(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":     "E",
 			"errorCode": 600002,
 			"message":   "Token expired",
@@ -109,7 +109,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error, got nil")
 
 	// APIRequest retries on TokenExpiredError by re-logging in
@@ -120,7 +120,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 // TestAPIRequest_RequestInProgress tests handling of request in progress error
 func TestAPIRequest_RequestInProgress(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":     "E",
 			"errorCode": 920000,
 			"extraCode": "400S01",
@@ -138,7 +138,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error, got nil")
 
 	// Verify it's a RequestInProgressError
@@ -152,7 +152,7 @@ func TestEncryptPayloadUsingKey(t *testing.T) {
 
 	client.Keys.EncKey = "testenckey123456"
 
-	testData := map[string]interface{}{
+	testData := map[string]any{
 		"test": "data",
 		"foo":  "bar",
 	}
@@ -176,7 +176,7 @@ func TestDecryptPayloadUsingKey(t *testing.T) {
 
 	client.Keys.EncKey = "testenckey123456"
 
-	testData := map[string]interface{}{
+	testData := map[string]any{
 		"test": "data",
 		"foo":  "bar",
 	}
@@ -219,7 +219,7 @@ func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
 func TestAPIRequest_MissingKeys(t *testing.T) {
 	// Create a server that returns error for checkVersion (key retrieval)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":   "E",
 			"message": "Server error",
 		}
@@ -235,7 +235,7 @@ func TestAPIRequest_MissingKeys(t *testing.T) {
 
 	// Don't set encryption keys, but request needsKeys=true
 	// APIRequest should attempt to get keys and fail
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
+	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
 	require.Error(t, err, "Expected error when keys are missing, got nil")
 }
 
@@ -252,14 +252,14 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 		assert.NotEmpty(t, r.Header.Get("Sign"), "sign header is missing")
 
 		// Return encrypted success response
-		testResponse := map[string]interface{}{
+		testResponse := map[string]any{
 			"resultCode": "200S00",
 			"success":    true,
 		}
 		responseJSON, _ := json.Marshal(testResponse)
 		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
 
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":   "S",
 			"payload": encrypted,
 		}
@@ -275,7 +275,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
-	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
 	assert.True(t, requestReceived)
@@ -296,14 +296,14 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 		assert.NotEmpty(t, r.URL.Query().Get("params"), "params query parameter is missing")
 
 		// Return encrypted success response
-		testResponse := map[string]interface{}{
+		testResponse := map[string]any{
 			"resultCode": "200S00",
 			"data":       "test-data",
 		}
 		responseJSON, _ := json.Marshal(testResponse)
 		encrypted, _ := EncryptAES128CBC(responseJSON, "testenckey123456", IV)
 
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":   "S",
 			"payload": encrypted,
 		}
@@ -412,7 +412,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 
 		// Return success response for checkVersion (encryption key retrieval)
 		if strings.Contains(r.URL.Path, "checkVersion") {
-			testResponse := map[string]interface{}{
+			testResponse := map[string]any{
 				"encKey":  "newtestenckey123",
 				"signKey": "newtestsignkey12",
 			}
@@ -421,7 +421,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 			tempClient := &Client{appCode: "202007270941270111799"}
 			key := tempClient.getDecryptionKeyFromAppCode()
 			encrypted, _ := EncryptAES128CBC(responseJSON, key, IV)
-			response := map[string]interface{}{
+			response := map[string]any{
 				"state":   "S",
 				"payload": encrypted,
 			}
@@ -434,7 +434,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 		// Always return encryption error for other requests to trigger retry with backoff
 		// Using 600001 (EncryptionError) instead of 600002 (TokenExpiredError) because
 		// TokenExpiredError triggers Login() which uses usherURL (not mocked here)
-		response := map[string]interface{}{
+		response := map[string]any{
 			"state":     "E",
 			"errorCode": 600001,
 			"message":   "Encryption error",
@@ -460,7 +460,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 	}()
 
 	start := time.Now()
-	_, err = client.APIRequest(ctx, "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
+	_, err = client.APIRequest(ctx, "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	elapsed := time.Since(start)
 
 	require.Error(t, err, "Expected error due to context cancellation, got nil")

@@ -40,7 +40,7 @@ func formatVehicleHeader(vehicleInfo VehicleInfo) string {
 }
 
 // toJSON converts a map to formatted JSON string
-func toJSON(data map[string]interface{}) (string, error) {
+func toJSON(data map[string]any) (string, error) {
 	jsonBytes, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal JSON: %w", err)

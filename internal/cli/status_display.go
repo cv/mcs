@@ -11,7 +11,7 @@ import (
 func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
 		hazardsOn, _ := vehicleStatus.GetHazardInfo()
-		data := map[string]interface{}{
+		data := map[string]any{
 			"vehicle":  extractVehicleInfoData(vehicleInfo),
 			"battery":  extractBatteryData(evStatus),
 			"fuel":     extractFuelData(vehicleStatus),

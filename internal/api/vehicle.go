@@ -15,7 +15,7 @@ const (
 
 // GetVecBaseInfos retrieves the base information for all vehicles associated with the account
 func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, error) {
-	bodyParams := map[string]interface{}{
+	bodyParams := map[string]any{
 		"internaluserid": InternalUserID,
 	}
 
@@ -33,8 +33,8 @@ func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, er
 }
 
 // buildVehicleStatusParams creates the standard body parameters for vehicle status requests
-func buildVehicleStatusParams(internalVIN string) map[string]interface{} {
-	return map[string]interface{}{
+func buildVehicleStatusParams(internalVIN string) map[string]any {
+	return map[string]any{
 		"internaluserid": InternalUserID,
 		"internalvin":    internalVIN,
 		"limit":          1,

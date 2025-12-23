@@ -41,7 +41,7 @@ func assertNoArgsCommand(t *testing.T, cmd *cobra.Command) {
 
 // assertSubcommandExists verifies that a subcommand exists, has a description,
 // and optionally validates that it accepts no arguments.
-func assertSubcommandExists(t *testing.T, parent *cobra.Command, subcommandName string, shouldAcceptNoArgs bool) *cobra.Command {
+func assertSubcommandExists(t *testing.T, parent *cobra.Command, subcommandName string, shouldAcceptNoArgs bool) {
 	t.Helper()
 
 	subCmd := findSubcommand(parent, subcommandName)
@@ -52,18 +52,16 @@ func assertSubcommandExists(t *testing.T, parent *cobra.Command, subcommandName 
 	if shouldAcceptNoArgs {
 		require.NoError(t, subCmd.ValidateArgs([]string{}))
 	}
-
-	return subCmd
 }
 
 // assertSubcommandsExist verifies that multiple subcommands exist with descriptions
-// and optionally validates that they accept no arguments.
-func assertSubcommandsExist(t *testing.T, parent *cobra.Command, subcommandNames []string, shouldAcceptNoArgs bool) {
+// and validates that they accept no arguments.
+func assertSubcommandsExist(t *testing.T, parent *cobra.Command, subcommandNames []string) {
 	t.Helper()
 
 	for _, name := range subcommandNames {
 		t.Run(name, func(t *testing.T) {
-			assertSubcommandExists(t, parent, name, shouldAcceptNoArgs)
+			assertSubcommandExists(t, parent, name, true)
 		})
 	}
 }
@@ -253,9 +251,9 @@ func (b *MockEVVehicleStatusBuilder) Build() *api.EVVehicleStatusResponse {
 }
 
 // parseJSONToMap is a test helper that parses a JSON string into a map.
-func parseJSONToMap(t *testing.T, jsonStr string) map[string]interface{} {
+func parseJSONToMap(t *testing.T, jsonStr string) map[string]any {
 	t.Helper()
-	var data map[string]interface{}
+	var data map[string]any
 	err := json.Unmarshal([]byte(jsonStr), &data)
 	require.NoError(t, err, "Expected valid JSON, got error: %v")
 
@@ -263,7 +261,7 @@ func parseJSONToMap(t *testing.T, jsonStr string) map[string]interface{} {
 }
 
 // assertMapValue is a test helper that asserts a map value equals expected.
-func assertMapValue(t *testing.T, data map[string]interface{}, key string, expected interface{}) {
+func assertMapValue(t *testing.T, data map[string]any, key string, expected any) {
 	t.Helper()
 	actual, ok := data[key]
 	assert.Truef(t, ok, "Expected key %q to exist in map", key)

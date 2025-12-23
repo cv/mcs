@@ -11,5 +11,5 @@ func TestChargeCommand(t *testing.T) {
 // TestChargeCommand_Subcommands tests charge subcommands
 func TestChargeCommand_Subcommands(t *testing.T) {
 	cmd := NewChargeCmd()
-	assertSubcommandsExist(t, cmd, []string{"start", "stop"}, true)
+	assertSubcommandsExist(t, cmd, []string{"start", "stop"})
 }

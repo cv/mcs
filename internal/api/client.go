@@ -25,10 +25,7 @@ func calculateBackoff(retryCount int) time.Duration {
 		return 0
 	}
 	// 2^(retryCount-1) seconds, capped at 8 seconds
-	backoffSeconds := 1 << (retryCount - 1)
-	if backoffSeconds > 8 {
-		backoffSeconds = 8
-	}
+	backoffSeconds := min(1<<(retryCount-1), 8)
 	return time.Duration(backoffSeconds) * time.Second
 }
 
@@ -49,17 +46,17 @@ func sleepWithContext(ctx context.Context, duration time.Duration) error {
 }
 
 // APIRequest makes an API request with proper encryption, signing, and error handling
-func (c *Client) APIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
+func (c *Client) APIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsKeys, needsAuth bool) (map[string]any, error) {
 	return c.apiRequestWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, 0)
 }
 
 // APIRequestJSON makes an API request and returns the raw decrypted JSON bytes
-func (c *Client) APIRequestJSON(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) ([]byte, error) {
+func (c *Client) APIRequestJSON(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsKeys, needsAuth bool) ([]byte, error) {
 	return c.apiRequestJSONWithRetry(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth, 0)
 }
 
 // retryFunc is the type for functions that can be retried
-type retryFunc[T any] func(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (T, error)
+type retryFunc[T any] func(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsKeys, needsAuth bool) (T, error)
 
 // genericRetry implements the retry logic with exponential backoff for API requests.
 // It handles encryption errors and token expiration by refreshing credentials and retrying.
@@ -68,7 +65,7 @@ func genericRetry[T any](
 	c *Client,
 	method, uri string,
 	queryParams map[string]string,
-	bodyParams map[string]interface{},
+	bodyParams map[string]any,
 	needsKeys, needsAuth bool,
 	retryCount int,
 	executeFunc retryFunc[T],
@@ -130,11 +127,11 @@ func genericRetry[T any](
 	return response, nil
 }
 
-func (c *Client) apiRequestWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool, retryCount int) (map[string]interface{}, error) {
+func (c *Client) apiRequestWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsKeys, needsAuth bool, retryCount int) (map[string]any, error) {
 	return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount, c.sendAPIRequest)
 }
 
-func (c *Client) apiRequestJSONWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool, retryCount int) ([]byte, error) {
+func (c *Client) apiRequestJSONWithRetry(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsKeys, needsAuth bool, retryCount int) ([]byte, error) {
 	return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount, c.sendAPIRequestJSON)
 }
 
@@ -179,7 +176,7 @@ func handleAPIResponse(response *APIBaseResponse) (string, error) {
 
 // executeAPIRequest handles the common logic for making API requests.
 // It returns the encrypted payload string on success, or an error.
-func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (string, error) {
+func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, needsAuth bool) (string, error) {
 	timestamp := getTimestampStrMs()
 
 	// Prepare query parameters (encrypted if provided)
@@ -299,8 +296,8 @@ func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, quer
 	return handleAPIResponse(&response)
 }
 
-func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) (map[string]interface{}, error) {
-	encryptedPayload, err := c.executeAPIRequest(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
+func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, _, needsAuth bool) (map[string]any, error) {
+	encryptedPayload, err := c.executeAPIRequest(ctx, method, uri, queryParams, bodyParams, needsAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -308,8 +305,8 @@ func (c *Client) sendAPIRequest(ctx context.Context, method, uri string, queryPa
 	return c.decryptPayloadUsingKey(encryptedPayload)
 }
 
-func (c *Client) sendAPIRequestJSON(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]interface{}, needsKeys, needsAuth bool) ([]byte, error) {
-	encryptedPayload, err := c.executeAPIRequest(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
+func (c *Client) sendAPIRequestJSON(ctx context.Context, method, uri string, queryParams map[string]string, bodyParams map[string]any, _, needsAuth bool) ([]byte, error) {
+	encryptedPayload, err := c.executeAPIRequest(ctx, method, uri, queryParams, bodyParams, needsAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +342,7 @@ func (c *Client) encryptPayloadUsingKey(payload string) (string, error) {
 }
 
 // decryptPayloadUsingKey decrypts a payload using the client's encryption key
-func (c *Client) decryptPayloadUsingKey(payload string) (map[string]interface{}, error) {
+func (c *Client) decryptPayloadUsingKey(payload string) (map[string]any, error) {
 	if c.Keys.EncKey == "" {
 		return nil, NewAPIError("Missing encryption key")
 	}
@@ -355,7 +352,7 @@ func (c *Client) decryptPayloadUsingKey(payload string) (map[string]interface{},
 		return nil, fmt.Errorf("failed to decrypt payload: %w", err)
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	if err := json.Unmarshal(decrypted, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse decrypted payload: %w", err)
 	}

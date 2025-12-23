@@ -10,20 +10,20 @@ import (
 
 // TestGetVecBaseInfos tests getting vehicle base information
 func TestGetVecBaseInfos(t *testing.T) {
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"resultCode": "200S00",
-		"vecBaseInfos": []map[string]interface{}{
+		"vecBaseInfos": []map[string]any{
 			{
 				"vin": "TEST123456789",
-				"Vehicle": map[string]interface{}{
-					"CvInformation": map[string]interface{}{
+				"Vehicle": map[string]any{
+					"CvInformation": map[string]any{
 						"internalVin": "INTERNAL123",
 					},
 				},
 				"econnectType": 1,
 			},
 		},
-		"vehicleFlags": []map[string]interface{}{
+		"vehicleFlags": []map[string]any{
 			{"vinRegistStatus": 3},
 		},
 	}
@@ -43,30 +43,30 @@ func TestGetVecBaseInfos(t *testing.T) {
 
 // TestGetVehicleStatus tests getting vehicle status
 func TestGetVehicleStatus(t *testing.T) {
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"resultCode": "200S00",
-		"alertInfos": []map[string]interface{}{
+		"alertInfos": []map[string]any{
 			{
 				"OccurrenceDate": "20231201120000",
-				"Door": map[string]interface{}{
+				"Door": map[string]any{
 					"DrStatDrv": 0, "DrStatPsngr": 0, "DrStatRl": 0, "DrStatRr": 0,
 					"DrStatTrnkLg": 0, "DrStatHood": 0, "FuelLidOpenStatus": 0,
 					"LockLinkSwDrv": 0, "LockLinkSwPsngr": 0, "LockLinkSwRl": 0, "LockLinkSwRr": 0,
 				},
-				"Pw":         map[string]interface{}{"PwPosDrv": 0, "PwPosPsngr": 0, "PwPosRl": 0, "PwPosRr": 0},
-				"HazardLamp": map[string]interface{}{"HazardSw": 0},
+				"Pw":         map[string]any{"PwPosDrv": 0, "PwPosPsngr": 0, "PwPosRl": 0, "PwPosRr": 0},
+				"HazardLamp": map[string]any{"HazardSw": 0},
 			},
 		},
-		"remoteInfos": []map[string]interface{}{
+		"remoteInfos": []map[string]any{
 			{
-				"PositionInfo": map[string]interface{}{
+				"PositionInfo": map[string]any{
 					"Latitude": 37.7749, "LatitudeFlag": 0,
 					"Longitude": 122.4194, "LongitudeFlag": 1,
 					"AcquisitionDatetime": "20231201120000",
 				},
-				"ResidualFuel":     map[string]interface{}{"FuelSegementDActl": 75.5, "RemDrvDistDActlKm": 350.2},
-				"DriveInformation": map[string]interface{}{"OdoDispValue": 12345.6},
-				"TPMSInformation":  map[string]interface{}{"FLTPrsDispPsi": 32.5, "FRTPrsDispPsi": 32.0, "RLTPrsDispPsi": 31.5, "RRTPrsDispPsi": 31.8},
+				"ResidualFuel":     map[string]any{"FuelSegementDActl": 75.5, "RemDrvDistDActlKm": 350.2},
+				"DriveInformation": map[string]any{"OdoDispValue": 12345.6},
+				"TPMSInformation":  map[string]any{"FLTPrsDispPsi": 32.5, "FRTPrsDispPsi": 32.0, "RLTPrsDispPsi": 31.5, "RRTPrsDispPsi": 31.8},
 			},
 		},
 	}
@@ -102,20 +102,20 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 
 // TestGetEVVehicleStatus tests getting EV vehicle status
 func TestGetEVVehicleStatus(t *testing.T) {
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"resultCode": "200S00",
-		"resultData": []map[string]interface{}{
+		"resultData": []map[string]any{
 			{
 				"OccurrenceDate": "20231201120000",
-				"PlusBInformation": map[string]interface{}{
-					"VehicleInfo": map[string]interface{}{
-						"ChargeInfo": map[string]interface{}{
+				"PlusBInformation": map[string]any{
+					"VehicleInfo": map[string]any{
+						"ChargeInfo": map[string]any{
 							"SmaphSOC": 85, "SmaphRemDrvDistKm": 245.5,
 							"ChargerConnectorFitting": 1, "ChargeStatusSub": 6,
 							"MaxChargeMinuteAC": 180, "MaxChargeMinuteQBC": 45,
 							"CstmzStatBatHeatAutoSW": 1, "BatteryHeaterON": 0,
 						},
-						"RemoteHvacInfo": map[string]interface{}{
+						"RemoteHvacInfo": map[string]any{
 							"HVAC": 1, "FrontDefroster": 0, "RearDefogger": 0,
 							"InteriorTemp": 22, "TargetTemp": 21,
 						},

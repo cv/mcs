@@ -46,7 +46,7 @@ func (t *TouchEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 		downTime := timeSinceSensorCollectionStart - mathrand.Intn(1000) - 1000
 		t.addTouchSequence(downTime)
 	case timeSinceSensorCollectionStart < 10000:
-		for i := 0; i < 2; i++ {
+		for i := range 2 {
 			timestampOffset := 0
 			if i == 1 {
 				timestampOffset = 5000
@@ -55,7 +55,7 @@ func (t *TouchEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 			t.addTouchSequence(downTime)
 		}
 	default:
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			var timestampOffset int
 			if i == 0 {
 				timestampOffset = timeSinceSensorCollectionStart - 9000
@@ -66,36 +66,6 @@ func (t *TouchEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 			t.addTouchSequence(downTime)
 		}
 	}
-}
-
-// addTouchSequence adds a complete touch sequence (down, moves, up) starting at the given time
-func (t *TouchEventList) addTouchSequence(downTime int) {
-	// down event
-	t.touchEvents = append(t.touchEvents, &TouchEvent{
-		eventType:    2,
-		time:         downTime,
-		pointerCount: 1,
-		toolType:     1,
-	})
-
-	// move events (2-8 events)
-	numMoveEvents := mathrand.Intn(7) + 2
-	for i := 0; i < numMoveEvents; i++ {
-		t.touchEvents = append(t.touchEvents, &TouchEvent{
-			eventType:    1,
-			time:         mathrand.Intn(47) + 3,
-			pointerCount: 1,
-			toolType:     1,
-		})
-	}
-
-	// up event
-	t.touchEvents = append(t.touchEvents, &TouchEvent{
-		eventType:    3,
-		time:         mathrand.Intn(97) + 3,
-		pointerCount: 1,
-		toolType:     1,
-	})
 }
 
 // ToString converts TouchEventList to string format
@@ -115,4 +85,34 @@ func (t *TouchEventList) GetSum() int {
 		sum += event.time
 	}
 	return sum
+}
+
+// addTouchSequence adds a complete touch sequence (down, moves, up) starting at the given time
+func (t *TouchEventList) addTouchSequence(downTime int) {
+	// down event
+	t.touchEvents = append(t.touchEvents, &TouchEvent{
+		eventType:    2,
+		time:         downTime,
+		pointerCount: 1,
+		toolType:     1,
+	})
+
+	// move events (2-8 events)
+	numMoveEvents := mathrand.Intn(7) + 2
+	for range numMoveEvents {
+		t.touchEvents = append(t.touchEvents, &TouchEvent{
+			eventType:    1,
+			time:         mathrand.Intn(47) + 3,
+			pointerCount: 1,
+			toolType:     1,
+		})
+	}
+
+	// up event
+	t.touchEvents = append(t.touchEvents, &TouchEvent{
+		eventType:    3,
+		time:         mathrand.Intn(97) + 3,
+		pointerCount: 1,
+		toolType:     1,
+	})
 }

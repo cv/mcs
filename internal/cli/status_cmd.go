@@ -330,6 +330,15 @@ func displayStatusWithVehicle(cmd *cobra.Command, statusType StatusType, vehicle
 	case StatusDoors:
 		doorStatus, _ := vehicleStatus.GetDoorsInfo()
 		output, err = formatDoorsStatus(doorStatus, jsonOutput)
+	case StatusWindows:
+		windowsInfo, _ := vehicleStatus.GetWindowsInfo()
+		output, err = formatWindowsStatus(windowsInfo, jsonOutput)
+	case StatusOdometer:
+		odometerInfo, _ := vehicleStatus.GetOdometerInfo()
+		output, err = formatOdometerStatus(odometerInfo, jsonOutput)
+	case StatusHVAC:
+		hvacInfo, _ := evStatus.GetHvacInfo()
+		output, err = formatHvacStatus(hvacInfo, jsonOutput)
 	case StatusAll:
 		output, err = displayAllStatus(vehicleStatus, evStatus, vehicleInfo, jsonOutput)
 	}

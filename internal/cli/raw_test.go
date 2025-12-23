@@ -21,7 +21,7 @@ func TestRawCommand(t *testing.T) {
 // TestRawCommand_Subcommands tests raw subcommands
 func TestRawCommand_Subcommands(t *testing.T) {
 	cmd := NewRawCmd()
-	assertSubcommandsExist(t, cmd, []string{"status", "ev", "vehicle"}, true)
+	assertSubcommandsExist(t, cmd, []string{"status", "ev", "vehicle"})
 }
 
 // TestRawCommand_SubcommandStructure tests structure of each raw subcommand using table-driven pattern
@@ -133,7 +133,7 @@ func TestRunRawStatus_OutputFormat(t *testing.T) {
 			require.NoError(t, err, "Expected successful JSON marshal, got error: %v")
 
 			// Verify it's valid JSON by unmarshaling
-			var result map[string]interface{}
+			var result map[string]any
 			err = json.Unmarshal(jsonBytes, &result)
 			require.NoError(t, err, "Expected valid JSON output, got error: %v")
 
@@ -177,7 +177,7 @@ func TestRunRawEV_OutputFormat(t *testing.T) {
 			require.NoError(t, err, "Expected successful JSON marshal, got error: %v")
 
 			// Verify it's valid JSON by unmarshaling
-			var result map[string]interface{}
+			var result map[string]any
 			err = json.Unmarshal(jsonBytes, &result)
 			require.NoError(t, err, "Expected valid JSON output, got error: %v")
 
@@ -266,7 +266,7 @@ func TestRunRawVehicle_OutputFormat(t *testing.T) {
 			require.NoError(t, err, "Expected successful JSON marshal, got error: %v")
 
 			// Verify it's valid JSON by unmarshaling
-			var result map[string]interface{}
+			var result map[string]any
 			err = json.Unmarshal(jsonBytes, &result)
 			require.NoError(t, err, "Expected valid JSON output, got error: %v")
 

@@ -128,7 +128,7 @@ func waitForCondition(
 	client vehicleStatusGetter,
 	internalVIN api.InternalVIN,
 	useEVStatus bool,
-	conditionChecker func(interface{}) (bool, error),
+	conditionChecker func(any) (bool, error),
 	timeout time.Duration,
 	pollInterval time.Duration,
 	actionName string,
@@ -141,7 +141,7 @@ func waitForCondition(
 	}
 
 	checkFunc := func() (bool, error) {
-		var status interface{}
+		var status any
 		var err error
 
 		if useEVStatus {
@@ -169,7 +169,7 @@ func waitForDoorsLocked(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		vStatus := status.(*api.VehicleStatusResponse)
 		doorStatus, err := vStatus.GetDoorsInfo()
 		if err != nil {
@@ -190,7 +190,7 @@ func waitForDoorsUnlocked(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		vStatus := status.(*api.VehicleStatusResponse)
 		doorStatus, err := vStatus.GetDoorsInfo()
 		if err != nil {
@@ -212,7 +212,7 @@ func waitForEngineRunning(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		evStatus := status.(*api.EVVehicleStatusResponse)
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
@@ -233,7 +233,7 @@ func waitForEngineStopped(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		evStatus := status.(*api.EVVehicleStatusResponse)
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
@@ -254,7 +254,7 @@ func waitForCharging(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		evStatus := status.(*api.EVVehicleStatusResponse)
 		batteryInfo, err := evStatus.GetBatteryInfo()
 		if err != nil {
@@ -275,7 +275,7 @@ func waitForNotCharging(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		evStatus := status.(*api.EVVehicleStatusResponse)
 		batteryInfo, err := evStatus.GetBatteryInfo()
 		if err != nil {
@@ -300,7 +300,7 @@ func waitForHvacOn(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		evStatus := status.(*api.EVVehicleStatusResponse)
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
@@ -321,7 +321,7 @@ func waitForHvacOff(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		evStatus := status.(*api.EVVehicleStatusResponse)
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {
@@ -345,7 +345,7 @@ func waitForHvacSettings(
 	timeout time.Duration,
 	pollInterval time.Duration,
 ) confirmationResult {
-	conditionChecker := func(status interface{}) (bool, error) {
+	conditionChecker := func(status any) (bool, error) {
 		evStatus := status.(*api.EVVehicleStatusResponse)
 		hvacInfo, err := evStatus.GetHvacInfo()
 		if err != nil {

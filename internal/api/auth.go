@@ -305,7 +305,7 @@ func (c *Client) Login(ctx context.Context) error {
 	}
 
 	// Prepare login request
-	loginData := map[string]interface{}{
+	loginData := map[string]any{
 		"appId":      "MazdaApp",
 		"deviceId":   c.usherAPIDeviceID,
 		"locale":     "en-US",

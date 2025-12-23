@@ -9,28 +9,28 @@ import (
 func TestGetString(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     map[string]interface{}
+		input     map[string]any
 		key       string
 		wantValue string
 		wantOk    bool
 	}{
 		{
 			name:      "valid string",
-			input:     map[string]interface{}{"key": "value"},
+			input:     map[string]any{"key": "value"},
 			key:       "key",
 			wantValue: "value",
 			wantOk:    true,
 		},
 		{
 			name:      "missing key",
-			input:     map[string]interface{}{"other": "value"},
+			input:     map[string]any{"other": "value"},
 			key:       "key",
 			wantValue: "",
 			wantOk:    false,
 		},
 		{
 			name:      "wrong type",
-			input:     map[string]interface{}{"key": 123},
+			input:     map[string]any{"key": 123},
 			key:       "key",
 			wantValue: "",
 			wantOk:    false,
@@ -44,7 +44,7 @@ func TestGetString(t *testing.T) {
 		},
 		{
 			name:      "empty string",
-			input:     map[string]interface{}{"key": ""},
+			input:     map[string]any{"key": ""},
 			key:       "key",
 			wantValue: "",
 			wantOk:    true,
@@ -63,42 +63,42 @@ func TestGetString(t *testing.T) {
 func TestGetInt(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     map[string]interface{}
+		input     map[string]any
 		key       string
 		wantValue int
 		wantOk    bool
 	}{
 		{
 			name:      "valid int",
-			input:     map[string]interface{}{"key": 42},
+			input:     map[string]any{"key": 42},
 			key:       "key",
 			wantValue: 42,
 			wantOk:    true,
 		},
 		{
 			name:      "valid float64",
-			input:     map[string]interface{}{"key": 42.0},
+			input:     map[string]any{"key": 42.0},
 			key:       "key",
 			wantValue: 42,
 			wantOk:    true,
 		},
 		{
 			name:      "float64 with decimal",
-			input:     map[string]interface{}{"key": 42.7},
+			input:     map[string]any{"key": 42.7},
 			key:       "key",
 			wantValue: 42,
 			wantOk:    true,
 		},
 		{
 			name:      "missing key",
-			input:     map[string]interface{}{"other": 42},
+			input:     map[string]any{"other": 42},
 			key:       "key",
 			wantValue: 0,
 			wantOk:    false,
 		},
 		{
 			name:      "wrong type",
-			input:     map[string]interface{}{"key": "not a number"},
+			input:     map[string]any{"key": "not a number"},
 			key:       "key",
 			wantValue: 0,
 			wantOk:    false,
@@ -124,35 +124,35 @@ func TestGetInt(t *testing.T) {
 func TestGetFloat64(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     map[string]interface{}
+		input     map[string]any
 		key       string
 		wantValue float64
 		wantOk    bool
 	}{
 		{
 			name:      "valid float64",
-			input:     map[string]interface{}{"key": 42.5},
+			input:     map[string]any{"key": 42.5},
 			key:       "key",
 			wantValue: 42.5,
 			wantOk:    true,
 		},
 		{
 			name:      "zero float",
-			input:     map[string]interface{}{"key": 0.0},
+			input:     map[string]any{"key": 0.0},
 			key:       "key",
 			wantValue: 0.0,
 			wantOk:    true,
 		},
 		{
 			name:      "missing key",
-			input:     map[string]interface{}{"other": 42.5},
+			input:     map[string]any{"other": 42.5},
 			key:       "key",
 			wantValue: 0,
 			wantOk:    false,
 		},
 		{
 			name:      "wrong type",
-			input:     map[string]interface{}{"key": "not a number"},
+			input:     map[string]any{"key": "not a number"},
 			key:       "key",
 			wantValue: 0,
 			wantOk:    false,
@@ -178,35 +178,35 @@ func TestGetFloat64(t *testing.T) {
 func TestGetBool(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     map[string]interface{}
+		input     map[string]any
 		key       string
 		wantValue bool
 		wantOk    bool
 	}{
 		{
 			name:      "valid true",
-			input:     map[string]interface{}{"key": true},
+			input:     map[string]any{"key": true},
 			key:       "key",
 			wantValue: true,
 			wantOk:    true,
 		},
 		{
 			name:      "valid false",
-			input:     map[string]interface{}{"key": false},
+			input:     map[string]any{"key": false},
 			key:       "key",
 			wantValue: false,
 			wantOk:    true,
 		},
 		{
 			name:      "missing key",
-			input:     map[string]interface{}{"other": true},
+			input:     map[string]any{"other": true},
 			key:       "key",
 			wantValue: false,
 			wantOk:    false,
 		},
 		{
 			name:      "wrong type",
-			input:     map[string]interface{}{"key": 1},
+			input:     map[string]any{"key": 1},
 			key:       "key",
 			wantValue: false,
 			wantOk:    false,
@@ -230,29 +230,29 @@ func TestGetBool(t *testing.T) {
 }
 
 func TestGetMap(t *testing.T) {
-	nested := map[string]interface{}{"nested": "value"}
+	nested := map[string]any{"nested": "value"}
 
 	tests := []struct {
 		name   string
-		input  map[string]interface{}
+		input  map[string]any
 		key    string
 		wantOk bool
 	}{
 		{
 			name:   "valid map",
-			input:  map[string]interface{}{"key": nested},
+			input:  map[string]any{"key": nested},
 			key:    "key",
 			wantOk: true,
 		},
 		{
 			name:   "missing key",
-			input:  map[string]interface{}{"other": nested},
+			input:  map[string]any{"other": nested},
 			key:    "key",
 			wantOk: false,
 		},
 		{
 			name:   "wrong type",
-			input:  map[string]interface{}{"key": "not a map"},
+			input:  map[string]any{"key": "not a map"},
 			key:    "key",
 			wantOk: false,
 		},
@@ -277,29 +277,29 @@ func TestGetMap(t *testing.T) {
 }
 
 func TestGetSlice(t *testing.T) {
-	slice := []interface{}{"a", "b", "c"}
+	slice := []any{"a", "b", "c"}
 
 	tests := []struct {
 		name   string
-		input  map[string]interface{}
+		input  map[string]any
 		key    string
 		wantOk bool
 	}{
 		{
 			name:   "valid slice",
-			input:  map[string]interface{}{"key": slice},
+			input:  map[string]any{"key": slice},
 			key:    "key",
 			wantOk: true,
 		},
 		{
 			name:   "missing key",
-			input:  map[string]interface{}{"other": slice},
+			input:  map[string]any{"other": slice},
 			key:    "key",
 			wantOk: false,
 		},
 		{
 			name:   "wrong type",
-			input:  map[string]interface{}{"key": "not a slice"},
+			input:  map[string]any{"key": "not a slice"},
 			key:    "key",
 			wantOk: false,
 		},
@@ -324,49 +324,49 @@ func TestGetSlice(t *testing.T) {
 }
 
 func TestGetMapSlice(t *testing.T) {
-	mapSlice := []interface{}{
-		map[string]interface{}{"a": 1},
-		map[string]interface{}{"b": 2},
+	mapSlice := []any{
+		map[string]any{"a": 1},
+		map[string]any{"b": 2},
 	}
 
 	tests := []struct {
 		name    string
-		input   map[string]interface{}
+		input   map[string]any
 		key     string
 		wantLen int
 		wantOk  bool
 	}{
 		{
 			name:    "valid map slice",
-			input:   map[string]interface{}{"key": mapSlice},
+			input:   map[string]any{"key": mapSlice},
 			key:     "key",
 			wantLen: 2,
 			wantOk:  true,
 		},
 		{
 			name:    "empty slice",
-			input:   map[string]interface{}{"key": []interface{}{}},
+			input:   map[string]any{"key": []any{}},
 			key:     "key",
 			wantLen: 0,
 			wantOk:  true,
 		},
 		{
 			name:    "missing key",
-			input:   map[string]interface{}{"other": mapSlice},
+			input:   map[string]any{"other": mapSlice},
 			key:     "key",
 			wantLen: 0,
 			wantOk:  false,
 		},
 		{
 			name:    "slice with non-map element",
-			input:   map[string]interface{}{"key": []interface{}{"not a map"}},
+			input:   map[string]any{"key": []any{"not a map"}},
 			key:     "key",
 			wantLen: 0,
 			wantOk:  false,
 		},
 		{
 			name:    "wrong type",
-			input:   map[string]interface{}{"key": "not a slice"},
+			input:   map[string]any{"key": "not a slice"},
 			key:     "key",
 			wantLen: 0,
 			wantOk:  false,
@@ -390,15 +390,15 @@ func TestGetMapSlice(t *testing.T) {
 }
 
 func TestGetMapFromSlice(t *testing.T) {
-	slice := []interface{}{
-		map[string]interface{}{"a": 1},
-		map[string]interface{}{"b": 2},
+	slice := []any{
+		map[string]any{"a": 1},
+		map[string]any{"b": 2},
 		"not a map",
 	}
 
 	tests := []struct {
 		name   string
-		slice  []interface{}
+		slice  []any
 		index  int
 		wantOk bool
 	}{

@@ -13,7 +13,7 @@ func TestBatteryInfoToMap(t *testing.T) {
 	tests := []struct {
 		name        string
 		batteryInfo api.BatteryInfo
-		wantFields  map[string]interface{}
+		wantFields  map[string]any
 	}{
 		{
 			name: "charging with time estimates",
@@ -27,7 +27,7 @@ func TestBatteryInfoToMap(t *testing.T) {
 				HeaterOn:         false,
 				HeaterAuto:       false,
 			},
-			wantFields: map[string]interface{}{
+			wantFields: map[string]any{
 				"battery_level":           float64(66),
 				"range_km":                245.5,
 				"plugged_in":              true,
@@ -50,7 +50,7 @@ func TestBatteryInfoToMap(t *testing.T) {
 				HeaterOn:         true,
 				HeaterAuto:       true,
 			},
-			wantFields: map[string]interface{}{
+			wantFields: map[string]any{
 				"battery_level": float64(50),
 				"range_km":      150.0,
 				"plugged_in":    false,

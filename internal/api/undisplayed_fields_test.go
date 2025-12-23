@@ -12,12 +12,12 @@ import (
 // can be parsed correctly from the API response structure
 func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	// Create a comprehensive mock response with ALL fields we want to verify
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"resultCode": "200S00",
-		"alertInfos": []interface{}{
-			map[string]interface{}{
+		"alertInfos": []any{
+			map[string]any{
 				"OccurrenceDate": "20231201120000",
-				"Door": map[string]interface{}{
+				"Door": map[string]any{
 					// Already displayed fields
 					"DrStatDrv":    0,
 					"DrStatPsngr":  0,
@@ -35,17 +35,17 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 					"LockLinkSwRr":    float64(0),
 				},
 				// UNDISPLAYED: Window positions
-				"Pw": map[string]interface{}{
+				"Pw": map[string]any{
 					"PwPosDrv":   float64(0),
 					"PwPosPsngr": float64(0),
 					"PwPosRl":    float64(0),
 					"PwPosRr":    float64(0),
 				},
 				// UNDISPLAYED: Hazard lights
-				"HazardLamp": map[string]interface{}{
+				"HazardLamp": map[string]any{
 					"HazardSw": float64(0),
 				},
-				"PositionInfo": map[string]interface{}{
+				"PositionInfo": map[string]any{
 					"Latitude":            37.7749,
 					"LatitudeFlag":        0,
 					"Longitude":           122.4194,
@@ -54,24 +54,24 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 				},
 			},
 		},
-		"remoteInfos": []interface{}{
-			map[string]interface{}{
-				"PositionInfo": map[string]interface{}{
+		"remoteInfos": []any{
+			map[string]any{
+				"PositionInfo": map[string]any{
 					"Latitude":            37.7749,
 					"LatitudeFlag":        0,
 					"Longitude":           122.4194,
 					"LongitudeFlag":       1,
 					"AcquisitionDatetime": "20231201120000",
 				},
-				"ResidualFuel": map[string]interface{}{
+				"ResidualFuel": map[string]any{
 					"FuelSegementDActl": 75.5,
 					"RemDrvDistDActlKm": 350.2,
 				},
 				// UNDISPLAYED: Odometer
-				"DriveInformation": map[string]interface{}{
+				"DriveInformation": map[string]any{
 					"OdoDispValue": float64(12345.6),
 				},
-				"TPMSInformation": map[string]interface{}{
+				"TPMSInformation": map[string]any{
 					"FLTPrsDispPsi": 32.5,
 					"FRTPrsDispPsi": 32.0,
 					"RLTPrsDispPsi": 31.5,
@@ -184,14 +184,14 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 // can be parsed correctly from the API response structure
 func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	// Create a comprehensive mock response with ALL fields we want to verify
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"resultCode": "200S00",
-		"resultData": []interface{}{
-			map[string]interface{}{
+		"resultData": []any{
+			map[string]any{
 				"OccurrenceDate": "20231201120000",
-				"PlusBInformation": map[string]interface{}{
-					"VehicleInfo": map[string]interface{}{
-						"ChargeInfo": map[string]interface{}{
+				"PlusBInformation": map[string]any{
+					"VehicleInfo": map[string]any{
+						"ChargeInfo": map[string]any{
 							// Already displayed fields
 							"SmaphSOC":                85,
 							"SmaphRemDrvDistKm":       245.5,
@@ -206,7 +206,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 							// UNDISPLAYED: Battery heater on
 							"BatteryHeaterON": float64(0),
 						},
-						"RemoteHvacInfo": map[string]interface{}{
+						"RemoteHvacInfo": map[string]any{
 							// Already displayed fields
 							"HVAC":           1,
 							"FrontDefroster": 0,
@@ -335,12 +335,12 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 // TestVehicleStatusWithVariedValues tests that fields can handle different values
 func TestVehicleStatusWithVariedValues(t *testing.T) {
 	// Test with hood open, fuel lid open, windows partially open, hazard on
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"resultCode": "200S00",
-		"alertInfos": []interface{}{
-			map[string]interface{}{
+		"alertInfos": []any{
+			map[string]any{
 				"OccurrenceDate": "20231201120000",
-				"Door": map[string]interface{}{
+				"Door": map[string]any{
 					"DrStatDrv":         0,
 					"DrStatPsngr":       0,
 					"DrStatRl":          0,
@@ -353,32 +353,32 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 					"LockLinkSwRl":      float64(0),
 					"LockLinkSwRr":      float64(0),
 				},
-				"Pw": map[string]interface{}{
+				"Pw": map[string]any{
 					"PwPosDrv":   float64(50),  // Driver window half open
 					"PwPosPsngr": float64(100), // Passenger window fully open
 					"PwPosRl":    float64(0),
 					"PwPosRr":    float64(25),
 				},
-				"HazardLamp": map[string]interface{}{
+				"HazardLamp": map[string]any{
 					"HazardSw": float64(1), // Hazard on
 				},
-				"PositionInfo": map[string]interface{}{
+				"PositionInfo": map[string]any{
 					"Latitude":            37.7749,
 					"Longitude":           122.4194,
 					"AcquisitionDatetime": "20231201120000",
 				},
 			},
 		},
-		"remoteInfos": []interface{}{
-			map[string]interface{}{
-				"ResidualFuel": map[string]interface{}{
+		"remoteInfos": []any{
+			map[string]any{
+				"ResidualFuel": map[string]any{
 					"FuelSegementDActl": 75.5,
 					"RemDrvDistDActlKm": 350.2,
 				},
-				"DriveInformation": map[string]interface{}{
+				"DriveInformation": map[string]any{
 					"OdoDispValue": float64(99999.9), // High odometer
 				},
-				"TPMSInformation": map[string]interface{}{
+				"TPMSInformation": map[string]any{
 					"FLTPrsDispPsi": 32.5,
 					"FRTPrsDispPsi": 32.0,
 					"RLTPrsDispPsi": 31.5,
@@ -442,14 +442,14 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 // TestEVVehicleStatusWithVariedValues tests EV fields with different values
 func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 	// Test with battery heater on, different temps
-	responseData := map[string]interface{}{
+	responseData := map[string]any{
 		"resultCode": "200S00",
-		"resultData": []interface{}{
-			map[string]interface{}{
+		"resultData": []any{
+			map[string]any{
 				"OccurrenceDate": "20231201120000",
-				"PlusBInformation": map[string]interface{}{
-					"VehicleInfo": map[string]interface{}{
-						"ChargeInfo": map[string]interface{}{
+				"PlusBInformation": map[string]any{
+					"VehicleInfo": map[string]any{
+						"ChargeInfo": map[string]any{
 							"SmaphSOC":                50,
 							"SmaphRemDrvDistKm":       120.0,
 							"ChargerConnectorFitting": 1,
@@ -459,7 +459,7 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 							"CstmzStatBatHeatAutoSW":  float64(0),   // Auto off
 							"BatteryHeaterON":         float64(1),   // Manually on
 						},
-						"RemoteHvacInfo": map[string]interface{}{
+						"RemoteHvacInfo": map[string]any{
 							"HVAC":           1,
 							"FrontDefroster": 1,
 							"RearDefogger":   1,

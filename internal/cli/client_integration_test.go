@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -26,7 +25,7 @@ func TestCreateAPIClient_WithValidConfig(t *testing.T) {
 
 	// Test: Create API client
 	ConfigFile = "" // Use environment variables
-	client, err := createAPIClient(context.Background())
+	client, err := createAPIClient()
 	require.NoError(t, err, "Failed to create API client: %v")
 
 	require.NotNil(t, client, "Expected client to be created, got nil")
@@ -45,7 +44,7 @@ func TestCreateAPIClient_WithInvalidRegion(t *testing.T) {
 
 	// Test: Create API client should fail
 	ConfigFile = ""
-	_, err := createAPIClient(context.Background())
+	_, err := createAPIClient()
 	require.Error(t, err, "Expected error with invalid region, got nil")
 }
 
@@ -72,7 +71,7 @@ region = "MNAO"
 
 	// Test: Create API client from file
 	ConfigFile = configPath
-	client, err := createAPIClient(context.Background())
+	client, err := createAPIClient()
 	require.NoError(t, err, "Failed to create API client: %v")
 
 	require.NotNil(t, client, "Expected client to be created, got nil")
@@ -101,7 +100,7 @@ func TestCreateAPIClient_WithCachedCredentials(t *testing.T) {
 
 	// Test: Create API client (should use cached credentials)
 	ConfigFile = ""
-	client, err := createAPIClient(context.Background())
+	client, err := createAPIClient()
 	require.NoError(t, err, "Failed to create API client: %v")
 
 	// Verify: Check that cached credentials were loaded
@@ -136,7 +135,7 @@ func TestCreateAPIClient_WithExpiredCache(t *testing.T) {
 
 	// Test: Create API client (should ignore expired cache)
 	ConfigFile = ""
-	client, err := createAPIClient(context.Background())
+	client, err := createAPIClient()
 	require.NoError(t, err, "Failed to create API client: %v")
 
 	// Verify: Cached credentials should not be loaded (expired)
@@ -242,7 +241,7 @@ region = "MME"
 
 	// Test: Create API client
 	ConfigFile = configPath
-	client, err := createAPIClient(context.Background())
+	client, err := createAPIClient()
 	require.NoError(t, err, "Failed to create API client: %v")
 
 	// Verify: Client should be created (env values should be used)
@@ -263,7 +262,7 @@ func TestCreateAPIClient_MissingCredentials(t *testing.T) {
 
 	// Test: Create API client should fail
 	ConfigFile = ""
-	_, err := createAPIClient(context.Background())
+	_, err := createAPIClient()
 	require.Error(t, err, "Expected error with missing credentials, got nil")
 }
 

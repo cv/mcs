@@ -17,7 +17,7 @@ func TestClimateCommand_Subcommands(t *testing.T) {
 	cmd := NewClimateCmd()
 
 	// Test on/off subcommands (accept no args)
-	assertSubcommandsExist(t, cmd, []string{"on", "off"}, true)
+	assertSubcommandsExist(t, cmd, []string{"on", "off"})
 
 	// Test set subcommand (accepts flags, so no args validation)
 	t.Run("set", func(t *testing.T) {
