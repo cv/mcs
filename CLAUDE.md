@@ -212,6 +212,32 @@ go test -cover ./...       # With coverage
 
 Integration tests cover config→client→cache flows. See `*_integration_test.go` files.
 
+### Assertion Guidelines
+
+Use specific testify assertions for better failure messages:
+
+| Instead of | Use |
+|-----------|-----|
+| `assert.True(t, strings.Contains(s, sub))` | `assert.Contains(t, s, sub)` |
+| `assert.True(t, bytes.Equal(a, b))` | `assert.Equal(t, a, b)` |
+| `assert.True(t, regexp.MatchString(p, s))` | `assert.Regexp(t, p, s)` |
+| `assert.True(t, err != nil)` | `assert.Error(t, err)` |
+| `assert.True(t, x == y)` | `assert.Equal(t, x, y)` |
+| `assert.False(t, x != y)` | `assert.Equal(t, x, y)` |
+| `assert.False(t, s != "")` | `assert.Empty(t, s)` |
+| `require.False(t, len(x) == 0)` | `require.NotEmpty(t, x)` |
+| `assert.True(t, x == 0)` | `assert.Zero(t, x)` |
+
+Omit assertion messages when the assertion type and variable names are self-explanatory:
+```go
+// Good - variable name is descriptive
+assert.True(t, callbackExecuted)
+assert.NotNil(t, client)
+
+// Good - adds context not obvious from the assertion
+assert.Equal(t, 0600, perm, "cache file permissions")
+```
+
 ## Ticket Tracking
 
 Uses `bd` (bead) for issue tracking. Database in `.beads/`.
