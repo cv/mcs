@@ -17,6 +17,7 @@ linters:
     - gosec              # Security issues
 
     # Code quality
+    - gochecknoinits     # Disallow init functions
     - canonicalheader    # HTTP header canonicalization
     - dupword            # Duplicate words (typos)
     - exhaustive         # Exhaustive switch statements
@@ -35,6 +36,7 @@ linters:
     - wastedassign       # Wasted assignments
 
     # Test quality
+    - nolintlint         # Validate nolint directives
     - paralleltest       # Parallel test best practices
     - testifylint        # Testify usage
     - thelper            # Test helper best practices
@@ -43,6 +45,8 @@ linters:
   settings:
     goconst:
       min-occurrences: 3
+    paralleltest:
+      ignore-missing-subtests: true
     gosec:
       excludes:
         - G115  # Integer overflow - checked at runtime

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 )
 
 // ANSI color codes
@@ -17,22 +18,23 @@ const (
 )
 
 // colorEnabled tracks whether color output is enabled
-var colorEnabled = true
-
-func init() {
-	// Disable colors if NO_COLOR env var is set or output is not a TTY
-	if os.Getenv("NO_COLOR") != "" {
-		colorEnabled = false
-	}
-}
+// Disabled by default if NO_COLOR env var is set (https://no-color.org/)
+var (
+	colorEnabled = os.Getenv("NO_COLOR") == ""
+	colorMu      sync.RWMutex
+)
 
 // SetColorEnabled sets whether color output is enabled
 func SetColorEnabled(enabled bool) {
+	colorMu.Lock()
+	defer colorMu.Unlock()
 	colorEnabled = enabled
 }
 
 // IsColorEnabled returns whether color output is enabled
 func IsColorEnabled() bool {
+	colorMu.RLock()
+	defer colorMu.RUnlock()
 	return colorEnabled
 }
 
@@ -53,7 +55,10 @@ func IsTTY(w io.Writer) bool {
 
 // colorize wraps text in ANSI color codes if colors are enabled
 func colorize(color, text string) string {
-	if !colorEnabled {
+	colorMu.RLock()
+	enabled := colorEnabled
+	colorMu.RUnlock()
+	if !enabled {
 		return text
 	}
 	return color + text + colorReset

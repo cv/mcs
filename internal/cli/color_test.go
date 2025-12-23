@@ -1,14 +1,24 @@
 package cli
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProgressBar(t *testing.T) { //nolint:paralleltest // modifies global colorEnabled state
+// colorTestMutex serializes color tests that modify global colorEnabled state.
+// This allows tests to be marked as parallel (satisfying paralleltest linter)
+// while ensuring correct behavior.
+var colorTestMutex sync.Mutex
+
+func TestProgressBar(t *testing.T) {
+	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+
 	// Disable colors for consistent test results
-	oldColorEnabled := colorEnabled
+	oldColorEnabled := IsColorEnabled()
 	SetColorEnabled(false)
 	defer SetColorEnabled(oldColorEnabled)
 
@@ -68,7 +78,7 @@ func TestProgressBar(t *testing.T) { //nolint:paralleltest // modifies global co
 		},
 	}
 
-	for _, tt := range tests { //nolint:paralleltest // parent modifies global colorEnabled state
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ProgressBar(tt.percent, tt.width)
 			assert.Equal(t, tt.expected, result)
@@ -76,9 +86,13 @@ func TestProgressBar(t *testing.T) { //nolint:paralleltest // modifies global co
 	}
 }
 
-func TestProgressBar_WithColors(t *testing.T) { //nolint:paralleltest // modifies global colorEnabled state
+func TestProgressBar_WithColors(t *testing.T) {
+	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+
 	// Enable colors for color testing
-	oldColorEnabled := colorEnabled
+	oldColorEnabled := IsColorEnabled()
 	SetColorEnabled(true)
 	defer SetColorEnabled(oldColorEnabled)
 
@@ -92,7 +106,7 @@ func TestProgressBar_WithColors(t *testing.T) { //nolint:paralleltest // modifie
 		{name: "low battery (red)", percent: 20, width: 10},
 	}
 
-	for _, tt := range tests { //nolint:paralleltest // parent modifies global colorEnabled state
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ProgressBar(tt.percent, tt.width)
 			// Just verify it contains ANSI codes (starts with escape sequence)
@@ -101,9 +115,13 @@ func TestProgressBar_WithColors(t *testing.T) { //nolint:paralleltest // modifie
 	}
 }
 
-func TestColorize(t *testing.T) { //nolint:paralleltest // modifies global colorEnabled state
+func TestColorize(t *testing.T) {
+	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+
 	// Disable colors
-	oldColorEnabled := colorEnabled
+	oldColorEnabled := IsColorEnabled()
 	SetColorEnabled(false)
 	defer SetColorEnabled(oldColorEnabled)
 
@@ -114,9 +132,13 @@ func TestColorize(t *testing.T) { //nolint:paralleltest // modifies global color
 	assert.Equal(t, text, Bold(text))
 }
 
-func TestColorize_WithColors(t *testing.T) { //nolint:paralleltest // modifies global colorEnabled state
+func TestColorize_WithColors(t *testing.T) {
+	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+
 	// Enable colors
-	oldColorEnabled := colorEnabled
+	oldColorEnabled := IsColorEnabled()
 	SetColorEnabled(true)
 	defer SetColorEnabled(oldColorEnabled)
 
@@ -143,8 +165,12 @@ func TestColorize_WithColors(t *testing.T) { //nolint:paralleltest // modifies g
 	assert.Equal(t, expected, result)
 }
 
-func TestSetColorEnabled(t *testing.T) { //nolint:paralleltest // modifies global colorEnabled state
-	oldColorEnabled := colorEnabled
+func TestSetColorEnabled(t *testing.T) {
+	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+
+	oldColorEnabled := IsColorEnabled()
 	defer SetColorEnabled(oldColorEnabled)
 
 	SetColorEnabled(true)
@@ -154,9 +180,13 @@ func TestSetColorEnabled(t *testing.T) { //nolint:paralleltest // modifies globa
 	assert.False(t, IsColorEnabled())
 }
 
-func TestColorPressure(t *testing.T) { //nolint:paralleltest // modifies global colorEnabled state
+func TestColorPressure(t *testing.T) {
+	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+
 	// Disable colors for consistent test results
-	oldColorEnabled := colorEnabled
+	oldColorEnabled := IsColorEnabled()
 	SetColorEnabled(false)
 	defer SetColorEnabled(oldColorEnabled)
 
@@ -181,7 +211,7 @@ func TestColorPressure(t *testing.T) { //nolint:paralleltest // modifies global 
 		{"very low", 25.0, "25.0"},
 	}
 
-	for _, tt := range tests { //nolint:paralleltest // parent modifies global colorEnabled state
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ColorPressure(tt.pressure, target)
 			assert.Equal(t, tt.expected, result)
@@ -189,9 +219,13 @@ func TestColorPressure(t *testing.T) { //nolint:paralleltest // modifies global 
 	}
 }
 
-func TestColorPressure_WithColors(t *testing.T) { //nolint:paralleltest // modifies global colorEnabled state
+func TestColorPressure_WithColors(t *testing.T) {
+	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+
 	// Enable colors for color testing
-	oldColorEnabled := colorEnabled
+	oldColorEnabled := IsColorEnabled()
 	SetColorEnabled(true)
 	defer SetColorEnabled(oldColorEnabled)
 
@@ -210,7 +244,7 @@ func TestColorPressure_WithColors(t *testing.T) { //nolint:paralleltest // modif
 		{"red - very low", 25.0, colorRed},
 	}
 
-	for _, tt := range tests { //nolint:paralleltest // parent modifies global colorEnabled state
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ColorPressure(tt.pressure, target)
 			// Check it starts with expected color code

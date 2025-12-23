@@ -10,11 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func init() {
-	// Disable colors for tests
-	SetColorEnabled(false)
-}
-
 // TestStatusCommand tests the status command
 func TestStatusCommand(t *testing.T) {
 	t.Parallel()
@@ -323,6 +318,10 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 // TestFormatFuelStatus tests fuel status formatting
 func TestFormatFuelStatus(t *testing.T) {
 	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+	SetColorEnabled(false)
+
 	tests := []struct {
 		name           string
 		fuelLevel      float64
@@ -352,7 +351,6 @@ func TestFormatFuelStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			fuelInfo := api.FuelInfo{
 				FuelLevel: tt.fuelLevel,
 				RangeKm:   tt.rangeKm,
@@ -463,6 +461,10 @@ func TestFormatDoorsStatus(t *testing.T) {
 // TestFormatTiresStatus tests tire status formatting
 func TestFormatTiresStatus(t *testing.T) {
 	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+	SetColorEnabled(false)
+
 	tests := []struct {
 		name          string
 		frontLeftPsi  float64
@@ -483,7 +485,6 @@ func TestFormatTiresStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			tireInfo := api.TireInfo{
 				FrontLeftPsi:  tt.frontLeftPsi,
 				FrontRightPsi: tt.frontRightPsi,
