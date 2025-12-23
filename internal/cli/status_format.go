@@ -49,33 +49,47 @@ func toJSON(data map[string]any) (string, error) {
 	return string(jsonBytes), nil
 }
 
+// getChargingStatusFlag returns the charging status flag string.
+func getChargingStatusFlag(charging bool, chargeTimeACMin, chargeTimeQBCMin float64) string {
+	if !charging {
+		return "plugged in, not charging"
+	}
+
+	// Show charging time estimates
+	timeStr := formatChargeTime(chargeTimeACMin, chargeTimeQBCMin)
+	if timeStr != "" {
+		return "charging, " + timeStr
+	}
+
+	return "charging"
+}
+
+// getHeaterStatusFlag returns the heater status flag string.
+func getHeaterStatusFlag(heaterOn, heaterAuto bool) string {
+	if heaterOn && heaterAuto {
+		return "battery heater on, auto enabled"
+	}
+	if heaterOn {
+		return "battery heater on"
+	}
+	if heaterAuto {
+		return "battery heater auto enabled"
+	}
+
+	return ""
+}
+
 // buildBatteryStatusFlags builds the status flags for battery display.
 func buildBatteryStatusFlags(batteryInfo api.BatteryInfo) []string {
 	var flags []string
 
 	if batteryInfo.PluggedIn {
-		if batteryInfo.Charging {
-			// Show charging time estimates
-			timeStr := formatChargeTime(batteryInfo.ChargeTimeACMin, batteryInfo.ChargeTimeQBCMin)
-			if timeStr != "" {
-				flags = append(flags, "charging, "+timeStr)
-			} else {
-				flags = append(flags, "charging")
-			}
-		} else {
-			flags = append(flags, "plugged in, not charging")
-		}
+		flags = append(flags, getChargingStatusFlag(batteryInfo.Charging, batteryInfo.ChargeTimeACMin, batteryInfo.ChargeTimeQBCMin))
 	}
 
 	// Add heater status
-	if batteryInfo.HeaterOn {
-		if batteryInfo.HeaterAuto {
-			flags = append(flags, "battery heater on, auto enabled")
-		} else {
-			flags = append(flags, "battery heater on")
-		}
-	} else if batteryInfo.HeaterAuto {
-		flags = append(flags, "battery heater auto enabled")
+	if heaterFlag := getHeaterStatusFlag(batteryInfo.HeaterOn, batteryInfo.HeaterAuto); heaterFlag != "" {
+		flags = append(flags, heaterFlag)
 	}
 
 	return flags
@@ -324,6 +338,26 @@ func formatThousands(value float64) string {
 	return p.Sprintf("%.1f", value)
 }
 
+// formatMinutesDuration formats minutes as "Xh Ym" or "Xm".
+func formatMinutesDuration(minutes float64) string {
+	if minutes <= 0 {
+		return ""
+	}
+
+	hours := int(minutes) / 60
+	mins := int(minutes) % 60
+
+	if hours > 0 && mins > 0 {
+		return fmt.Sprintf("%dh %dm", hours, mins)
+	}
+
+	if hours > 0 {
+		return fmt.Sprintf("%dh", hours)
+	}
+
+	return fmt.Sprintf("%dm", mins)
+}
+
 // formatChargeTime formats charging time estimates for display.
 func formatChargeTime(acMinutes, qbcMinutes float64) string {
 	// If both are zero or negative, no charging time info available
@@ -331,41 +365,30 @@ func formatChargeTime(acMinutes, qbcMinutes float64) string {
 		return ""
 	}
 
-	// Helper to format minutes as "Xh Ym" or "Xm"
-	formatMinutes := func(minutes float64) string {
-		if minutes <= 0 {
-			return ""
-		}
-		hours := int(minutes) / 60
-		mins := int(minutes) % 60
-		if hours > 0 {
-			if mins > 0 {
-				return fmt.Sprintf("%dh %dm", hours, mins)
-			}
-
-			return fmt.Sprintf("%dh", hours)
-		}
-
-		return fmt.Sprintf("%dm", mins)
-	}
-
 	// If both are available and different, show both
 	if qbcMinutes > 0 && acMinutes > 0 && qbcMinutes != acMinutes {
-		qbcStr := formatMinutes(qbcMinutes)
-		acStr := formatMinutes(acMinutes)
+		qbcStr := formatMinutesDuration(qbcMinutes)
+		acStr := formatMinutesDuration(acMinutes)
 
 		return fmt.Sprintf("~%s quick / ~%s AC", qbcStr, acStr)
 	}
 
 	// Otherwise, show whichever is available
 	if qbcMinutes > 0 {
-		return fmt.Sprintf("~%s to full", formatMinutes(qbcMinutes))
+		return fmt.Sprintf("~%s to full", formatMinutesDuration(qbcMinutes))
 	}
+
 	if acMinutes > 0 {
-		return fmt.Sprintf("~%s to full", formatMinutes(acMinutes))
+		return fmt.Sprintf("~%s to full", formatMinutesDuration(acMinutes))
 	}
 
 	return ""
+}
+
+// windowPosition describes a single window for status checking.
+type windowPosition struct {
+	name     string
+	position float64
 }
 
 // formatWindowsStatus formats window status for display.
@@ -374,26 +397,20 @@ func formatWindowsStatus(windowsInfo api.WindowStatus, jsonOutput bool) (string,
 		return toJSON(windowStatusToMap(windowsInfo))
 	}
 
-	// If all windows are closed, show simple message
-	if windowsInfo.DriverPosition == api.WindowClosed && windowsInfo.PassengerPosition == api.WindowClosed &&
-		windowsInfo.RearLeftPosition == api.WindowClosed && windowsInfo.RearRightPosition == api.WindowClosed {
-		return "WINDOWS: " + Green("All closed"), nil
+	// Define all windows to check
+	windows := []windowPosition{
+		{"Driver", windowsInfo.DriverPosition},
+		{"Passenger", windowsInfo.PassengerPosition},
+		{"Rear left", windowsInfo.RearLeftPosition},
+		{"Rear right", windowsInfo.RearRightPosition},
 	}
 
-	// Otherwise, build a list of open windows with percentages
+	// Build a list of open windows with percentages
 	var openWindows []string
-
-	if windowsInfo.DriverPosition > api.WindowClosed {
-		openWindows = append(openWindows, Yellow(fmt.Sprintf("Driver %.0f%%", windowsInfo.DriverPosition)))
-	}
-	if windowsInfo.PassengerPosition > api.WindowClosed {
-		openWindows = append(openWindows, Yellow(fmt.Sprintf("Passenger %.0f%%", windowsInfo.PassengerPosition)))
-	}
-	if windowsInfo.RearLeftPosition > api.WindowClosed {
-		openWindows = append(openWindows, Yellow(fmt.Sprintf("Rear left %.0f%%", windowsInfo.RearLeftPosition)))
-	}
-	if windowsInfo.RearRightPosition > api.WindowClosed {
-		openWindows = append(openWindows, Yellow(fmt.Sprintf("Rear right %.0f%%", windowsInfo.RearRightPosition)))
+	for _, window := range windows {
+		if window.position > api.WindowClosed {
+			openWindows = append(openWindows, Yellow(fmt.Sprintf("%s %.0f%%", window.name, window.position)))
+		}
 	}
 
 	if len(openWindows) == 0 {
