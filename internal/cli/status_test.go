@@ -1323,6 +1323,10 @@ func TestFormatTimestamp(t *testing.T) {
 // TestFormatWindowsStatus tests the formatWindowsStatus function
 func TestFormatWindowsStatus(t *testing.T) {
 	t.Parallel()
+	colorTestMutex.Lock()
+	defer colorTestMutex.Unlock()
+	SetColorEnabled(false)
+
 	tests := []struct {
 		name           string
 		windowsInfo    api.WindowStatus
@@ -1400,7 +1404,6 @@ func TestFormatWindowsStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			result, err := formatWindowsStatus(tt.windowsInfo, tt.jsonOutput)
 			require.NoError(t, err, "Unexpected error: %v")
 

@@ -173,7 +173,7 @@ func TestWaitForCondition(t *testing.T) {
 				api.InternalVIN("test-vin"),
 				tt.useEVStatus,
 				tt.conditionFunc,
-				200*time.Millisecond, // Use short timeout for tests
+				50*time.Millisecond, // Use short timeout for tests
 				50*time.Millisecond,
 				"test action",
 			)
@@ -237,7 +237,7 @@ func TestPollUntilCondition(t *testing.T) {
 			checkFunc: func() (bool, error) {
 				return false, nil
 			},
-			timeout:       200 * time.Millisecond,
+			timeout:       50 * time.Millisecond,
 			pollInterval:  50 * time.Millisecond,
 			expectError:   false, // timeout is not an error, just a warning
 			expectTimeout: true,
@@ -247,7 +247,7 @@ func TestPollUntilCondition(t *testing.T) {
 			checkFunc: func() (bool, error) {
 				return false, errors.New("check failed")
 			},
-			timeout:       200 * time.Millisecond,
+			timeout:       50 * time.Millisecond,
 			pollInterval:  50 * time.Millisecond,
 			expectError:   false, // errors are treated as "not ready yet", will timeout
 			expectTimeout: true,
@@ -289,7 +289,7 @@ func TestPollUntilCondition(t *testing.T) {
 			checkFunc: func() (bool, error) {
 				return false, errors.New("persistent error")
 			},
-			timeout:       200 * time.Millisecond,
+			timeout:       50 * time.Millisecond,
 			pollInterval:  50 * time.Millisecond,
 			expectError:   false, // should timeout, not error
 			expectTimeout: true,
@@ -418,7 +418,7 @@ func TestWaitForDoorsLocked(t *testing.T) {
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
 			if !tt.expectMet {
-				timeout = 200 * time.Millisecond
+				timeout = 50 * time.Millisecond
 			}
 
 			result := waitForDoorsLocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
@@ -494,7 +494,7 @@ func TestWaitForEngineRunning(t *testing.T) {
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
 			if !tt.expectMet {
-				timeout = 200 * time.Millisecond
+				timeout = 50 * time.Millisecond
 			}
 
 			result := waitForEngineRunning(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
@@ -570,7 +570,7 @@ func TestWaitForEngineStopped(t *testing.T) {
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
 			if !tt.expectMet {
-				timeout = 200 * time.Millisecond
+				timeout = 50 * time.Millisecond
 			}
 
 			result := waitForEngineStopped(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
@@ -676,7 +676,7 @@ func TestWaitForCharging(t *testing.T) {
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
 			if !tt.expectMet {
-				timeout = 200 * time.Millisecond
+				timeout = 50 * time.Millisecond
 			}
 
 			result := waitForCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
@@ -752,7 +752,7 @@ func TestWaitForNotCharging(t *testing.T) {
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
 			if !tt.expectMet {
-				timeout = 200 * time.Millisecond
+				timeout = 50 * time.Millisecond
 			}
 
 			result := waitForNotCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
@@ -866,7 +866,7 @@ func TestWaitForHvacOn(t *testing.T) {
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
 			if !tt.expectMet {
-				timeout = 200 * time.Millisecond
+				timeout = 50 * time.Millisecond
 			}
 
 			result := waitForHvacOn(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
@@ -946,7 +946,7 @@ func TestWaitForHvacOff(t *testing.T) {
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
 			if !tt.expectMet {
-				timeout = 200 * time.Millisecond
+				timeout = 50 * time.Millisecond
 			}
 
 			result := waitForHvacOff(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
@@ -1058,7 +1058,7 @@ func TestWaitForHvacSettings(t *testing.T) {
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
 			if !tt.expectMet {
-				timeout = 200 * time.Millisecond
+				timeout = 50 * time.Millisecond
 			}
 
 			result := waitForHvacSettings(
@@ -1279,7 +1279,7 @@ func TestWaitForConditionRefreshesStatus(t *testing.T) {
 		api.InternalVIN("test-vin"),
 		true, // useEVStatus
 		conditionChecker,
-		200*time.Millisecond,
+		50*time.Millisecond,
 		50*time.Millisecond,
 		"test action",
 	)
@@ -1402,7 +1402,7 @@ func TestWaitForDoorsUnlocked(t *testing.T) {
 			// Use shorter timeout for "never" cases to speed up tests
 			timeout := 5 * time.Second
 			if !tt.expectMet {
-				timeout = 200 * time.Millisecond
+				timeout = 50 * time.Millisecond
 			}
 
 			result := waitForDoorsUnlocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
