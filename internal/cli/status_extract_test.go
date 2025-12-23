@@ -73,12 +73,8 @@ func TestBatteryInfoToMap(t *testing.T) {
 
 			// Verify charge time fields are only present when charging
 			if !tt.batteryInfo.Charging {
-				if _, ok := data["charge_time_ac_minutes"]; ok {
-					t.Error("Expected charge_time_ac_minutes to not be present when not charging")
-				}
-				if _, ok := data["charge_time_qbc_minutes"]; ok {
-					t.Error("Expected charge_time_qbc_minutes to not be present when not charging")
-				}
+				assert.NotContains(t, data, "charge_time_ac_minutes")
+				assert.NotContains(t, data, "charge_time_qbc_minutes")
 			}
 		})
 	}
@@ -258,7 +254,5 @@ func TestExtractWithGetterError(t *testing.T) {
 		fuelInfoToMap,
 	)
 
-	if len(data) != 0 {
-		t.Errorf("Expected empty map when getter fails, got %v", data)
-	}
+	assert.Empty(t, data)
 }

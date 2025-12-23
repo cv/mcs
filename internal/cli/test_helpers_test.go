@@ -36,9 +36,7 @@ func assertCommandBasics(t *testing.T, cmd *cobra.Command, expectedUse string) {
 func assertNoArgsCommand(t *testing.T, cmd *cobra.Command) {
 	t.Helper()
 
-	if err := cmd.ValidateArgs([]string{}); err != nil {
-		t.Errorf("%s command should accept no arguments: %v", cmd.Use, err)
-	}
+	assert.Equal(t, nil, cmd.ValidateArgs([]string{}))
 }
 
 // assertSubcommandExists verifies that a subcommand exists, has a description,
@@ -52,9 +50,7 @@ func assertSubcommandExists(t *testing.T, parent *cobra.Command, subcommandName 
 	assert.NotEqualf(t, "", subCmd.Short, "Expected %s subcommand to have a description", subcommandName)
 
 	if shouldAcceptNoArgs {
-		if err := subCmd.ValidateArgs([]string{}); err != nil {
-			t.Errorf("%s subcommand should accept no arguments: %v", subcommandName, err)
-		}
+		assert.Equal(t, nil, subCmd.ValidateArgs([]string{}))
 	}
 
 	return subCmd
@@ -85,9 +81,10 @@ func assertFlagExists(t *testing.T, cmd *cobra.Command, assertion FlagAssertion)
 	flag := cmd.Flags().Lookup(assertion.Name)
 	assert.NotEqualf(t, nil, flag, "Expected --%s flag to exist", assertion.Name)
 
-	if assertion.DefaultValue != "" && flag.DefValue != assertion.DefaultValue {
-		t.Errorf("Expected --%s default to be '%s', got '%s'", assertion.Name, assertion.DefaultValue, flag.DefValue)
+	if assertion.DefaultValue != "" {
+		assert.Equal(t, assertion.DefaultValue, flag.DefValue)
 	}
+
 }
 
 // MockVehicleStatusBuilder provides a fluent API for building mock VehicleStatusResponse objects.

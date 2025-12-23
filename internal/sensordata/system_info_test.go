@@ -22,9 +22,8 @@ func TestSystemInfo_Randomize(t *testing.T) {
 	assert.Truef(t, validScreenSizes[si.screenHeight], "screenHeight %d not in valid set", si.screenHeight)
 
 	// Check battery level is in reasonable range
-	if si.batteryLevel < 10 || si.batteryLevel > 90 {
-		t.Errorf("batteryLevel %d out of expected range [10, 90]", si.batteryLevel)
-	}
+	assert.GreaterOrEqual(t, si.batteryLevel, 10)
+	assert.LessOrEqual(t, si.batteryLevel, 90)
 
 	// Check required fields are set
 	assert.Equalf(t, "en", si.language, "Expected language 'en', got '%s'", si.language)
@@ -60,9 +59,7 @@ func TestSystemInfo_GetCharCodeSum(t *testing.T) {
 	sum := si.GetCharCodeSum()
 
 	// Sum should be positive and reasonably large given the string content
-	if sum <= 0 {
-		t.Errorf("Expected positive char code sum, got %d", sum)
-	}
+	assert.Positive(t, sum)
 
 	// The sum should be consistent
 	sum2 := si.GetCharCodeSum()

@@ -147,9 +147,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 	require.Error(t, err, "Expected error, got nil")
 
 	// Verify it's a RequestInProgressError
-	if _, ok := err.(*RequestInProgressError); !ok {
-		t.Errorf("Expected RequestInProgressError, got %T: %v", err, err)
-	}
+	assert.IsType(t, (*RequestInProgressError)(nil), err)
 }
 
 // TestEncryptPayloadUsingKey tests payload encryption
@@ -372,9 +370,9 @@ func TestSleepWithContext_Completes(t *testing.T) {
 	assert.EqualValuesf(t, nil, err, "sleepWithContext returned error: %v", err)
 
 	// Allow 50ms tolerance
-	if elapsed < duration || elapsed > duration+50*time.Millisecond {
-		t.Errorf("sleepWithContext took %v, expected around %v", elapsed, duration)
-	}
+	assert.GreaterOrEqual(t, elapsed, duration)
+	assert.LessOrEqual(t, elapsed, duration+50*time.Millisecond)
+
 }
 
 // TestSleepWithContext_Cancelled tests that sleep returns early on context cancellation
@@ -397,9 +395,7 @@ func TestSleepWithContext_Cancelled(t *testing.T) {
 	assert.EqualValuesf(t, context.Canceled, err, "sleepWithContext returned %v, want context.Canceled", err)
 
 	// Should return much earlier than 5 seconds
-	if elapsed > 1*time.Second {
-		t.Errorf("sleepWithContext took %v, should have returned early", elapsed)
-	}
+	assert.LessOrEqual(t, elapsed, 1*time.Second)
 }
 
 // TestSleepWithContext_ZeroDuration tests that zero duration returns immediately
@@ -412,9 +408,7 @@ func TestSleepWithContext_ZeroDuration(t *testing.T) {
 
 	assert.EqualValuesf(t, nil, err, "sleepWithContext returned error: %v", err)
 
-	if elapsed > 10*time.Millisecond {
-		t.Errorf("sleepWithContext with 0 duration took %v, should be immediate", elapsed)
-	}
+	assert.LessOrEqual(t, elapsed, 10*time.Millisecond)
 }
 
 // TestAPIRequest_RetryWithContextCancellation tests that context cancellation during backoff returns immediately
@@ -489,13 +483,9 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 	// Should return quickly after cancellation (within 1 second total)
 	// First retry is after 1 second, so if cancelled at 500ms during first backoff,
 	// it should return before the 1 second completes
-	if elapsed > 1500*time.Millisecond {
-		t.Errorf("Request took %v, should have returned quickly after context cancellation", elapsed)
-	}
+	assert.LessOrEqual(t, elapsed, 1500*time.Millisecond)
 
 	// Should have made 1 initial call, Login will fail but that's expected
 	// The key point is we don't wait through all the retries
-	if callCount > 2 {
-		t.Errorf("Expected at most 2 calls, got %d", callCount)
-	}
+	assert.LessOrEqual(t, callCount, 2)
 }

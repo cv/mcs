@@ -397,35 +397,38 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	require.False(t, !ok || len(alertInfos) == 0, "alertInfos not found in response")
 	door, ok := getMap(alertInfos[0], "Door")
 	require.True(t, ok, "Door not found")
-	if hoodStatus, ok := getFloat64(door, "DrStatHood"); !ok || hoodStatus != 1 {
-		t.Error("Expected hood open (1)")
-	}
-	if fuelLid, ok := getFloat64(door, "FuelLidOpenStatus"); !ok || fuelLid != 1 {
-		t.Error("Expected fuel lid open (1)")
-	}
+	hoodStatus, ok := getFloat64(door, "DrStatHood")
+	require.True(t, ok)
+	assert.EqualValues(t, 1, hoodStatus)
+
+	fuelLid, ok := getFloat64(door, "FuelLidOpenStatus")
+	require.True(t, ok)
+	assert.EqualValues(t, 1, fuelLid)
 
 	pw, ok := getMap(alertInfos[0], "Pw")
 	require.True(t, ok, "Pw not found")
-	if drvWindow, ok := getFloat64(pw, "PwPosDrv"); !ok || drvWindow != 50 {
-		t.Error("Expected driver window at 50")
-	}
-	if psWindow, ok := getFloat64(pw, "PwPosPsngr"); !ok || psWindow != 100 {
-		t.Error("Expected passenger window at 100")
-	}
+	drvWindow, ok := getFloat64(pw, "PwPosDrv")
+	require.True(t, ok)
+	assert.EqualValues(t, 50, drvWindow)
+
+	psWindow, ok := getFloat64(pw, "PwPosPsngr")
+	require.True(t, ok)
+	assert.EqualValues(t, 100, psWindow)
 
 	hazard, ok := getMap(alertInfos[0], "HazardLamp")
 	require.True(t, ok, "HazardLamp not found")
-	if hazardSw, ok := getFloat64(hazard, "HazardSw"); !ok || hazardSw != 1 {
-		t.Error("Expected hazard lights on (1)")
-	}
+	hazardSw, ok := getFloat64(hazard, "HazardSw")
+	require.True(t, ok)
+	assert.EqualValues(t, 1, hazardSw)
 
 	remoteInfos, ok := getMapSlice(responseData, "remoteInfos")
 	require.False(t, !ok || len(remoteInfos) == 0, "remoteInfos not found in response")
 	driveInfo, ok := getMap(remoteInfos[0], "DriveInformation")
 	require.True(t, ok, "DriveInformation not found")
-	if odometer, ok := getFloat64(driveInfo, "OdoDispValue"); !ok || odometer != 99999.9 {
-		t.Error("Expected odometer at 99999.9")
-	}
+	odometer, ok := getFloat64(driveInfo, "OdoDispValue")
+	require.True(t, ok)
+	assert.EqualValues(t, 99999.9, odometer)
+
 }
 
 // TestEVVehicleStatusWithVariedValues tests EV fields with different values
@@ -481,19 +484,22 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 	require.True(t, ok, "VehicleInfo not found in response")
 	chargeInfo, ok := getMap(vehicleInfo, "ChargeInfo")
 	require.True(t, ok, "ChargeInfo not found in response")
-	if acChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteAC"); !ok || acChargeTime != 240 {
-		t.Error("Expected AC charge time 240 minutes")
-	}
-	if batHeaterOn, ok := getFloat64(chargeInfo, "BatteryHeaterON"); !ok || batHeaterOn != 1 {
-		t.Error("Expected battery heater on (1)")
-	}
+	acChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteAC")
+	require.True(t, ok)
+	assert.EqualValues(t, 240, acChargeTime)
+
+	batHeaterOn, ok := getFloat64(chargeInfo, "BatteryHeaterON")
+	require.True(t, ok)
+	assert.EqualValues(t, 1, batHeaterOn)
 
 	hvacInfo, ok := getMap(vehicleInfo, "RemoteHvacInfo")
 	require.True(t, ok, "RemoteHvacInfo not found in response")
-	if interiorTemp, ok := getFloat64(hvacInfo, "InteriorTemp"); !ok || interiorTemp != 18 {
-		t.Error("Expected interior temp 18")
-	}
-	if targetTemp, ok := getFloat64(hvacInfo, "TargetTemp"); !ok || targetTemp != 24 {
-		t.Error("Expected target temp 24")
-	}
+	interiorTemp, ok := getFloat64(hvacInfo, "InteriorTemp")
+	require.True(t, ok)
+	assert.EqualValues(t, 18, interiorTemp)
+
+	targetTemp, ok := getFloat64(hvacInfo, "TargetTemp")
+	require.True(t, ok)
+	assert.EqualValues(t, 24, targetTemp)
+
 }

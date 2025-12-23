@@ -86,9 +86,7 @@ func TestUninstallSkill(t *testing.T) {
 
 			// Verify directory is removed
 			skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
-			if _, err := os.Stat(skillPath); !os.IsNotExist(err) {
-				t.Errorf("Expected skill directory to be removed, but it still exists")
-			}
+			assert.NoDirExists(t, skillPath)
 		})
 	}
 }
@@ -143,9 +141,7 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 	assert.Equalf(t, expectedOutput, output, "Expected output '%s', got '%s'")
 
 	// Verify directory was created
-	if _, err := os.Stat(skillPath); os.IsNotExist(err) {
-		t.Error("Expected skill directory to be created")
-	}
+	assert.DirExists(t, skillPath)
 
 	// Verify files were copied
 	expectedFiles := []string{
@@ -155,15 +151,11 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 
 	for _, file := range expectedFiles {
 		filePath := filepath.Join(skillPath, file)
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			t.Errorf("Expected file %s to exist", file)
-		}
+		assert.FileExists(t, filePath, "Expected file %s to exist", file)
 
 		// Verify file has content
 		content, err := os.ReadFile(filePath)
-		if err != nil {
-			t.Errorf("Expected to read file %s, got error: %v", file, err)
-		}
+		assert.NoErrorf(t, err, "Expected to read file %s, got error: %v", file, err)
 		assert.NotEqualf(t, 0, len(content), "Expected file %s to have content", file)
 	}
 }
@@ -202,15 +194,11 @@ func TestSkillInstallCommand_ReinstallRemovesOld(t *testing.T) {
 	require.NoError(t, err, "Expected install to succeed, got error: %v")
 
 	// Verify old file is gone
-	if _, err := os.Stat(oldFilePath); !os.IsNotExist(err) {
-		t.Error("Expected old file to be removed during reinstall")
-	}
+	assert.NoFileExists(t, oldFilePath)
 
 	// Verify new files exist
 	newFilePath := filepath.Join(skillPath, "SKILL.md")
-	if _, err := os.Stat(newFilePath); os.IsNotExist(err) {
-		t.Error("Expected new files to be installed")
-	}
+	assert.FileExists(t, newFilePath)
 }
 
 // TestSkillUninstallCommand tests the skill uninstall subcommand
@@ -284,9 +272,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 
 			// Verify directory is removed
 			skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
-			if _, err := os.Stat(skillPath); !os.IsNotExist(err) {
-				t.Error("Expected skill directory to be removed")
-			}
+			assert.NoDirExists(t, skillPath)
 		})
 	}
 }
@@ -356,9 +342,8 @@ func TestSkillPathCommand_OutputFormat(t *testing.T) {
 	output := outBuf.String()
 	lines := bytes.Split([]byte(output), []byte("\n"))
 	// Should have exactly 2 elements: the path and an empty string after final newline
-	if len(lines) != 2 || len(lines[1]) != 0 {
-		t.Errorf("Expected single line output, got %d lines", len(lines)-1)
-	}
+	assert.Len(t, lines, 2)
+	assert.Empty(t, lines[1])
 
 	// Verify it's a valid path
 	pathStr := string(lines[0])

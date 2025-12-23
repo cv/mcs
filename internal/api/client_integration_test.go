@@ -131,9 +131,7 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
 	require.Error(t, err, "Expected error due to max retries, got nil")
 
-	if err.Error() != "Request exceeded max number of retries" {
-		t.Errorf("Expected max retries error, got: %v", err)
-	}
+	assert.EqualError(t, err, "Request exceeded max number of retries")
 }
 
 // TestAPIRequest_EngineStartLimitError tests the engine start limit error
@@ -162,9 +160,7 @@ func TestAPIRequest_EngineStartLimitError(t *testing.T) {
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
 	require.Error(t, err, "Expected engine start limit error, got nil")
 
-	if _, ok := err.(*EngineStartLimitError); !ok {
-		t.Errorf("Expected EngineStartLimitError, got %T", err)
-	}
+	assert.IsType(t, (*EngineStartLimitError)(nil), err)
 }
 
 // TestAPIRequest_WithQueryParams tests GET request with query parameters
@@ -226,9 +222,7 @@ func TestEncryptPayloadUsingKey_MissingKey(t *testing.T) {
 	_, err = client.encryptPayloadUsingKey("test data")
 	require.Error(t, err, "Expected error when encryption key is missing, got nil")
 
-	if _, ok := err.(*APIError); !ok {
-		t.Errorf("Expected APIError, got %T", err)
-	}
+	assert.IsType(t, (*APIError)(nil), err)
 }
 
 // TestDecryptPayloadUsingKey_MissingKey tests error when decryption key is missing
@@ -240,9 +234,7 @@ func TestDecryptPayloadUsingKey_MissingKey(t *testing.T) {
 	_, err = client.decryptPayloadUsingKey("test data")
 	require.Error(t, err, "Expected error when decryption key is missing, got nil")
 
-	if _, ok := err.(*APIError); !ok {
-		t.Errorf("Expected APIError, got %T", err)
-	}
+	assert.IsType(t, (*APIError)(nil), err)
 }
 
 // TestAPIRequest_TokenExpiredRetry tests that expired token triggers re-authentication
@@ -371,9 +363,7 @@ func TestAPIRequest_RequestInProgressRetry(t *testing.T) {
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	require.Error(t, err, "Expected RequestInProgressError, got nil")
 
-	if _, ok := err.(*RequestInProgressError); !ok {
-		t.Errorf("Expected RequestInProgressError, got %T: %v", err, err)
-	}
+	assert.IsType(t, (*RequestInProgressError)(nil), err)
 }
 
 // TestAPIRequestJSON_FullFlow tests the JSON request flow (returns raw bytes instead of parsed map)

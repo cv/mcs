@@ -82,9 +82,7 @@ func TestControlEndpoints(t *testing.T) {
 			client := createTestClient(t, server.URL)
 
 			err := tt.method(context.Background(), client, "INTERNAL123")
-			if err != nil {
-				t.Fatalf("%s failed: %v", tt.name, err)
-			}
+			require.NoErrorf(t, err, "%s failed: %v", tt.name, err)
 		})
 	}
 }
@@ -136,8 +134,6 @@ func TestBoolToInt(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got := boolToInt(tt.input); got != tt.want {
-			t.Errorf("boolToInt(%v) = %d, want %d", tt.input, got, tt.want)
-		}
+		assert.Equal(t, tt.want, boolToInt(tt.input))
 	}
 }

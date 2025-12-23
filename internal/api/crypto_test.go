@@ -63,9 +63,7 @@ func TestDecryptAES128CBC(t *testing.T) {
 	decrypted, err := DecryptAES128CBC(encrypted, key, iv)
 	require.NoError(t, err, "DecryptAES128CBC() error = %v")
 
-	if string(decrypted) != string(original) {
-		t.Errorf("DecryptAES128CBC() = %s, want %s", decrypted, original)
-	}
+	assert.Equal(t, string(original), string(decrypted))
 }
 
 func TestGenerateUUIDFromSeed(t *testing.T) {
@@ -147,9 +145,10 @@ func TestEncryptRSA(t *testing.T) {
 				require.NoError(t, err, "EncryptRSA() error = %v, wantErr %v")
 			}
 
-			if !tt.wantErr && len(encrypted) == 0 {
-				t.Errorf("EncryptRSA() returned empty result")
+			if !tt.wantErr {
+				assert.NotEmpty(t, encrypted)
 			}
+
 		})
 	}
 }

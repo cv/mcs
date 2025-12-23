@@ -25,9 +25,9 @@ func TestNewSensorDataBuilder(t *testing.T) {
 
 	assert.NotNil(t, builder.performanceTestResults, "Expected performanceTestResults to be initialized")
 
-	if builder.deviceInfoTime < 3000 || builder.deviceInfoTime >= 8000 {
-		t.Errorf("Expected deviceInfoTime between 3000 and 8000, got %d", builder.deviceInfoTime)
-	}
+	assert.GreaterOrEqual(t, builder.deviceInfoTime, 3000)
+	assert.Less(t, builder.deviceInfoTime, 8000)
+
 }
 
 func TestSensorDataBuilder_GenerateSensorData(t *testing.T) {

@@ -871,9 +871,10 @@ func TestWaitForHvacOn(t *testing.T) {
 				assert.True(t, tt.expectMet, "Expected HVAC to not be on but it was")
 			}
 
-			if tt.expectCalled > 0 && calls < tt.expectCalled {
-				t.Errorf("Expected at least %d calls but got %d", tt.expectCalled, calls)
+			if tt.expectCalled > 0 {
+				assert.GreaterOrEqual(t, calls, tt.expectCalled)
 			}
+
 		})
 	}
 }

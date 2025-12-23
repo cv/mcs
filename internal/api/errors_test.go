@@ -54,9 +54,10 @@ func TestCheckResultCode(t *testing.T) {
 				require.NoError(t, err, "checkResultCode() error = %v, wantErr %v")
 			}
 
-			if tt.wantErr && err.Error() != tt.errMessage {
-				t.Errorf("checkResultCode() error message = %v, want %v", err.Error(), tt.errMessage)
+			if tt.wantErr {
+				assert.EqualError(t, err, tt.errMessage)
 			}
+
 		})
 	}
 }

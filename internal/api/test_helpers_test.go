@@ -73,13 +73,13 @@ func createTestServer(t *testing.T, responseData map[string]interface{}, options
 
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Validate path if specified
-		if opts.expectedPath != "" && r.URL.Path != opts.expectedPath {
-			t.Errorf("Expected path %s, got %s", opts.expectedPath, r.URL.Path)
+		if opts.expectedPath != "" {
+			assert.Equal(t, opts.expectedPath, r.URL.Path)
 		}
 
 		// Validate method if specified
-		if opts.expectedMethod != "" && r.Method != opts.expectedMethod {
-			t.Errorf("Expected method %s, got %s", opts.expectedMethod, r.Method)
+		if opts.expectedMethod != "" {
+			assert.Equal(t, opts.expectedMethod, r.Method)
 		}
 
 		// Validate body if requested

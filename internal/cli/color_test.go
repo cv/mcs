@@ -108,18 +108,10 @@ func TestColorize(t *testing.T) {
 	defer SetColorEnabled(oldColorEnabled)
 
 	text := "test"
-	if result := Red(text); result != text {
-		t.Errorf("Expected uncolored text '%s', got '%s'", text, result)
-	}
-	if result := Green(text); result != text {
-		t.Errorf("Expected uncolored text '%s', got '%s'", text, result)
-	}
-	if result := Yellow(text); result != text {
-		t.Errorf("Expected uncolored text '%s', got '%s'", text, result)
-	}
-	if result := Bold(text); result != text {
-		t.Errorf("Expected uncolored text '%s', got '%s'", text, result)
-	}
+	assert.Equal(t, text, Red(text))
+	assert.Equal(t, text, Green(text))
+	assert.Equal(t, text, Yellow(text))
+	assert.Equal(t, text, Bold(text))
 }
 
 func TestColorize_WithColors(t *testing.T) {
@@ -222,10 +214,7 @@ func TestColorPressure_WithColors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ColorPressure(tt.pressure, target)
 			// Check it starts with expected color code
-			if len(result) < len(tt.expectedColor) {
-				t.Errorf("Result too short")
-				return
-			}
+			assert.GreaterOrEqual(t, len(result), len(tt.expectedColor))
 			assert.Equalf(t, tt.expectedColor, result[:len(tt.expectedColor)], "Expected color %q, got prefix %q")
 		})
 	}

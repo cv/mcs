@@ -96,13 +96,14 @@ func TestStatusCommand_JSONFlag(t *testing.T) {
 			cmd := NewStatusCmd()
 			flag := cmd.PersistentFlags().Lookup(tt.flagName)
 
-			if tt.shouldExist && flag == nil {
-				t.Fatalf("Expected --%s flag to exist", tt.flagName)
+			if tt.shouldExist {
+				require.NotNil(t, flag)
 			}
 
-			if flag != nil && flag.Value.Type() != tt.expectedType {
-				t.Errorf("Expected --%s flag to be %s, got %s", tt.flagName, tt.expectedType, flag.Value.Type())
+			if flag != nil {
+				assert.Equal(t, tt.expectedType, flag.Value.Type())
 			}
+
 		})
 	}
 }
@@ -1257,9 +1258,9 @@ func TestFormatTimestamp(t *testing.T) {
 			if tt.expectedFormat != "" {
 				assert.Truef(t, strings.Contains(result, tt.expectedFormat), "Expected result to contain '%s', got '%s'", tt.expectedFormat, result)
 				// Should also contain relative time in parentheses
-				if !strings.Contains(result, "(") || !strings.Contains(result, ")") {
-					t.Errorf("Expected result to contain relative time in parentheses, got '%s'", result)
-				}
+				assert.Contains(t, result, "(")
+				assert.Contains(t, result, ")")
+
 			}
 
 			for _, expected := range tt.expectedContains {
@@ -1683,9 +1684,7 @@ func TestDisplayAllStatus(t *testing.T) {
 				// Verify JSON structure has expected top-level keys
 				expectedKeys := []string{"vehicle", "battery", "fuel", "location", "tires", "doors", "windows", "hazards", "climate", "odometer"}
 				for _, key := range expectedKeys {
-					if _, ok := data[key]; !ok {
-						t.Errorf("Expected JSON to contain key '%s'", key)
-					}
+					assert.Contains(t, data, key)
 				}
 			} else {
 				for _, expected := range tt.expectedOutput {

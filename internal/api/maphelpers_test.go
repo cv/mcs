@@ -268,9 +268,10 @@ func TestGetMap(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getMap(tt.input, tt.key)
 			assert.EqualValuesf(t, tt.wantOk, gotOk, "getMap() ok = %v, want %v")
-			if tt.wantOk && gotValue == nil {
-				t.Errorf("getMap() returned nil when ok=true")
+			if tt.wantOk {
+				assert.NotNil(t, gotValue)
 			}
+
 		})
 	}
 }
@@ -314,9 +315,10 @@ func TestGetSlice(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getSlice(tt.input, tt.key)
 			assert.EqualValuesf(t, tt.wantOk, gotOk, "getSlice() ok = %v, want %v")
-			if tt.wantOk && gotValue == nil {
-				t.Errorf("getSlice() returned nil when ok=true")
+			if tt.wantOk {
+				assert.NotNil(t, gotValue)
 			}
+
 		})
 	}
 }
@@ -442,9 +444,10 @@ func TestGetMapFromSlice(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getMapFromSlice(tt.slice, tt.index)
 			assert.EqualValuesf(t, tt.wantOk, gotOk, "getMapFromSlice() ok = %v, want %v")
-			if tt.wantOk && gotValue == nil {
-				t.Errorf("getMapFromSlice() returned nil when ok=true")
+			if tt.wantOk {
+				assert.NotNil(t, gotValue)
 			}
+
 		})
 	}
 }

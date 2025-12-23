@@ -145,9 +145,7 @@ func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) {
 	_, _ = errBuf.ReadFrom(r)
 
 	// Should not print anything for skill command
-	if errBuf.Len() > 0 {
-		t.Errorf("Expected no output for skill command, got: %s", errBuf.String())
-	}
+	assert.Empty(t, errBuf.String())
 }
 
 func TestCheckSkillVersionMismatch_SkipsSkillSubcommands(t *testing.T) {
@@ -170,7 +168,5 @@ func TestCheckSkillVersionMismatch_SkipsSkillSubcommands(t *testing.T) {
 	_, _ = errBuf.ReadFrom(r)
 
 	// Should not print anything for skill subcommand
-	if errBuf.Len() > 0 {
-		t.Errorf("Expected no output for skill subcommand, got: %s", errBuf.String())
-	}
+	assert.Empty(t, errBuf.String())
 }

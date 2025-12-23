@@ -226,9 +226,7 @@ func TestCachePersistence_ConcurrentAccess(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		go func(id int) {
 			cache, err := Load()
-			if err != nil {
-				t.Errorf("Concurrent load %d failed: %v", id, err)
-			}
+			assert.NoErrorf(t, err, "Concurrent load %d failed: %v", id, err)
 			assert.NotEqualf(t, nil, cache, "Concurrent load %d returned nil", id)
 			done <- true
 		}(i)
@@ -392,9 +390,7 @@ func TestCachePersistence_DirectoryCreation(t *testing.T) {
 
 	// Verify cache directory doesn't exist yet
 	cachePath := filepath.Join(tmpDir, ".cache", "mcs")
-	if _, err := os.Stat(cachePath); err == nil {
-		t.Error("Cache directory should not exist yet")
-	}
+	assert.NoFileExists(t, cachePath)
 
 	// Save cache (should create directory)
 	cache := &TokenCache{
@@ -408,9 +404,7 @@ func TestCachePersistence_DirectoryCreation(t *testing.T) {
 	require.NoError(t, err, "Save() failed: %v")
 
 	// Verify directory was created
-	if _, err := os.Stat(cachePath); err != nil {
-		t.Errorf("Cache directory should have been created: %v", err)
-	}
+	assert.DirExists(t, cachePath)
 }
 
 // TestCachePersistence_EmptyHomeDir tests behavior when HOME is not set

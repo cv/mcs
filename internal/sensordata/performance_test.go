@@ -25,23 +25,14 @@ func TestPerformanceTestResults_Randomize(t *testing.T) {
 	assert.Equalf(t, 59, p.floatTestResult, "Expected floatTestResult = 59, got %d", p.floatTestResult)
 
 	// Check that loop test result is in expected range
-	if p.loopTestResult < 8500 || p.loopTestResult > 16000 {
-		t.Errorf("loopTestResult %d out of expected range [8500, 16000]", p.loopTestResult)
-	}
+	assert.GreaterOrEqual(t, p.loopTestResult, 8500)
+	assert.LessOrEqual(t, p.loopTestResult, 16000)
 
 	// Check that iterations are positive
-	if p.modTestIters <= 0 {
-		t.Errorf("Expected positive modTestIters, got %d", p.modTestIters)
-	}
-	if p.floatTestIters <= 0 {
-		t.Errorf("Expected positive floatTestIters, got %d", p.floatTestIters)
-	}
-	if p.sqrtTestIters <= 0 {
-		t.Errorf("Expected positive sqrtTestIters, got %d", p.sqrtTestIters)
-	}
-	if p.trigTestIters <= 0 {
-		t.Errorf("Expected positive trigTestIters, got %d", p.trigTestIters)
-	}
+	assert.Positive(t, p.modTestIters)
+	assert.Positive(t, p.floatTestIters)
+	assert.Positive(t, p.sqrtTestIters)
+	assert.Positive(t, p.trigTestIters)
 }
 
 func TestPerformanceTestResults_ToString(t *testing.T) {
