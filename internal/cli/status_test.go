@@ -10,6 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// withColorsDisabled acquires the color mutex and disables colors for the test.
+// Call this at the start of any test that checks formatted text output.
+func withColorsDisabled(t *testing.T) {
+	t.Helper()
+	colorTestMutex.Lock()
+	t.Cleanup(colorTestMutex.Unlock)
+	SetColorEnabled(false)
+}
+
 // TestStatusCommand tests the status command
 func TestStatusCommand(t *testing.T) {
 	t.Parallel()
@@ -112,6 +121,8 @@ func TestStatusCommand_JSONFlag(t *testing.T) {
 // TestFormatBatteryStatus tests battery status formatting
 func TestFormatBatteryStatus(t *testing.T) {
 	t.Parallel()
+	withColorsDisabled(t)
+
 	tests := []struct {
 		name             string
 		batteryLevel     float64
@@ -176,7 +187,6 @@ func TestFormatBatteryStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			batteryInfo := api.BatteryInfo{
 				BatteryLevel:     tt.batteryLevel,
 				RangeKm:          tt.range_,
@@ -242,6 +252,8 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 // TestFormatBatteryStatus_WithHeater tests battery heater display
 func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 	t.Parallel()
+	withColorsDisabled(t)
+
 	tests := []struct {
 		name       string
 		heaterOn   bool
@@ -282,7 +294,6 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			var batteryInfo api.BatteryInfo
 			if i == 4 {
 				// Last test case includes charging
@@ -318,9 +329,7 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 // TestFormatFuelStatus tests fuel status formatting
 func TestFormatFuelStatus(t *testing.T) {
 	t.Parallel()
-	colorTestMutex.Lock()
-	defer colorTestMutex.Unlock()
-	SetColorEnabled(false)
+	withColorsDisabled(t)
 
 	tests := []struct {
 		name           string
@@ -373,6 +382,8 @@ func TestFormatFuelStatus(t *testing.T) {
 // TestFormatDoorsStatus tests doors status formatting
 func TestFormatDoorsStatus(t *testing.T) {
 	t.Parallel()
+	withColorsDisabled(t)
+
 	tests := []struct {
 		name           string
 		doorStatus     api.DoorStatus
@@ -450,7 +461,6 @@ func TestFormatDoorsStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			result, err := formatDoorsStatus(tt.doorStatus, false)
 			require.NoError(t, err, "Unexpected error: %v")
 			assert.Equal(t, tt.expectedOutput, result)
