@@ -103,7 +103,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		// DriveInformation.OdoDispValue
 		remoteInfos, ok := getMapSlice(responseData, "remoteInfos")
 		require.True(t, ok, "remoteInfos not found in response")
-		require.False(t, len(remoteInfos) == 0, "remoteInfos is empty")
+		require.NotEmpty(t, remoteInfos)
 		driveInfo, ok := getMap(remoteInfos[0], "DriveInformation")
 		require.True(t, ok, "DriveInformation not found in response")
 		odometer, ok := getFloat64(driveInfo, "OdoDispValue")
@@ -115,7 +115,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		// alertInfos[].Door.DrStatHood
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
-		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
+		require.NotEmpty(t, alertInfos)
 		door, ok := getMap(alertInfos[0], "Door")
 		require.True(t, ok, "Door not found in response")
 		hoodStatus, ok := getFloat64(door, "DrStatHood")
@@ -127,7 +127,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		// alertInfos[].Door.FuelLidOpenStatus
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
-		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
+		require.NotEmpty(t, alertInfos)
 		door, ok := getMap(alertInfos[0], "Door")
 		require.True(t, ok, "Door not found in response")
 		fuelLid, ok := getFloat64(door, "FuelLidOpenStatus")
@@ -139,7 +139,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		// alertInfos[].Door.LockLinkSwDrv/Psngr/Rl/Rr
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
-		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
+		require.NotEmpty(t, alertInfos)
 		door, ok := getMap(alertInfos[0], "Door")
 		require.True(t, ok, "Door not found in response")
 
@@ -155,7 +155,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		// alertInfos[].Pw.PwPosDrv/Psngr/Rl/Rr
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
-		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
+		require.NotEmpty(t, alertInfos)
 		pw, ok := getMap(alertInfos[0], "Pw")
 		require.True(t, ok, "Pw not found in response")
 
@@ -171,7 +171,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		// alertInfos[].HazardLamp.HazardSw
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
-		require.False(t, len(alertInfos) == 0, "alertInfos is empty")
+		require.NotEmpty(t, alertInfos)
 		hazard, ok := getMap(alertInfos[0], "HazardLamp")
 		require.True(t, ok, "HazardLamp not found in response")
 		hazardSw, ok := getFloat64(hazard, "HazardSw")
@@ -238,7 +238,8 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	t.Run("VerifyACChargeTimeField", func(t *testing.T) {
 		// ChargeInfo.MaxChargeMinuteAC
 		resultData, ok := getMapSlice(responseData, "resultData")
-		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
+		require.True(t, ok, "resultData not found in response")
+		require.NotEmpty(t, resultData)
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
 		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
@@ -253,7 +254,8 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	t.Run("VerifyQuickChargeTimeField", func(t *testing.T) {
 		// ChargeInfo.MaxChargeMinuteQBC
 		resultData, ok := getMapSlice(responseData, "resultData")
-		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
+		require.True(t, ok, "resultData not found in response")
+		require.NotEmpty(t, resultData)
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
 		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
@@ -268,7 +270,8 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	t.Run("VerifyBatteryHeaterAutoField", func(t *testing.T) {
 		// ChargeInfo.CstmzStatBatHeatAutoSW
 		resultData, ok := getMapSlice(responseData, "resultData")
-		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
+		require.True(t, ok, "resultData not found in response")
+		require.NotEmpty(t, resultData)
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
 		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
@@ -283,7 +286,8 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	t.Run("VerifyBatteryHeaterOnField", func(t *testing.T) {
 		// ChargeInfo.BatteryHeaterON
 		resultData, ok := getMapSlice(responseData, "resultData")
-		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
+		require.True(t, ok, "resultData not found in response")
+		require.NotEmpty(t, resultData)
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
 		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
@@ -298,7 +302,8 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	t.Run("VerifyInteriorTempField", func(t *testing.T) {
 		// RemoteHvacInfo.InteriorTemp
 		resultData, ok := getMapSlice(responseData, "resultData")
-		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
+		require.True(t, ok, "resultData not found in response")
+		require.NotEmpty(t, resultData)
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
 		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
@@ -313,7 +318,8 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	t.Run("VerifyTargetTempField", func(t *testing.T) {
 		// RemoteHvacInfo.TargetTemp
 		resultData, ok := getMapSlice(responseData, "resultData")
-		require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
+		require.True(t, ok, "resultData not found in response")
+		require.NotEmpty(t, resultData)
 		plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
 		require.True(t, ok, "PlusBInformation not found in response")
 		vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")
@@ -394,7 +400,8 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 
 	// Verify varied values
 	alertInfos, ok := getMapSlice(responseData, "alertInfos")
-	require.False(t, !ok || len(alertInfos) == 0, "alertInfos not found in response")
+	require.True(t, ok, "alertInfos not found in response")
+	require.NotEmpty(t, alertInfos)
 	door, ok := getMap(alertInfos[0], "Door")
 	require.True(t, ok, "Door not found")
 	hoodStatus, ok := getFloat64(door, "DrStatHood")
@@ -422,7 +429,8 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	assert.EqualValues(t, 1, hazardSw)
 
 	remoteInfos, ok := getMapSlice(responseData, "remoteInfos")
-	require.False(t, !ok || len(remoteInfos) == 0, "remoteInfos not found in response")
+	require.True(t, ok, "remoteInfos not found in response")
+	require.NotEmpty(t, remoteInfos)
 	driveInfo, ok := getMap(remoteInfos[0], "DriveInformation")
 	require.True(t, ok, "DriveInformation not found")
 	odometer, ok := getFloat64(driveInfo, "OdoDispValue")
@@ -477,7 +485,8 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 
 	// Verify varied values
 	resultData, ok := getMapSlice(responseData, "resultData")
-	require.False(t, !ok || len(resultData) == 0, "resultData not found in response")
+	require.True(t, ok, "resultData not found in response")
+	require.NotEmpty(t, resultData)
 	plusBInfo, ok := getMap(resultData[0], "PlusBInformation")
 	require.True(t, ok, "PlusBInformation not found in response")
 	vehicleInfo, ok := getMap(plusBInfo, "VehicleInfo")

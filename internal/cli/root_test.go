@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"os"
-	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -25,7 +24,7 @@ func TestRootCmd_Version(t *testing.T) {
 	require.NoError(t, err, "Execute() error = %v")
 
 	result := output.String()
-	assert.Truef(t, strings.Contains(result, "mcs version"), "Expected version output, got: %s", result)
+	assert.Contains(t, result, "mcs version")
 }
 
 func TestRootCmd_Help(t *testing.T) {
@@ -39,9 +38,9 @@ func TestRootCmd_Help(t *testing.T) {
 	require.NoError(t, err, "Execute() error = %v")
 
 	result := output.String()
-	assert.Truef(t, strings.Contains(result, "mcs"), "Expected help output to contain 'mcs', got: %s", result)
+	assert.Contains(t, result, "mcs")
 	// Check for content from the Long description
-	assert.Truef(t, strings.Contains(result, "manufacturer API"), "Expected help output to contain 'manufacturer API', got: %s", result)
+	assert.Contains(t, result, "manufacturer API")
 }
 
 func TestRootCmd_NoArgs(t *testing.T) {

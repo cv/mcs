@@ -267,7 +267,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 			output := outBuf.String()
 			assert.NotEqual(t, 0, len(output), "Expected output message")
 			if len(tt.expectedOutput) > 0 {
-				assert.Truef(t, bytes.Contains([]byte(output), []byte(tt.expectedOutput)), "Expected output to contain '%s', got '%s'", tt.expectedOutput, output)
+				assert.Contains(t, output, tt.expectedOutput)
 			}
 
 			// Verify directory is removed

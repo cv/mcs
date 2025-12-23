@@ -1,7 +1,6 @@
 package sensordata
 
 import (
-	"strings"
 	"testing"
 	"time"
 
@@ -83,12 +82,12 @@ func TestTouchEventList_ToString(t *testing.T) {
 	result := list.ToString()
 
 	// Should contain all events
-	assert.True(t, strings.Contains(result, "2,100"), "Expected ToString to contain first event")
-	assert.True(t, strings.Contains(result, "1,50"), "Expected ToString to contain second event")
-	assert.True(t, strings.Contains(result, "3,25"), "Expected ToString to contain third event")
+	assert.Contains(t, result, "2,100", "first event")
+	assert.Contains(t, result, "1,50", "second event")
+	assert.Contains(t, result, "3,25", "third event")
 
 	// Should end with semicolon
-	assert.True(t, strings.HasSuffix(result, ";"), "Expected ToString to end with semicolon")
+	assert.Truef(t, result[len(result)-1] == ';', "expected ToString to end with semicolon, got %q", result)
 }
 
 func TestTouchEventList_GetSum(t *testing.T) {

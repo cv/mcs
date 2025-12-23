@@ -49,7 +49,7 @@ func TestSystemInfo_ToString(t *testing.T) {
 	assert.Truef(t, strings.HasPrefix(result, "-1,uaend,-1,"), "Expected ToString to start with '-1,uaend,-1,', got '%s'", result[:min(20, len(result))])
 
 	// Check that it contains the package name
-	assert.True(t, strings.Contains(result, "com.interrait.mymazda"), "Expected ToString to contain package name")
+	assert.Contains(t, result, "com.interrait.mymazda")
 }
 
 func TestSystemInfo_GetCharCodeSum(t *testing.T) {
@@ -63,7 +63,7 @@ func TestSystemInfo_GetCharCodeSum(t *testing.T) {
 
 	// The sum should be consistent
 	sum2 := si.GetCharCodeSum()
-	assert.False(t, sum != sum2, "GetCharCodeSum should be deterministic")
+	assert.Equal(t, sum, sum2, "GetCharCodeSum should be deterministic")
 }
 
 func TestPercentEncode(t *testing.T) {

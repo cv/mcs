@@ -87,8 +87,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 
 	// APIRequest retries on EncryptionError by fetching new keys
 	// Since our mock server always returns the same error, it eventually fails with wrapped error
-	expectedMsg := "failed to retrieve encryption keys"
-	assert.Truef(t, strings.Contains(err.Error(), expectedMsg), "Expected error containing %q, got: %v", expectedMsg, err)
+	assert.ErrorContains(t, err, "failed to retrieve encryption keys")
 }
 
 // TestAPIRequest_TokenExpired tests handling of expired token error
@@ -117,8 +116,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 
 	// APIRequest retries on TokenExpiredError by re-logging in
 	// Since re-login will fail (mock server only handles one endpoint), we get a wrapped error
-	expectedMsg := "failed to login"
-	assert.Truef(t, strings.Contains(err.Error(), expectedMsg), "Expected error containing %q, got: %v", expectedMsg, err)
+	assert.ErrorContains(t, err, "failed to login")
 }
 
 // TestAPIRequest_RequestInProgress tests handling of request in progress error

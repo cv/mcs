@@ -187,7 +187,11 @@ func TestVehicleStatusResponse_Unmarshal(t *testing.T) {
 	assert.EqualValuesf(t, -122.4194, alert.PositionInfo.Longitude, "Expected Longitude -122.4194, got %f", alert.PositionInfo.Longitude)
 
 	door := alert.Door
-	assert.False(t, door.DrStatDrv != 0 || door.DrStatPsngr != 0 || door.DrStatRl != 0 || door.DrStatRr != 0 || door.DrStatTrnkLg != 0, "Expected all doors to be locked (0)")
+	assert.Zero(t, door.DrStatDrv)
+	assert.Zero(t, door.DrStatPsngr)
+	assert.Zero(t, door.DrStatRl)
+	assert.Zero(t, door.DrStatRr)
+	assert.Zero(t, door.DrStatTrnkLg)
 }
 
 func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {

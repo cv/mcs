@@ -210,7 +210,7 @@ func TestEncryptPayloadUsingKey_EmptyPayload(t *testing.T) {
 	encrypted, err := client.encryptPayloadUsingKey("")
 	require.NoError(t, err, "Failed to encrypt empty payload: %v")
 
-	assert.False(t, encrypted != "", "Expected empty encrypted payload for empty input")
+	assert.Empty(t, encrypted)
 }
 
 // TestEncryptPayloadUsingKey_MissingKey tests error when encryption key is missing

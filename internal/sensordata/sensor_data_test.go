@@ -1,7 +1,6 @@
 package sensordata
 
 import (
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -39,7 +38,7 @@ func TestSensorDataBuilder_GenerateSensorData(t *testing.T) {
 
 	// Format is: 1,a,<aes_key>,<hmac_key>$<encrypted_data>$<timestamps>
 	// Check that it ends with timestamps in format: $<num>,<num>,<num>
-	assert.True(t, regexp.MustCompile(`\$[0-9]+,[0-9]+,[0-9]+$`).MatchString(result), "Expected timestamp format at end: $<num>,<num>,<num>")
+	assert.Regexp(t, `\$[0-9]+,[0-9]+,[0-9]+$`, result, "expected timestamp format at end")
 }
 
 func TestCountSeparators(t *testing.T) {

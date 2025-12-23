@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 	"time"
 
@@ -475,7 +474,7 @@ func TestFormatTiresStatus(t *testing.T) {
 			result, err := formatTiresStatus(tireInfo, false)
 			require.NoError(t, err, "Unexpected error: %v")
 
-			assert.Truef(t, strings.Contains(result, tt.expectedPart), "Expected output to contain '%s', got '%s'", tt.expectedPart, result)
+			assert.Contains(t, result, tt.expectedPart)
 		})
 	}
 }
@@ -513,7 +512,7 @@ func TestFormatLocationStatus(t *testing.T) {
 			require.NoError(t, err, "Unexpected error: %v")
 
 			for _, expected := range tt.expectedContains {
-				assert.Truef(t, strings.Contains(result, expected), "Expected output to contain '%s', got '%s'", expected, result)
+				assert.Contains(t, result, expected)
 			}
 		})
 	}
@@ -1256,7 +1255,7 @@ func TestFormatTimestamp(t *testing.T) {
 			result := formatTimestamp(tt.timestamp)
 
 			if tt.expectedFormat != "" {
-				assert.Truef(t, strings.Contains(result, tt.expectedFormat), "Expected result to contain '%s', got '%s'", tt.expectedFormat, result)
+				assert.Contains(t, result, tt.expectedFormat)
 				// Should also contain relative time in parentheses
 				assert.Contains(t, result, "(")
 				assert.Contains(t, result, ")")
@@ -1264,7 +1263,7 @@ func TestFormatTimestamp(t *testing.T) {
 			}
 
 			for _, expected := range tt.expectedContains {
-				assert.Truef(t, strings.Contains(result, expected), "Expected result to contain '%s', got '%s'", expected, result)
+				assert.Contains(t, result, expected)
 			}
 		})
 	}
@@ -1513,7 +1512,7 @@ func TestDisplayStatusWithVehicle(t *testing.T) {
 
 			output := buf.String()
 			for _, expected := range tt.expectedOutput {
-				assert.Truef(t, strings.Contains(output, expected), "Expected output to contain '%s', got '%s'", expected, output)
+				assert.Contains(t, output, expected)
 			}
 		})
 	}
@@ -1688,7 +1687,7 @@ func TestDisplayAllStatus(t *testing.T) {
 				}
 			} else {
 				for _, expected := range tt.expectedOutput {
-					assert.Truef(t, strings.Contains(result, expected), "Expected output to contain '%s', got '%s'", expected, result)
+					assert.Contains(t, result, expected)
 				}
 			}
 		})

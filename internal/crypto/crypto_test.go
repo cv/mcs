@@ -1,7 +1,6 @@
 package crypto
 
 import (
-	"bytes"
 	"crypto/aes"
 	"testing"
 
@@ -82,7 +81,7 @@ func TestPKCS7Unpad(t *testing.T) {
 			}
 
 			if !tt.wantErr {
-				assert.Truef(t, bytes.Equal(result, tt.want), "PKCS7Unpad() = %v, want %v", result, tt.want)
+				assert.Equal(t, tt.want, result)
 			}
 
 		})
@@ -94,7 +93,7 @@ func TestPKCS7PadUnpad_RoundTrip(t *testing.T) {
 	padded := PKCS7Pad(data, aes.BlockSize)
 	unpadded, err := PKCS7Unpad(padded)
 	require.NoError(t, err, "PKCS7Unpad() error = %v")
-	assert.Truef(t, bytes.Equal(unpadded, data), "Round trip failed: got %v, want %v", unpadded, data)
+	assert.Equal(t, data, unpadded)
 }
 
 func TestEncryptDecryptAES128CBC(t *testing.T) {
@@ -108,7 +107,7 @@ func TestEncryptDecryptAES128CBC(t *testing.T) {
 	decrypted, err := DecryptAES128CBC(encrypted, key, iv)
 	require.NoError(t, err, "DecryptAES128CBC() error = %v")
 
-	assert.Truef(t, bytes.Equal(decrypted, plaintext), "DecryptAES128CBC() = %v, want %v", decrypted, plaintext)
+	assert.Equal(t, plaintext, decrypted)
 }
 
 func TestEncryptAES128CBC_InvalidKey(t *testing.T) {

@@ -1,7 +1,6 @@
 package sensordata
 
 import (
-	"strings"
 	"testing"
 	"time"
 
@@ -72,8 +71,8 @@ func TestKeyEventList_ToString(t *testing.T) {
 	result := list.ToString()
 
 	// Should contain both events
-	assert.True(t, strings.Contains(result, "2,5000,517;"), "Expected ToString to contain first event")
-	assert.True(t, strings.Contains(result, "2,30,517,1;"), "Expected ToString to contain second event")
+	assert.Contains(t, result, "2,5000,517;", "first event")
+	assert.Contains(t, result, "2,30,517,1;", "second event")
 }
 
 func TestKeyEventList_ToString_Empty(t *testing.T) {
