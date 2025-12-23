@@ -14,6 +14,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// setupTestClient creates a client with test credentials and encryption keys
+func setupTestClient(t *testing.T) *Client {
+	t.Helper()
+	client, err := NewClient("test@example.com", "password", RegionMNAO)
+	require.NoError(t, err, "Failed to create client: %v")
+	client.Keys.EncKey = "testenckey123456"
+	client.Keys.SignKey = "testsignkey12345"
+	return client
+}
+
+// setupErrorServer creates a mock server that returns the specified API error response
+func setupErrorServer(t *testing.T, errorCode int, extraCode, message string) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := map[string]any{
+			"state":     "E",
+			"errorCode": errorCode,
+			"message":   message,
+		}
+		if extraCode != "" {
+			response["extraCode"] = extraCode
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+}
+
 // TestAPIRequest_Success tests successful API request with encryption
 func TestAPIRequest_Success(t *testing.T) {
 	t.Parallel()
@@ -65,25 +92,13 @@ func TestAPIRequest_Success(t *testing.T) {
 // TestAPIRequest_EncryptionError tests handling of encryption error response
 func TestAPIRequest_EncryptionError(t *testing.T) {
 	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]any{
-			"state":     "E",
-			"errorCode": 600001,
-			"message":   "Encryption error",
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(response)
-
-	}))
+	server := setupErrorServer(t, 600001, "", "Encryption error")
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	require.NoError(t, err, "Failed to create client: %v")
+	client := setupTestClient(t)
 	client.baseURL = server.URL + "/"
-	client.Keys.EncKey = "testenckey123456"
-	client.Keys.SignKey = "testsignkey12345"
 
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error, got nil")
 
 	// APIRequest retries on EncryptionError by fetching new keys
@@ -94,25 +109,13 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 // TestAPIRequest_TokenExpired tests handling of expired token error
 func TestAPIRequest_TokenExpired(t *testing.T) {
 	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]any{
-			"state":     "E",
-			"errorCode": 600002,
-			"message":   "Token expired",
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(response)
-
-	}))
+	server := setupErrorServer(t, 600002, "", "Token expired")
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	require.NoError(t, err, "Failed to create client: %v")
+	client := setupTestClient(t)
 	client.baseURL = server.URL + "/"
-	client.Keys.EncKey = "testenckey123456"
-	client.Keys.SignKey = "testsignkey12345"
 
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error, got nil")
 
 	// APIRequest retries on TokenExpiredError by re-logging in
@@ -123,26 +126,13 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 // TestAPIRequest_RequestInProgress tests handling of request in progress error
 func TestAPIRequest_RequestInProgress(t *testing.T) {
 	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]any{
-			"state":     "E",
-			"errorCode": 920000,
-			"extraCode": "400S01",
-			"message":   "Request in progress",
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(response)
-
-	}))
+	server := setupErrorServer(t, 920000, "400S01", "Request in progress")
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	require.NoError(t, err, "Failed to create client: %v")
+	client := setupTestClient(t)
 	client.baseURL = server.URL + "/"
-	client.Keys.EncKey = "testenckey123456"
-	client.Keys.SignKey = "testsignkey12345"
 
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error, got nil")
 
 	// Verify it's a RequestInProgressError

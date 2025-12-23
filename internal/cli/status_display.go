@@ -7,6 +7,17 @@ import (
 	"github.com/cv/mcs/internal/api"
 )
 
+// appendFormattedSection appends a formatted section to the output string with a newline.
+// It calls the provided formatter function and handles errors.
+func appendFormattedSection(output *string, formatter func() (string, error)) error {
+	result, err := formatter()
+	if err != nil {
+		return err
+	}
+	*output += result + "\n"
+	return nil
+}
+
 // displayAllStatus displays all status information
 func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo, jsonOutput bool) (string, error) {
 	if jsonOutput {
@@ -62,24 +73,24 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	output += formatBatteryStatusCompact(batteryInfo) + "\n"
 	output += formatFuelStatusWithRange(fuelInfo, batteryInfo) + "\n"
 
-	hvacOutput, err := formatHvacStatus(hvacInfo, false)
-	if err != nil {
+	if err := appendFormattedSection(&output, func() (string, error) {
+		return formatHvacStatus(hvacInfo, false)
+	}); err != nil {
 		return "", err
 	}
-	output += hvacOutput + "\n"
 
 	doorStatus, _ := vehicleStatus.GetDoorsInfo()
-	doorsOutput, err := formatDoorsStatus(doorStatus, false)
-	if err != nil {
+	if err := appendFormattedSection(&output, func() (string, error) {
+		return formatDoorsStatus(doorStatus, false)
+	}); err != nil {
 		return "", err
 	}
-	output += doorsOutput + "\n"
 
-	windowsOutput, err := formatWindowsStatus(windowsInfo, false)
-	if err != nil {
+	if err := appendFormattedSection(&output, func() (string, error) {
+		return formatWindowsStatus(windowsInfo, false)
+	}); err != nil {
 		return "", err
 	}
-	output += windowsOutput + "\n"
 
 	// Only show hazards if they're on
 	if hazardsOn {
@@ -87,12 +98,13 @@ func displayAllStatus(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EV
 	}
 
 	tireInfo, _ := vehicleStatus.GetTiresInfo()
-	tiresOutput, err := formatTiresStatus(tireInfo, false)
-	if err != nil {
+	if err := appendFormattedSection(&output, func() (string, error) {
+		return formatTiresStatus(tireInfo, false)
+	}); err != nil {
 		return "", err
 	}
-	output += tiresOutput + "\n"
 
+	// Note: odometer is the last section, so no trailing newline
 	odometerOutput, err := formatOdometerStatus(odometerInfo, false)
 	if err != nil {
 		return "", err

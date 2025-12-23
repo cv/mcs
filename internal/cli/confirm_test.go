@@ -325,15 +325,62 @@ func TestPollUntilCondition(t *testing.T) {
 	}
 }
 
+// testDoorStatusSequence is a test helper for door status confirmation tests
+type testDoorStatusSequence struct {
+	name        string
+	doorStatus  []api.DoorStatus
+	expectError bool
+	expectMet   bool
+}
+
+// runDoorStatusTest runs a door status test with the given wait function
+func runDoorStatusTest(t *testing.T, tt testDoorStatusSequence, waitFunc func(context.Context, io.Writer, vehicleStatusGetter, api.InternalVIN, time.Duration, time.Duration) confirmationResult, successMsg string) {
+	t.Helper()
+	ctx := context.Background()
+	var buf bytes.Buffer
+
+	// Create mock client that returns the door status sequence
+	calls := 0
+	mockClient := &mockClientForConfirm{
+		getVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
+			if calls >= len(tt.doorStatus) {
+				calls = len(tt.doorStatus) - 1
+			}
+			status := tt.doorStatus[calls]
+			calls++
+			return NewMockVehicleStatus().WithDoorStatus(status).Build(), nil
+		},
+	}
+
+	// Use shorter timeout for "never" cases to speed up tests
+	timeout := 5 * time.Second
+	if !tt.expectMet {
+		timeout = testTimeout
+	}
+
+	result := waitFunc(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
+
+	if tt.expectError {
+		require.Error(t, result.err)
+	}
+
+	if !tt.expectError {
+		require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
+	}
+
+	if tt.expectMet {
+		assert.Truef(t, result.success, "%s (calls: %d)", successMsg, calls)
+	}
+
+	if result.success {
+		assert.True(t, tt.expectMet)
+	}
+}
+
 // TestWaitForDoorsLocked tests the door lock confirmation logic
 func TestWaitForDoorsLocked(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name        string
-		doorStatus  []api.DoorStatus
-		expectError bool
-		expectMet   bool
-	}{
+	tests := []testDoorStatusSequence{
 		{
 			name: "all doors locked immediately",
 			doorStatus: []api.DoorStatus{
@@ -402,122 +449,105 @@ func TestWaitForDoorsLocked(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
-			var buf bytes.Buffer
-
-			// Create mock client that returns the door status sequence
-			calls := 0
-			mockClient := &mockClientForConfirm{
-				getVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
-					if calls >= len(tt.doorStatus) {
-						calls = len(tt.doorStatus) - 1
-					}
-					status := tt.doorStatus[calls]
-					calls++
-					return NewMockVehicleStatus().WithDoorStatus(status).Build(), nil
-				},
-			}
-
-			// Use shorter timeout for "never" cases to speed up tests
-			timeout := 5 * time.Second
-			if !tt.expectMet {
-				timeout = testTimeout
-			}
-
-			result := waitForDoorsLocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
-
-			if tt.expectError {
-				require.Error(t, result.err)
-			}
-
-			if !tt.expectError {
-				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
-			}
-
-			if tt.expectMet {
-				assert.Truef(t, result.success, "Expected doors to be locked but they weren't (calls: %d)", calls)
-			}
-
-			if result.success {
-				assert.True(t, tt.expectMet)
-			}
-
+			runDoorStatusTest(t, tt, waitForDoorsLocked, "Expected doors to be locked but they weren't")
 		})
+	}
+}
+
+// testBoolStatusSequence is a test helper for boolean status confirmation tests
+type testBoolStatusSequence struct {
+	name         string
+	statusValues []bool
+	expectError  bool
+	expectMet    bool
+}
+
+// runBoolStatusTest runs a boolean status test with the given mock builder and wait function
+func runBoolStatusTest(
+	t *testing.T,
+	tt testBoolStatusSequence,
+	mockBuilder func(bool) *api.EVVehicleStatusResponse,
+	waitFunc func(context.Context, io.Writer, vehicleStatusGetter, api.InternalVIN, time.Duration, time.Duration) confirmationResult,
+	successMsg string,
+) {
+	t.Helper()
+	ctx := context.Background()
+	var buf bytes.Buffer
+
+	// Create mock client that returns the status sequence
+	calls := 0
+	mockClient := &mockClientForConfirm{
+		getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
+			if calls >= len(tt.statusValues) {
+				calls = len(tt.statusValues) - 1
+			}
+			status := tt.statusValues[calls]
+			calls++
+			return mockBuilder(status), nil
+		},
+	}
+
+	// Use shorter timeout for "never" cases to speed up tests
+	timeout := 5 * time.Second
+	if !tt.expectMet {
+		timeout = testTimeout
+	}
+
+	result := waitFunc(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
+
+	if tt.expectError {
+		require.Error(t, result.err)
+	}
+
+	if !tt.expectError {
+		require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
+	}
+
+	if tt.expectMet {
+		assert.Truef(t, result.success, "%s (calls: %d)", successMsg, calls)
+	}
+
+	if result.success {
+		assert.True(t, tt.expectMet)
 	}
 }
 
 // TestWaitForEngineRunning tests the engine running confirmation logic
 func TestWaitForEngineRunning(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name        string
-		hvacStatus  []bool
-		expectError bool
-		expectMet   bool
-	}{
+	tests := []testBoolStatusSequence{
 		{
-			name:        "engine running immediately",
-			hvacStatus:  []bool{true},
-			expectError: false,
-			expectMet:   true,
+			name:         "engine running immediately",
+			statusValues: []bool{true},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:        "engine starts after one check",
-			hvacStatus:  []bool{false, true},
-			expectError: false,
-			expectMet:   true,
+			name:         "engine starts after one check",
+			statusValues: []bool{false, true},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:        "engine never starts",
-			hvacStatus:  []bool{false, false, false},
-			expectError: false,
-			expectMet:   false,
+			name:         "engine never starts",
+			statusValues: []bool{false, false, false},
+			expectError:  false,
+			expectMet:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
-			var buf bytes.Buffer
-
-			// Create mock client that returns the HVAC status sequence
-			calls := 0
-			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
-					if calls >= len(tt.hvacStatus) {
-						calls = len(tt.hvacStatus) - 1
-					}
-					hvacOn := tt.hvacStatus[calls]
-					calls++
-					return NewMockEVVehicleStatus().WithHVAC(hvacOn).Build(), nil
+			runBoolStatusTest(
+				t,
+				tt,
+				func(hvacOn bool) *api.EVVehicleStatusResponse {
+					return NewMockEVVehicleStatus().WithHVAC(hvacOn).Build()
 				},
-			}
-
-			// Use shorter timeout for "never" cases to speed up tests
-			timeout := 5 * time.Second
-			if !tt.expectMet {
-				timeout = testTimeout
-			}
-
-			result := waitForEngineRunning(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
-
-			if tt.expectError {
-				require.Error(t, result.err)
-			}
-
-			if !tt.expectError {
-				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
-			}
-
-			if tt.expectMet {
-				assert.Truef(t, result.success, "Expected engine to be running but it wasn't (calls: %d)", calls)
-			}
-
-			if result.success {
-				assert.True(t, tt.expectMet)
-			}
-
+				waitForEngineRunning,
+				"Expected engine to be running but it wasn't",
+			)
 		})
 	}
 }
@@ -525,75 +555,39 @@ func TestWaitForEngineRunning(t *testing.T) {
 // TestWaitForEngineStopped tests the engine stopped confirmation logic
 func TestWaitForEngineStopped(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name        string
-		hvacStatus  []bool
-		expectError bool
-		expectMet   bool
-	}{
+	tests := []testBoolStatusSequence{
 		{
-			name:        "engine stopped immediately",
-			hvacStatus:  []bool{false},
-			expectError: false,
-			expectMet:   true,
+			name:         "engine stopped immediately",
+			statusValues: []bool{false},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:        "engine stops after one check",
-			hvacStatus:  []bool{true, false},
-			expectError: false,
-			expectMet:   true,
+			name:         "engine stops after one check",
+			statusValues: []bool{true, false},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:        "engine never stops",
-			hvacStatus:  []bool{true, true, true},
-			expectError: false,
-			expectMet:   false,
+			name:         "engine never stops",
+			statusValues: []bool{true, true, true},
+			expectError:  false,
+			expectMet:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
-			var buf bytes.Buffer
-
-			// Create mock client that returns the HVAC status sequence
-			calls := 0
-			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
-					if calls >= len(tt.hvacStatus) {
-						calls = len(tt.hvacStatus) - 1
-					}
-					hvacOn := tt.hvacStatus[calls]
-					calls++
-					return NewMockEVVehicleStatus().WithHVAC(hvacOn).Build(), nil
+			runBoolStatusTest(
+				t,
+				tt,
+				func(hvacOn bool) *api.EVVehicleStatusResponse {
+					return NewMockEVVehicleStatus().WithHVAC(hvacOn).Build()
 				},
-			}
-
-			// Use shorter timeout for "never" cases to speed up tests
-			timeout := 5 * time.Second
-			if !tt.expectMet {
-				timeout = testTimeout
-			}
-
-			result := waitForEngineStopped(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
-
-			if tt.expectError {
-				require.Error(t, result.err)
-			}
-
-			if !tt.expectError {
-				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
-			}
-
-			if tt.expectMet {
-				assert.Truef(t, result.success, "Expected engine to be stopped but it wasn't (calls: %d)", calls)
-			}
-
-			if result.success {
-				assert.True(t, tt.expectMet)
-			}
-
+				waitForEngineStopped,
+				"Expected engine to be stopped but it wasn't",
+			)
 		})
 	}
 }
@@ -631,75 +625,39 @@ func (m *mockClientForConfirm) RefreshVehicleStatus(ctx context.Context, interna
 // TestWaitForCharging tests the charging started confirmation logic
 func TestWaitForCharging(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name           string
-		chargingStatus []bool
-		expectError    bool
-		expectMet      bool
-	}{
+	tests := []testBoolStatusSequence{
 		{
-			name:           "charging started immediately",
-			chargingStatus: []bool{true},
-			expectError:    false,
-			expectMet:      true,
+			name:         "charging started immediately",
+			statusValues: []bool{true},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:           "charging starts after one check",
-			chargingStatus: []bool{false, true},
-			expectError:    false,
-			expectMet:      true,
+			name:         "charging starts after one check",
+			statusValues: []bool{false, true},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:           "charging never starts",
-			chargingStatus: []bool{false, false, false},
-			expectError:    false,
-			expectMet:      false,
+			name:         "charging never starts",
+			statusValues: []bool{false, false, false},
+			expectError:  false,
+			expectMet:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
-			var buf bytes.Buffer
-
-			// Create mock client that returns the charging status sequence
-			calls := 0
-			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
-					if calls >= len(tt.chargingStatus) {
-						calls = len(tt.chargingStatus) - 1
-					}
-					charging := tt.chargingStatus[calls]
-					calls++
-					return NewMockEVVehicleStatus().WithCharging(charging).Build(), nil
+			runBoolStatusTest(
+				t,
+				tt,
+				func(charging bool) *api.EVVehicleStatusResponse {
+					return NewMockEVVehicleStatus().WithCharging(charging).Build()
 				},
-			}
-
-			// Use shorter timeout for "never" cases to speed up tests
-			timeout := 5 * time.Second
-			if !tt.expectMet {
-				timeout = testTimeout
-			}
-
-			result := waitForCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
-
-			if tt.expectError {
-				require.Error(t, result.err)
-			}
-
-			if !tt.expectError {
-				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
-			}
-
-			if tt.expectMet {
-				assert.Truef(t, result.success, "Expected charging to be started but it wasn't (calls: %d)", calls)
-			}
-
-			if result.success {
-				assert.True(t, tt.expectMet)
-			}
-
+				waitForCharging,
+				"Expected charging to be started but it wasn't",
+			)
 		})
 	}
 }
@@ -707,75 +665,39 @@ func TestWaitForCharging(t *testing.T) {
 // TestWaitForNotCharging tests the charging stopped confirmation logic
 func TestWaitForNotCharging(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name           string
-		chargingStatus []bool
-		expectError    bool
-		expectMet      bool
-	}{
+	tests := []testBoolStatusSequence{
 		{
-			name:           "charging stopped immediately",
-			chargingStatus: []bool{false},
-			expectError:    false,
-			expectMet:      true,
+			name:         "charging stopped immediately",
+			statusValues: []bool{false},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:           "charging stops after one check",
-			chargingStatus: []bool{true, false},
-			expectError:    false,
-			expectMet:      true,
+			name:         "charging stops after one check",
+			statusValues: []bool{true, false},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:           "charging never stops",
-			chargingStatus: []bool{true, true, true},
-			expectError:    false,
-			expectMet:      false,
+			name:         "charging never stops",
+			statusValues: []bool{true, true, true},
+			expectError:  false,
+			expectMet:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
-			var buf bytes.Buffer
-
-			// Create mock client that returns the charging status sequence
-			calls := 0
-			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
-					if calls >= len(tt.chargingStatus) {
-						calls = len(tt.chargingStatus) - 1
-					}
-					charging := tt.chargingStatus[calls]
-					calls++
-					return NewMockEVVehicleStatus().WithCharging(charging).Build(), nil
+			runBoolStatusTest(
+				t,
+				tt,
+				func(charging bool) *api.EVVehicleStatusResponse {
+					return NewMockEVVehicleStatus().WithCharging(charging).Build()
 				},
-			}
-
-			// Use shorter timeout for "never" cases to speed up tests
-			timeout := 5 * time.Second
-			if !tt.expectMet {
-				timeout = testTimeout
-			}
-
-			result := waitForNotCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
-
-			if tt.expectError {
-				require.Error(t, result.err)
-			}
-
-			if !tt.expectError {
-				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
-			}
-
-			if tt.expectMet {
-				assert.Truef(t, result.success, "Expected charging to be stopped but it wasn't (calls: %d)", calls)
-			}
-
-			if result.success {
-				assert.True(t, tt.expectMet)
-			}
-
+				waitForNotCharging,
+				"Expected charging to be stopped but it wasn't",
+			)
 		})
 	}
 }
@@ -901,75 +823,39 @@ func TestWaitForHvacOn(t *testing.T) {
 // TestWaitForHvacOff tests the HVAC off confirmation logic
 func TestWaitForHvacOff(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name        string
-		hvacStatus  []bool
-		expectError bool
-		expectMet   bool
-	}{
+	tests := []testBoolStatusSequence{
 		{
-			name:        "hvac off immediately",
-			hvacStatus:  []bool{false},
-			expectError: false,
-			expectMet:   true,
+			name:         "hvac off immediately",
+			statusValues: []bool{false},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:        "hvac turns off after one check",
-			hvacStatus:  []bool{true, false},
-			expectError: false,
-			expectMet:   true,
+			name:         "hvac turns off after one check",
+			statusValues: []bool{true, false},
+			expectError:  false,
+			expectMet:    true,
 		},
 		{
-			name:        "hvac never turns off",
-			hvacStatus:  []bool{true, true, true},
-			expectError: false,
-			expectMet:   false,
+			name:         "hvac never turns off",
+			statusValues: []bool{true, true, true},
+			expectError:  false,
+			expectMet:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
-			var buf bytes.Buffer
-
-			// Create mock client that returns the HVAC status sequence
-			calls := 0
-			mockClient := &mockClientForConfirm{
-				getEVVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.EVVehicleStatusResponse, error) {
-					if calls >= len(tt.hvacStatus) {
-						calls = len(tt.hvacStatus) - 1
-					}
-					hvacOn := tt.hvacStatus[calls]
-					calls++
-					return NewMockEVVehicleStatus().WithHVACSettings(hvacOn, 22.0, false, false).Build(), nil
+			runBoolStatusTest(
+				t,
+				tt,
+				func(hvacOn bool) *api.EVVehicleStatusResponse {
+					return NewMockEVVehicleStatus().WithHVACSettings(hvacOn, 22.0, false, false).Build()
 				},
-			}
-
-			// Use shorter timeout for "never" cases to speed up tests
-			timeout := 5 * time.Second
-			if !tt.expectMet {
-				timeout = testTimeout
-			}
-
-			result := waitForHvacOff(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
-
-			if tt.expectError {
-				require.Error(t, result.err)
-			}
-
-			if !tt.expectError {
-				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
-			}
-
-			if tt.expectMet {
-				assert.Truef(t, result.success, "Expected HVAC to be off but it wasn't (calls: %d)", calls)
-			}
-
-			if result.success {
-				assert.True(t, tt.expectMet)
-			}
-
+				waitForHvacOff,
+				"Expected HVAC to be off but it wasn't",
+			)
 		})
 	}
 }
@@ -1298,12 +1184,7 @@ func TestWaitForConditionRefreshesStatus(t *testing.T) {
 // TestWaitForDoorsUnlocked tests the door unlock confirmation logic
 func TestWaitForDoorsUnlocked(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name        string
-		doorStatus  []api.DoorStatus
-		expectError bool
-		expectMet   bool
-	}{
+	tests := []testDoorStatusSequence{
 		{
 			name: "all doors unlocked immediately",
 			doorStatus: []api.DoorStatus{
@@ -1386,46 +1267,7 @@ func TestWaitForDoorsUnlocked(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
-			var buf bytes.Buffer
-
-			// Create mock client that returns the door status sequence
-			calls := 0
-			mockClient := &mockClientForConfirm{
-				getVehicleStatusFunc: func(ctx context.Context, internalVIN api.InternalVIN) (*api.VehicleStatusResponse, error) {
-					if calls >= len(tt.doorStatus) {
-						calls = len(tt.doorStatus) - 1
-					}
-					status := tt.doorStatus[calls]
-					calls++
-					return NewMockVehicleStatus().WithDoorStatus(status).Build(), nil
-				},
-			}
-
-			// Use shorter timeout for "never" cases to speed up tests
-			timeout := 5 * time.Second
-			if !tt.expectMet {
-				timeout = testTimeout
-			}
-
-			result := waitForDoorsUnlocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, testTimeout)
-
-			if tt.expectError {
-				require.Error(t, result.err)
-			}
-
-			if !tt.expectError {
-				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
-			}
-
-			if tt.expectMet {
-				assert.Truef(t, result.success, "Expected doors to be unlocked but they weren't (calls: %d)", calls)
-			}
-
-			if result.success {
-				assert.True(t, tt.expectMet)
-			}
-
+			runDoorStatusTest(t, tt, waitForDoorsUnlocked, "Expected doors to be unlocked but they weren't")
 		})
 	}
 }

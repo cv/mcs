@@ -138,27 +138,13 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 // TestAPIRequest_EngineStartLimitError tests the engine start limit error
 func TestAPIRequest_EngineStartLimitError(t *testing.T) {
 	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]any{
-			"state":     "E",
-			"errorCode": 920000,
-			"extraCode": "400S11",
-			"message":   "Engine start limit",
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(response)
-
-	}))
+	server := setupErrorServer(t, 920000, "400S11", "Engine start limit")
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	require.NoError(t, err, "Failed to create client: %v")
+	client := setupTestClient(t)
 	client.baseURL = server.URL + "/"
-	client.Keys.EncKey = "testenckey123456"
-	client.Keys.SignKey = "testsignkey12345"
 
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
+	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
 	require.Error(t, err, "Expected engine start limit error, got nil")
 
 	assert.ErrorAs(t, err, new(*EngineStartLimitError))
@@ -345,29 +331,14 @@ func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 // TestAPIRequest_RequestInProgressRetry tests handling of request in progress error without retry
 func TestAPIRequest_RequestInProgressRetry(t *testing.T) {
 	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Always return request in progress error (should not retry this error)
-		response := map[string]any{
-			"state":     "E",
-			"errorCode": 920000,
-			"extraCode": "400S01",
-			"message":   "Request in progress",
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(response)
-
-	}))
+	server := setupErrorServer(t, 920000, "400S01", "Request in progress")
 	defer server.Close()
 
-	client, err := NewClient("test@example.com", "password", RegionMNAO)
-	require.NoError(t, err, "Failed to create client: %v")
+	client := setupTestClient(t)
 	client.baseURL = server.URL + "/"
-	client.Keys.EncKey = "testenckey123456"
-	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request - should fail immediately without retry
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected RequestInProgressError, got nil")
 
 	assert.ErrorAs(t, err, new(*RequestInProgressError))

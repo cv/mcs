@@ -35,10 +35,7 @@ func NewClimateCmd() *cobra.Command {
 
 // newClimateOnCmd creates the climate on subcommand
 func newClimateOnCmd() *cobra.Command {
-	var confirm bool
-	var confirmWait int
-
-	cmd := &cobra.Command{
+	return buildConfirmableCommand(CommandSpec{
 		Use:   "on",
 		Short: "Turn climate on",
 		Long:  `Turn the vehicle HVAC system on.`,
@@ -53,40 +50,27 @@ func newClimateOnCmd() *cobra.Command {
 
   # Turn climate on and wait up to 60 seconds for confirmation
   mcs climate on --confirm-wait 60`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
-				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
-						return client.HVACOn(ctx, string(internalVIN))
-					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForHvacOn(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
-					},
-					InitialDelay:  ConfirmationInitialDelay,
-					SuccessMsg:    "Climate turned on successfully",
-					WaitingMsg:    "Climate on command sent, waiting for confirmation...",
-					ActionName:    "turn HVAC on",
-					ConfirmName:   "HVAC status",
-					TimeoutSuffix: "confirmation timeout",
-				}
-				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
-			})
+		ConfirmFlagUsage: "wait for confirmation that climate has turned on",
+		Config: ConfirmableCommandConfig{
+			ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+				return client.HVACOn(ctx, string(internalVIN))
+			},
+			WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+				return waitForHvacOn(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
+			},
+			InitialDelay:  ConfirmationInitialDelay,
+			SuccessMsg:    "Climate turned on successfully",
+			WaitingMsg:    "Climate on command sent, waiting for confirmation...",
+			ActionName:    "turn HVAC on",
+			ConfirmName:   "HVAC status",
+			TimeoutSuffix: "confirmation timeout",
 		},
-		SilenceUsage: true,
-	}
-
-	cmd.Flags().BoolVar(&confirm, "confirm", true, "wait for confirmation that climate has turned on")
-	cmd.Flags().IntVar(&confirmWait, "confirm-wait", 90, "max seconds to wait for confirmation")
-
-	return cmd
+	})
 }
 
 // newClimateOffCmd creates the climate off subcommand
 func newClimateOffCmd() *cobra.Command {
-	var confirm bool
-	var confirmWait int
-
-	cmd := &cobra.Command{
+	return buildConfirmableCommand(CommandSpec{
 		Use:   "off",
 		Short: "Turn climate off",
 		Long:  `Turn the vehicle HVAC system off.`,
@@ -101,32 +85,22 @@ func newClimateOffCmd() *cobra.Command {
 
   # Turn climate off and wait up to 60 seconds for confirmation
   mcs climate off --confirm-wait 60`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
-				config := ConfirmableCommandConfig{
-					ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
-						return client.HVACOff(ctx, string(internalVIN))
-					},
-					WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
-						return waitForHvacOff(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
-					},
-					InitialDelay:  ConfirmationInitialDelay,
-					SuccessMsg:    "Climate turned off successfully",
-					WaitingMsg:    "Climate off command sent, waiting for confirmation...",
-					ActionName:    "turn HVAC off",
-					ConfirmName:   "HVAC status",
-					TimeoutSuffix: "confirmation timeout",
-				}
-				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)
-			})
+		ConfirmFlagUsage: "wait for confirmation that climate has turned off",
+		Config: ConfirmableCommandConfig{
+			ActionFunc: func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+				return client.HVACOff(ctx, string(internalVIN))
+			},
+			WaitFunc: func(ctx context.Context, out io.Writer, client *api.Client, internalVIN api.InternalVIN, timeout, pollInterval time.Duration) confirmationResult {
+				return waitForHvacOff(ctx, out, &clientAdapter{Client: client}, internalVIN, timeout, pollInterval)
+			},
+			InitialDelay:  ConfirmationInitialDelay,
+			SuccessMsg:    "Climate turned off successfully",
+			WaitingMsg:    "Climate off command sent, waiting for confirmation...",
+			ActionName:    "turn HVAC off",
+			ConfirmName:   "HVAC status",
+			TimeoutSuffix: "confirmation timeout",
 		},
-		SilenceUsage: true,
-	}
-
-	cmd.Flags().BoolVar(&confirm, "confirm", true, "wait for confirmation that climate has turned off")
-	cmd.Flags().IntVar(&confirmWait, "confirm-wait", 90, "max seconds to wait for confirmation")
-
-	return cmd
+	})
 }
 
 // newClimateSetCmd creates the climate set subcommand
