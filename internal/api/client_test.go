@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -465,7 +466,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 	require.Error(t, err, "Expected error due to context cancellation, got nil")
 
 	// Check if error is or contains context.Canceled
-	if err != context.Canceled {
+	if !errors.Is(err, context.Canceled) {
 		assert.Containsf(t, err.Error(), "context canceled", "Expected context.Canceled error, got: %v", err)
 	}
 

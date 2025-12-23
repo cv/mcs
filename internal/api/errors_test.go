@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,8 @@ func TestCheckResultCode_ReturnType(t *testing.T) {
 	err := checkResultCode("500E00", "test operation")
 	require.Error(t, err, "Expected error, got nil")
 
-	resultCodeErr, ok := err.(*ResultCodeError)
+	resultCodeErr := &ResultCodeError{}
+	ok := errors.As(err, &resultCodeErr)
 	require.Truef(t, ok, "Expected *ResultCodeError, got %T", err)
 
 	assert.Equalf(t, "500E00", resultCodeErr.ResultCode, "Expected ResultCode '500E00', got '%s'", resultCodeErr.ResultCode)

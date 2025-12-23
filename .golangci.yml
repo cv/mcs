@@ -2,4 +2,46 @@ version: "2"
 
 linters:
   enable:
-    - testifylint
+    # Bug finders
+    - bodyclose          # HTTP response body closure
+    - durationcheck      # Duration multiplication bugs
+    - errorlint          # Error wrapping issues
+    - noctx              # Missing context.Context usage
+
+    # Security
+    - gosec              # Security issues
+
+    # Code quality
+    - goconst            # Repeated strings that could be constants
+    - gocritic           # Bugs, performance, style issues
+    - misspell           # Typos
+    - unconvert          # Unnecessary type conversions
+    - usestdlibvars      # Use stdlib constants
+
+    # Test quality
+    - testifylint        # Testify usage
+
+  settings:
+    goconst:
+      min-occurrences: 3
+    gosec:
+      excludes:
+        - G115  # Integer overflow - checked at runtime
+        - G304  # File path from variable - paths are from config
+        - G301  # Directory permissions 0755 - standard for non-sensitive
+        - G306  # File permissions 0644 - standard for non-sensitive
+        - G401  # MD5 - required by API protocol
+        - G404  # math/rand - ok for sensor data simulation
+        - G501  # MD5 import - required by API protocol
+
+  exclusions:
+    rules:
+      # Sensor data uses append to build new slices intentionally
+      - path: internal/sensordata/
+        linters:
+          - gocritic
+        text: appendAssign
+      # Test files can have repeated strings
+      - path: _test\.go
+        linters:
+          - goconst

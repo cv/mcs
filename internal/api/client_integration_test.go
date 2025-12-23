@@ -19,14 +19,15 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 		requestCount++
 
 		var response map[string]interface{}
-		if requestCount == 1 {
+		switch {
+		case requestCount == 1:
 			// First request: return encryption error
 			response = map[string]interface{}{
 				"state":     "E",
 				"errorCode": 600001,
 				"message":   "Encryption error",
 			}
-		} else if requestCount == 2 && r.URL.Path == "/"+EndpointCheckVersion {
+		case requestCount == 2 && r.URL.Path == "/"+EndpointCheckVersion:
 			// Second request: return new keys
 			testResponse := map[string]interface{}{
 				"encKey":  "newtestenckey123",
@@ -42,7 +43,7 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 				"state":   "S",
 				"payload": encrypted,
 			}
-		} else {
+		default:
 			// Subsequent request: return success
 			testResponse := map[string]interface{}{
 				"resultCode": "200S00",

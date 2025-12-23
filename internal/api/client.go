@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -98,8 +99,9 @@ func genericRetry[T any](
 	response, err := executeFunc(ctx, method, uri, queryParams, bodyParams, needsKeys, needsAuth)
 	if err != nil {
 		// Handle retryable errors
-		switch err.(type) {
-		case *EncryptionError:
+		var encErr *EncryptionError
+		var tokenErr *TokenExpiredError
+		if errors.As(err, &encErr) {
 			// Retrieve new encryption keys and retry
 			if err := c.GetEncryptionKeys(ctx); err != nil {
 				return zero, fmt.Errorf("failed to retrieve encryption keys: %w", err)
@@ -110,7 +112,7 @@ func genericRetry[T any](
 				return zero, err
 			}
 			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
-		case *TokenExpiredError:
+		} else if errors.As(err, &tokenErr) {
 			// Login again and retry
 			if err := c.Login(ctx); err != nil {
 				return zero, fmt.Errorf("failed to login: %w", err)
@@ -121,9 +123,8 @@ func genericRetry[T any](
 				return zero, err
 			}
 			return genericRetry(ctx, c, method, uri, queryParams, bodyParams, needsKeys, needsAuth, retryCount+1, executeFunc)
-		default:
-			return zero, err
 		}
+		return zero, err
 	}
 
 	return response, nil
@@ -260,11 +261,12 @@ func (c *Client) executeAPIRequest(ctx context.Context, method, uri string, quer
 	}
 
 	// Calculate signature
-	if uri == EndpointCheckVersion {
+	switch {
+	case uri == EndpointCheckVersion:
 		headers["sign"] = c.getSignFromTimestamp(timestamp)
-	} else if method == "GET" {
+	case method == http.MethodGet:
 		headers["sign"] = c.getSignFromPayloadAndTimestamp(originalQueryStr, timestamp)
-	} else if method == "POST" {
+	case method == http.MethodPost:
 		headers["sign"] = c.getSignFromPayloadAndTimestamp(originalBodyStr, timestamp)
 	}
 

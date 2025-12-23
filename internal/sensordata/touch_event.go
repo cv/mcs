@@ -39,12 +39,13 @@ func (t *TouchEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 	nowTimestamp := time.Now().UTC()
 	timeSinceSensorCollectionStart := int(nowTimestamp.Sub(sensorCollectionStartTimestamp).Milliseconds())
 
-	if timeSinceSensorCollectionStart < 3000 {
+	switch {
+	case timeSinceSensorCollectionStart < 3000:
 		return
-	} else if timeSinceSensorCollectionStart >= 3000 && timeSinceSensorCollectionStart < 5000 {
+	case timeSinceSensorCollectionStart < 5000:
 		downTime := timeSinceSensorCollectionStart - mathrand.Intn(1000) - 1000
 		t.addTouchSequence(downTime)
-	} else if timeSinceSensorCollectionStart >= 5000 && timeSinceSensorCollectionStart < 10000 {
+	case timeSinceSensorCollectionStart < 10000:
 		for i := 0; i < 2; i++ {
 			timestampOffset := 0
 			if i == 1 {
@@ -53,7 +54,7 @@ func (t *TouchEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 			downTime := mathrand.Intn(900) + 100 + timestampOffset
 			t.addTouchSequence(downTime)
 		}
-	} else {
+	default:
 		for i := 0; i < 3; i++ {
 			timestampOffset := 0
 			if i == 0 {
