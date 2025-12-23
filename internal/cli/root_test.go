@@ -123,7 +123,7 @@ func TestExecute_WithRealSignal(t *testing.T) {
 	// Verify the signal types we're using are valid
 	signals := []os.Signal{os.Interrupt, syscall.SIGTERM}
 	for _, sig := range signals {
-		assert.NotNil(t, sig, "Signal is nil")
+		assert.NotNil(t, sig)
 	}
 }
 

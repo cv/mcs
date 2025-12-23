@@ -148,10 +148,10 @@ func TestSetColorEnabled(t *testing.T) {
 	defer SetColorEnabled(oldColorEnabled)
 
 	SetColorEnabled(true)
-	assert.True(t, IsColorEnabled(), "Expected colors to be enabled")
+	assert.True(t, IsColorEnabled())
 
 	SetColorEnabled(false)
-	assert.False(t, IsColorEnabled(), "Expected colors to be disabled")
+	assert.False(t, IsColorEnabled())
 }
 
 func TestColorPressure(t *testing.T) {

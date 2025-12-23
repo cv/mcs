@@ -285,7 +285,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
-	assert.True(t, requestReceived, "Request was not received by server")
+	assert.True(t, requestReceived)
 
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
 }
@@ -330,7 +330,7 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 	result, err := client.APIRequest(context.Background(), "GET", "test/endpoint", map[string]string{"key": "value"}, nil, false, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
-	assert.True(t, requestReceived, "Request was not received by server")
+	assert.True(t, requestReceived)
 
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
 }

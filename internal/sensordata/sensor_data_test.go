@@ -15,15 +15,11 @@ func TestNewSensorDataBuilder(t *testing.T) {
 
 	require.NotNil(t, builder, "Expected non-nil builder")
 
-	assert.NotNil(t, builder.systemInfo, "Expected systemInfo to be initialized")
-
-	assert.NotNil(t, builder.touchEventList, "Expected touchEventList to be initialized")
-
-	assert.NotNil(t, builder.keyEventList, "Expected keyEventList to be initialized")
-
-	assert.NotNil(t, builder.backgroundEventList, "Expected backgroundEventList to be initialized")
-
-	assert.NotNil(t, builder.performanceTestResults, "Expected performanceTestResults to be initialized")
+	assert.NotNil(t, builder.systemInfo)
+	assert.NotNil(t, builder.touchEventList)
+	assert.NotNil(t, builder.keyEventList)
+	assert.NotNil(t, builder.backgroundEventList)
+	assert.NotNil(t, builder.performanceTestResults)
 
 	assert.GreaterOrEqual(t, builder.deviceInfoTime, 3000)
 	assert.Less(t, builder.deviceInfoTime, 8000)

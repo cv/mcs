@@ -138,7 +138,7 @@ func TestRunRawStatus_OutputFormat(t *testing.T) {
 			require.NoError(t, err, "Expected valid JSON output, got error: %v")
 
 			// Verify expected structure exists
-			assert.NotNil(t, result["resultCode"], "Expected resultCode in JSON output")
+			assert.NotNil(t, result["resultCode"])
 		})
 	}
 }
@@ -182,7 +182,7 @@ func TestRunRawEV_OutputFormat(t *testing.T) {
 			require.NoError(t, err, "Expected valid JSON output, got error: %v")
 
 			// Verify expected structure exists
-			assert.NotNil(t, result["resultCode"], "Expected resultCode in JSON output")
+			assert.NotNil(t, result["resultCode"])
 		})
 	}
 }
@@ -271,7 +271,7 @@ func TestRunRawVehicle_OutputFormat(t *testing.T) {
 			require.NoError(t, err, "Expected valid JSON output, got error: %v")
 
 			// Verify expected structure exists
-			assert.NotNil(t, result["resultCode"], "Expected resultCode in JSON output")
+			assert.NotNil(t, result["resultCode"])
 		})
 	}
 }

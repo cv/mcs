@@ -192,6 +192,6 @@ func TestLoad_propagatesReadError(t *testing.T) {
 
 	// Load should return an error because reading the unreadable file failed
 	cfg, err := Load(configPath)
-	assert.Nil(t, cfg, "expected nil config")
+	assert.Nil(t, cfg)
 	assert.Error(t, err, "expected error when reading unreadable config file")
 }

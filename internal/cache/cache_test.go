@@ -107,7 +107,7 @@ func TestLoad_NoCache(t *testing.T) {
 	// Load without any cache file
 	cache, err := Load()
 	require.NoError(t, err, "Load() failed: %v")
-	assert.Nil(t, cache, "Load() should return nil when no cache exists")
+	assert.Nil(t, cache)
 }
 
 func TestLoad_InvalidJSON(t *testing.T) {

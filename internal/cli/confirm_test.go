@@ -177,7 +177,7 @@ func TestWaitForCondition(t *testing.T) {
 			)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -189,7 +189,7 @@ func TestWaitForCondition(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected condition to not be met but it was")
+				assert.True(t, tt.expectMet)
 			}
 
 		})
@@ -301,7 +301,7 @@ func TestPollUntilCondition(t *testing.T) {
 			result := pollUntilCondition(ctx, &buf, tt.checkFunc, tt.timeout, tt.pollInterval, "Test")
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -311,7 +311,7 @@ func TestPollUntilCondition(t *testing.T) {
 			assert.False(t, tt.expectTimeout && result.success, "Expected timeout but condition was met")
 
 			if !tt.expectTimeout && !tt.expectError {
-				assert.True(t, result.success, "Expected success but condition was not met")
+				assert.True(t, result.success)
 			}
 
 		})
@@ -418,7 +418,7 @@ func TestWaitForDoorsLocked(t *testing.T) {
 			result := waitForDoorsLocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -430,7 +430,7 @@ func TestWaitForDoorsLocked(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected doors to not be locked but they were")
+				assert.True(t, tt.expectMet)
 			}
 
 		})
@@ -492,7 +492,7 @@ func TestWaitForEngineRunning(t *testing.T) {
 			result := waitForEngineRunning(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -504,7 +504,7 @@ func TestWaitForEngineRunning(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected engine to not be running but it was")
+				assert.True(t, tt.expectMet)
 			}
 
 		})
@@ -566,7 +566,7 @@ func TestWaitForEngineStopped(t *testing.T) {
 			result := waitForEngineStopped(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -578,7 +578,7 @@ func TestWaitForEngineStopped(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected engine to not be stopped but it was")
+				assert.True(t, tt.expectMet)
 			}
 
 		})
@@ -670,7 +670,7 @@ func TestWaitForCharging(t *testing.T) {
 			result := waitForCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -682,7 +682,7 @@ func TestWaitForCharging(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected charging to not be started but it was")
+				assert.True(t, tt.expectMet)
 			}
 
 		})
@@ -744,7 +744,7 @@ func TestWaitForNotCharging(t *testing.T) {
 			result := waitForNotCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -756,7 +756,7 @@ func TestWaitForNotCharging(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected charging to not be stopped but it was")
+				assert.True(t, tt.expectMet)
 			}
 
 		})
@@ -856,7 +856,7 @@ func TestWaitForHvacOn(t *testing.T) {
 			result := waitForHvacOn(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -868,7 +868,7 @@ func TestWaitForHvacOn(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected HVAC to not be on but it was")
+				assert.True(t, tt.expectMet)
 			}
 
 			if tt.expectCalled > 0 {
@@ -934,7 +934,7 @@ func TestWaitForHvacOff(t *testing.T) {
 			result := waitForHvacOff(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -946,7 +946,7 @@ func TestWaitForHvacOff(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected HVAC to not be off but it was")
+				assert.True(t, tt.expectMet)
 			}
 
 		})
@@ -1054,7 +1054,7 @@ func TestWaitForHvacSettings(t *testing.T) {
 			)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -1066,7 +1066,7 @@ func TestWaitForHvacSettings(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected HVAC settings to not match but they did")
+				assert.True(t, tt.expectMet)
 			}
 
 		})
@@ -1212,7 +1212,7 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 			)
 
 			if tt.expectError {
-				assert.NotNil(t, err, "Expected error but got nil")
+				assert.NotNil(t, err)
 			}
 
 			if !tt.expectError {
@@ -1263,7 +1263,7 @@ func TestWaitForConditionRefreshesStatus(t *testing.T) {
 
 	assert.Equalf(t, nil, result.err, "Expected no error but got: %v", result.err)
 
-	assert.True(t, result.success, "Expected condition to be met")
+	assert.True(t, result.success)
 
 	// The critical assertion: RefreshVehicleStatus should be called exactly once before polling
 	assert.Equalf(t, 1, mockClient.refreshVehicleStatusCalls, "Expected RefreshVehicleStatus to be called exactly once, but was called %d times", mockClient.refreshVehicleStatusCalls)
@@ -1383,7 +1383,7 @@ func TestWaitForDoorsUnlocked(t *testing.T) {
 			result := waitForDoorsUnlocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err, "Expected error but got nil")
+				assert.NotNil(t, result.err)
 			}
 
 			if !tt.expectError {
@@ -1395,7 +1395,7 @@ func TestWaitForDoorsUnlocked(t *testing.T) {
 			}
 
 			if result.success {
-				assert.True(t, tt.expectMet, "Expected doors to not be unlocked but they were")
+				assert.True(t, tt.expectMet)
 			}
 
 		})
@@ -1456,7 +1456,7 @@ func TestClientAdapter(t *testing.T) {
 
 		assert.Equalf(t, nil, err, "Expected no error, got: %v", err)
 
-		assert.True(t, refreshCalled, "Expected RefreshVehicleStatus to be called")
+		assert.True(t, refreshCalled)
 	})
 
 	t.Run("GetVehicleStatus error propagation", func(t *testing.T) {

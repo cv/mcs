@@ -275,7 +275,7 @@ func TestEVVehicleStatusResponse_MissingHvacInfo(t *testing.T) {
 	require.NoError(t, err, "Failed to unmarshal: %v")
 
 	hvacInfo := resp.ResultData[0].PlusBInformation.VehicleInfo.RemoteHvacInfo
-	assert.Nil(t, hvacInfo, "Expected RemoteHvacInfo to be nil when not present")
+	assert.Nil(t, hvacInfo)
 }
 
 func TestInternalVIN_UnmarshalString(t *testing.T) {

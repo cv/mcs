@@ -192,7 +192,7 @@ func TestSaveClientCache_EmptyCredentials(t *testing.T) {
 	loadedCache, err := cache.Load()
 	require.NoError(t, err, "Failed to load cache: %v")
 
-	assert.Nil(t, loadedCache, "Expected no cache to be saved with empty credentials")
+	assert.Nil(t, loadedCache)
 }
 
 // TestSaveClientCache_PartialCredentials tests that partial credentials are not saved
@@ -216,7 +216,7 @@ func TestSaveClientCache_PartialCredentials(t *testing.T) {
 	loadedCache, err := cache.Load()
 	require.NoError(t, err, "Failed to load cache: %v")
 
-	assert.Nil(t, loadedCache, "Expected no cache to be saved with partial credentials")
+	assert.Nil(t, loadedCache)
 }
 
 // TestCreateAPIClient_EnvVarOverridesFile tests that env vars override config file
@@ -247,7 +247,7 @@ region = "MME"
 
 	// Verify: Client should be created (env values should be used)
 	// We can't directly verify the internal values, but we can verify no error
-	assert.NotNil(t, client, "Expected client to be created with env var values")
+	assert.NotNil(t, client)
 }
 
 // TestCreateAPIClient_MissingCredentials tests error when credentials are missing

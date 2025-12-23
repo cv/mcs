@@ -37,7 +37,7 @@ func TestSetupVehicleClient_Success(t *testing.T) {
 
 	require.NoError(t, err, "Expected successful setup, got error: %v")
 
-	assert.NotNil(t, client, "Expected client to be created, got nil")
+	assert.NotNil(t, client)
 
 	// Verify VehicleInfo fields are populated
 	assert.NotEqual(t, "", vehicleInfo.InternalVIN, "Expected InternalVIN to be set")
@@ -113,9 +113,9 @@ func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 
 	require.NoError(t, err, "Expected successful execution, got error: %v")
 
-	assert.True(t, callbackExecuted, "Expected callback to be executed")
+	assert.True(t, callbackExecuted)
 
-	assert.NotNil(t, receivedClient, "Expected client to be passed to callback")
+	assert.NotNil(t, receivedClient)
 
 	assert.NotEqual(t, "", receivedVIN, "Expected VIN to be passed to callback")
 }
@@ -156,7 +156,7 @@ func TestWithVehicleClient_SetupError(t *testing.T) {
 
 	require.Error(t, err, "Expected setup error to be propagated")
 
-	assert.False(t, callbackExecuted, "Expected callback not to be executed when setup fails")
+	assert.False(t, callbackExecuted)
 }
 
 // TestWithVehicleClientEx_CallbackExecuted tests extended callback execution
@@ -179,9 +179,9 @@ func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 
 	require.NoError(t, err, "Expected successful execution, got error: %v")
 
-	assert.True(t, callbackExecuted, "Expected callback to be executed")
+	assert.True(t, callbackExecuted)
 
-	assert.NotNil(t, receivedClient, "Expected client to be passed to callback")
+	assert.NotNil(t, receivedClient)
 
 	// Verify full VehicleInfo is passed
 	assert.NotEqual(t, "", receivedInfo.InternalVIN, "Expected InternalVIN to be set")
@@ -223,7 +223,7 @@ func TestWithVehicleClientEx_SetupError(t *testing.T) {
 
 	require.Error(t, err, "Expected setup error to be propagated")
 
-	assert.False(t, callbackExecuted, "Expected callback not to be executed when setup fails")
+	assert.False(t, callbackExecuted)
 }
 
 // TestVehicleInfo_StructFields tests VehicleInfo struct field types
