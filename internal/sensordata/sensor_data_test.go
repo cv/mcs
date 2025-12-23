@@ -82,10 +82,3 @@ func TestTimestampToMillis(t *testing.T) {
 	result := timestampToMillis(testTime)
 	assert.Equal(t, expectedMillis, result)
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

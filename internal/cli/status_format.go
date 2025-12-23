@@ -57,7 +57,7 @@ func buildBatteryStatusFlags(batteryInfo api.BatteryInfo) []string {
 			// Show charging time estimates
 			timeStr := formatChargeTime(batteryInfo.ChargeTimeACMin, batteryInfo.ChargeTimeQBCMin)
 			if timeStr != "" {
-				flags = append(flags, fmt.Sprintf("charging, %s", timeStr))
+				flags = append(flags, "charging, "+timeStr)
 			} else {
 				flags = append(flags, "charging")
 			}
@@ -113,7 +113,7 @@ func formatFuelStatus(fuelInfo api.FuelInfo, jsonOutput bool) (string, error) {
 // formatBatteryStatusCompact formats battery status without range (for combined view)
 func formatBatteryStatusCompact(batteryInfo api.BatteryInfo) string {
 	progressBar := ProgressBar(batteryInfo.BatteryLevel, 10)
-	status := fmt.Sprintf("BATTERY: %s", progressBar)
+	status := "BATTERY: " + progressBar
 
 	// Build status flags
 	flags := buildBatteryStatusFlags(batteryInfo)
@@ -182,7 +182,7 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, erro
 
 	// If all locked and closed, show simple message
 	if doorStatus.AllLocked {
-		return fmt.Sprintf("DOORS: %s", Green("All locked")), nil
+		return "DOORS: " + Green("All locked"), nil
 	}
 
 	// Define all door positions to check
@@ -202,12 +202,12 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, erro
 	for _, door := range doors {
 		// Check unlocked doors (closed but not locked)
 		if door.hasLock && !door.isLocked && !door.isOpen {
-			issues = append(issues, Yellow(fmt.Sprintf("%s unlocked", door.name)))
+			issues = append(issues, Yellow(door.name+" unlocked"))
 		}
 
 		// Check open doors/trunk/hood/fuel lid
 		if door.isOpen {
-			issues = append(issues, Red(fmt.Sprintf("%s open", door.name)))
+			issues = append(issues, Red(door.name+" open"))
 		}
 	}
 
@@ -215,7 +215,7 @@ func formatDoorsStatus(doorStatus api.DoorStatus, jsonOutput bool) (string, erro
 		return "DOORS: Status unknown", nil
 	}
 
-	return fmt.Sprintf("DOORS: %s", strings.Join(issues, ", ")), nil
+	return "DOORS: " + strings.Join(issues, ", "), nil
 }
 
 // formatOdometerStatus formats odometer status for display
@@ -368,7 +368,7 @@ func formatWindowsStatus(windowsInfo api.WindowStatus, jsonOutput bool) (string,
 	// If all windows are closed, show simple message
 	if windowsInfo.DriverPosition == api.WindowClosed && windowsInfo.PassengerPosition == api.WindowClosed &&
 		windowsInfo.RearLeftPosition == api.WindowClosed && windowsInfo.RearRightPosition == api.WindowClosed {
-		return fmt.Sprintf("WINDOWS: %s", Green("All closed")), nil
+		return "WINDOWS: " + Green("All closed"), nil
 	}
 
 	// Otherwise, build a list of open windows with percentages
@@ -388,8 +388,8 @@ func formatWindowsStatus(windowsInfo api.WindowStatus, jsonOutput bool) (string,
 	}
 
 	if len(openWindows) == 0 {
-		return fmt.Sprintf("WINDOWS: %s", Green("All closed")), nil
+		return "WINDOWS: " + Green("All closed"), nil
 	}
 
-	return fmt.Sprintf("WINDOWS: %s", strings.Join(openWindows, ", ")), nil
+	return "WINDOWS: " + strings.Join(openWindows, ", "), nil
 }

@@ -74,10 +74,10 @@ func Load(configPath string) (*Config, error) {
 // Validate checks if the configuration is valid
 func (c *Config) Validate() error {
 	if c.Email == "" {
-		return fmt.Errorf("email is required")
+		return errors.New("email is required")
 	}
 	if c.Password == "" {
-		return fmt.Errorf("password is required")
+		return errors.New("password is required")
 	}
 	if !c.Region.IsValid() {
 		return fmt.Errorf("invalid region: %s (must be one of: MNAO, MME, MJO)", c.Region)

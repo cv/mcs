@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -224,7 +225,7 @@ type RemoteHvacInfo struct {
 // GetInternalVIN extracts the internal VIN from the first vehicle in the response
 func (r *VecBaseInfosResponse) GetInternalVIN() (string, error) {
 	if len(r.VecBaseInfos) == 0 {
-		return "", fmt.Errorf("no vehicles found")
+		return "", errors.New("no vehicles found")
 	}
 	return string(r.VecBaseInfos[0].Vehicle.CvInformation.InternalVIN), nil
 }
@@ -232,7 +233,7 @@ func (r *VecBaseInfosResponse) GetInternalVIN() (string, error) {
 // GetVehicleInfo extracts vehicle identification info from the response
 func (r *VecBaseInfosResponse) GetVehicleInfo() (vin, nickname, modelName, modelYear string, err error) {
 	if len(r.VecBaseInfos) == 0 {
-		err = fmt.Errorf("no vehicles found")
+		err = errors.New("no vehicles found")
 		return
 	}
 	info := r.VecBaseInfos[0]
@@ -247,7 +248,7 @@ func (r *VecBaseInfosResponse) GetVehicleInfo() (vin, nickname, modelName, model
 // GetBatteryInfo extracts battery information from the EV status response
 func (r *EVVehicleStatusResponse) GetBatteryInfo() (BatteryInfo, error) {
 	if len(r.ResultData) == 0 {
-		return BatteryInfo{}, fmt.Errorf("no EV status data available")
+		return BatteryInfo{}, errors.New("no EV status data available")
 	}
 	chargeInfo := r.ResultData[0].PlusBInformation.VehicleInfo.ChargeInfo
 	return BatteryInfo{
@@ -265,11 +266,11 @@ func (r *EVVehicleStatusResponse) GetBatteryInfo() (BatteryInfo, error) {
 // GetHvacInfo extracts HVAC information from the EV status response
 func (r *EVVehicleStatusResponse) GetHvacInfo() (HVACInfo, error) {
 	if len(r.ResultData) == 0 {
-		return HVACInfo{}, fmt.Errorf("no EV status data available")
+		return HVACInfo{}, errors.New("no EV status data available")
 	}
 	hvacInfo := r.ResultData[0].PlusBInformation.VehicleInfo.RemoteHvacInfo
 	if hvacInfo == nil {
-		return HVACInfo{}, fmt.Errorf("no HVAC info available")
+		return HVACInfo{}, errors.New("no HVAC info available")
 	}
 	return HVACInfo{
 		HVACOn:         int(hvacInfo.HVAC) == HVACStatusOn,
@@ -283,7 +284,7 @@ func (r *EVVehicleStatusResponse) GetHvacInfo() (HVACInfo, error) {
 // GetOccurrenceDate returns the occurrence date from the first result
 func (r *EVVehicleStatusResponse) GetOccurrenceDate() (string, error) {
 	if len(r.ResultData) == 0 {
-		return "", fmt.Errorf("no EV status data available")
+		return "", errors.New("no EV status data available")
 	}
 	return r.ResultData[0].OccurrenceDate, nil
 }
@@ -291,7 +292,7 @@ func (r *EVVehicleStatusResponse) GetOccurrenceDate() (string, error) {
 // GetFuelInfo extracts fuel information from the vehicle status response
 func (r *VehicleStatusResponse) GetFuelInfo() (FuelInfo, error) {
 	if len(r.RemoteInfos) == 0 {
-		return FuelInfo{}, fmt.Errorf("no vehicle status data available")
+		return FuelInfo{}, errors.New("no vehicle status data available")
 	}
 	fuel := r.RemoteInfos[0].ResidualFuel
 	return FuelInfo{
@@ -303,7 +304,7 @@ func (r *VehicleStatusResponse) GetFuelInfo() (FuelInfo, error) {
 // GetTiresInfo extracts tire pressure information from the vehicle status response
 func (r *VehicleStatusResponse) GetTiresInfo() (TireInfo, error) {
 	if len(r.RemoteInfos) == 0 {
-		return TireInfo{}, fmt.Errorf("no vehicle status data available")
+		return TireInfo{}, errors.New("no vehicle status data available")
 	}
 	tpms := r.RemoteInfos[0].TPMSInformation
 	return TireInfo{
@@ -317,7 +318,7 @@ func (r *VehicleStatusResponse) GetTiresInfo() (TireInfo, error) {
 // GetLocationInfo extracts location information from the vehicle status response
 func (r *VehicleStatusResponse) GetLocationInfo() (LocationInfo, error) {
 	if len(r.AlertInfos) == 0 {
-		return LocationInfo{}, fmt.Errorf("no alert info available")
+		return LocationInfo{}, errors.New("no alert info available")
 	}
 	pos := r.AlertInfos[0].PositionInfo
 	return LocationInfo{
@@ -401,7 +402,7 @@ type HVACInfo struct {
 // GetDoorsInfo extracts door lock status from the vehicle status response
 func (r *VehicleStatusResponse) GetDoorsInfo() (status DoorStatus, err error) {
 	if len(r.AlertInfos) == 0 {
-		err = fmt.Errorf("no alert info available")
+		err = errors.New("no alert info available")
 		return
 	}
 	door := r.AlertInfos[0].Door
@@ -434,7 +435,7 @@ func (r *VehicleStatusResponse) GetDoorsInfo() (status DoorStatus, err error) {
 // GetOdometerInfo extracts odometer reading from the vehicle status response
 func (r *VehicleStatusResponse) GetOdometerInfo() (OdometerInfo, error) {
 	if len(r.RemoteInfos) == 0 {
-		return OdometerInfo{}, fmt.Errorf("no vehicle status data available")
+		return OdometerInfo{}, errors.New("no vehicle status data available")
 	}
 	return OdometerInfo{
 		OdometerKm: r.RemoteInfos[0].DriveInformation.OdoDispValue,
@@ -444,7 +445,7 @@ func (r *VehicleStatusResponse) GetOdometerInfo() (OdometerInfo, error) {
 // GetWindowsInfo extracts window position information from the vehicle status response
 func (r *VehicleStatusResponse) GetWindowsInfo() (WindowStatus, error) {
 	if len(r.AlertInfos) == 0 {
-		return WindowStatus{}, fmt.Errorf("no alert info available")
+		return WindowStatus{}, errors.New("no alert info available")
 	}
 	pw := r.AlertInfos[0].Pw
 	return WindowStatus{
@@ -458,7 +459,7 @@ func (r *VehicleStatusResponse) GetWindowsInfo() (WindowStatus, error) {
 // GetHazardInfo extracts hazard lights status from the vehicle status response
 func (r *VehicleStatusResponse) GetHazardInfo() (hazardsOn bool, err error) {
 	if len(r.AlertInfos) == 0 {
-		err = fmt.Errorf("no alert info available")
+		err = errors.New("no alert info available")
 		return
 	}
 	hazardsOn = int(r.AlertInfos[0].HazardLamp.HazardSw) == HazardLightsOn

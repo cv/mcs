@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	mathrand "math/rand"
 	"strconv"
@@ -193,7 +194,7 @@ func encryptSensorData(sensorData string) (string, error) {
 
 	rsaPubKey, ok := pubKey.(*rsa.PublicKey)
 	if !ok {
-		return "", fmt.Errorf("not an RSA public key")
+		return "", errors.New("not an RSA public key")
 	}
 
 	encryptedAESKey, err := rsa.EncryptPKCS1v15(rand.Reader, rsaPubKey, aesKey)

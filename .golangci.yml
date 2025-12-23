@@ -6,20 +6,31 @@ linters:
     - bodyclose          # HTTP response body closure
     - durationcheck      # Duration multiplication bugs
     - errorlint          # Error wrapping issues
+    - errchkjson         # JSON encoding error checks
+    - fatcontext         # Context misuse in loops
+    - nilerr             # Returns nil even when error set
     - noctx              # Missing context.Context usage
+    - nosprintfhostport  # URL construction bugs
 
     # Security
     - gosec              # Security issues
 
     # Code quality
+    - canonicalheader    # HTTP header canonicalization
+    - dupword            # Duplicate words (typos)
     - goconst            # Repeated strings that could be constants
     - gocritic           # Bugs, performance, style issues
+    - mirror             # bytes/strings usage patterns
     - misspell           # Typos
+    - perfsprint         # Faster alternatives to fmt.Sprintf
+    - predeclared        # Shadowing predeclared identifiers
     - unconvert          # Unnecessary type conversions
     - usestdlibvars      # Use stdlib constants
+    - wastedassign       # Wasted assignments
 
     # Test quality
     - testifylint        # Testify usage
+    - thelper            # Test helper best practices
 
   settings:
     goconst:

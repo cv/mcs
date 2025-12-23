@@ -3,6 +3,7 @@ package crypto
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"errors"
 	"fmt"
 )
 
@@ -20,18 +21,18 @@ func PKCS7Pad(data []byte, blockSize int) []byte {
 func PKCS7Unpad(data []byte) ([]byte, error) {
 	length := len(data)
 	if length == 0 {
-		return nil, fmt.Errorf("invalid padding: empty data")
+		return nil, errors.New("invalid padding: empty data")
 	}
 
 	padding := int(data[length-1])
 	if padding > length || padding > aes.BlockSize {
-		return nil, fmt.Errorf("invalid padding size")
+		return nil, errors.New("invalid padding size")
 	}
 
 	// Verify all padding bytes are correct
 	for i := 0; i < padding; i++ {
 		if data[length-1-i] != byte(padding) {
-			return nil, fmt.Errorf("invalid padding bytes")
+			return nil, errors.New("invalid padding bytes")
 		}
 	}
 
@@ -63,7 +64,7 @@ func DecryptAES128CBC(encrypted, key, iv []byte) ([]byte, error) {
 	}
 
 	if len(encrypted)%aes.BlockSize != 0 {
-		return nil, fmt.Errorf("ciphertext is not a multiple of block size")
+		return nil, errors.New("ciphertext is not a multiple of block size")
 	}
 
 	plaintext := make([]byte, len(encrypted))

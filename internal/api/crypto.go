@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -50,7 +51,7 @@ func EncryptRSA(data, publicKeyBase64 string) ([]byte, error) {
 
 	rsaPubKey, ok := pubKey.(*rsa.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("not an RSA public key")
+		return nil, errors.New("not an RSA public key")
 	}
 
 	// Encrypt using PKCS1v15

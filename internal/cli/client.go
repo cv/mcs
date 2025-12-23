@@ -28,13 +28,8 @@ func createAPIClient(ctx context.Context) (*api.Client, error) {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}
 
-	// Try to load cached credentials
-	cachedCreds, err := cache.Load()
-	if err != nil {
-		// If cache load fails, just continue without it
-		// The client will authenticate normally
-		return client, nil
-	}
+	// Try to load cached credentials (ignore errors - client will authenticate normally)
+	cachedCreds, _ := cache.Load()
 
 	// If we have valid cached credentials, use them
 	if cachedCreds != nil && cachedCreds.IsValid() {

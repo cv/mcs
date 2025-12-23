@@ -145,7 +145,7 @@ func handleAPIResponse(response *APIBaseResponse) (string, error) {
 	if response.State == "S" {
 		// Success - return encrypted payload for caller to decrypt
 		if response.Payload == "" {
-			return "", fmt.Errorf("payload not found in response")
+			return "", errors.New("payload not found in response")
 		}
 
 		return response.Payload, nil
@@ -168,10 +168,10 @@ func handleAPIResponse(response *APIBaseResponse) (string, error) {
 
 	// Generic error
 	if response.Message != "" {
-		return "", NewAPIError(fmt.Sprintf("Request failed: %s", response.Message))
+		return "", NewAPIError("Request failed: " + response.Message)
 	}
 	if response.Error != "" {
-		return "", NewAPIError(fmt.Sprintf("Request failed: %s", response.Error))
+		return "", NewAPIError("Request failed: " + response.Error)
 	}
 
 	return "", NewAPIError("Request failed for an unknown reason")

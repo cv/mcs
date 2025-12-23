@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -230,7 +231,7 @@ func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 	}
 
 	if response.Payload == "" {
-		return fmt.Errorf("payload not found in response")
+		return errors.New("payload not found in response")
 	}
 
 	decrypted, err := c.decryptCheckVersionPayload(response.Payload)
@@ -280,7 +281,7 @@ func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, err
 	}
 
 	if response.Data.PublicKey == "" {
-		return "", "", fmt.Errorf("public key not found in response")
+		return "", "", errors.New("public key not found in response")
 	}
 
 	return response.Data.PublicKey, response.Data.VersionPrefix, nil
@@ -344,17 +345,17 @@ func (c *Client) Login(ctx context.Context) error {
 	}
 
 	if response.Status == "INVALID_CREDENTIAL" {
-		return fmt.Errorf("invalid email or password")
+		return errors.New("invalid email or password")
 	}
 	if response.Status == "USER_LOCKED" {
-		return fmt.Errorf("account is locked")
+		return errors.New("account is locked")
 	}
 	if response.Status != "OK" {
 		return fmt.Errorf("login failed with status: %s", response.Status)
 	}
 
 	if response.Data.AccessToken == "" {
-		return fmt.Errorf("access token not found in response")
+		return errors.New("access token not found in response")
 	}
 
 	c.accessToken = response.Data.AccessToken

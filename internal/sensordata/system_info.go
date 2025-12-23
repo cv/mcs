@@ -186,7 +186,7 @@ func percentEncode(str string) string {
 		if b >= 33 && b <= 0x7E && b != 34 && b != 37 && b != 39 && b != 44 && b != 92 {
 			sb.WriteByte(b)
 		} else {
-			sb.WriteString("%" + strings.ToUpper(fmt.Sprintf("%x", b)))
+			sb.WriteString("%" + strings.ToUpper(strconv.FormatUint(uint64(b), 16)))
 		}
 	}
 	return sb.String()

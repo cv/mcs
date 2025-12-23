@@ -19,11 +19,11 @@ func TestAPIRequest_Success(t *testing.T) {
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify headers
-		assert.NotEmpty(t, r.Header.Get("device-id"), "device-id header is missing")
-		assert.NotEmpty(t, r.Header.Get("app-code"), "app-code header is missing")
-		assert.Equal(t, UserAgentBaseAPI, r.Header.Get("user-agent"))
-		assert.NotEmpty(t, r.Header.Get("sign"), "sign header is missing")
-		assert.NotEmpty(t, r.Header.Get("timestamp"), "timestamp header is missing")
+		assert.NotEmpty(t, r.Header.Get("Device-Id"), "device-id header is missing")
+		assert.NotEmpty(t, r.Header.Get("App-Code"), "app-code header is missing")
+		assert.Equal(t, UserAgentBaseAPI, r.Header.Get("User-Agent"))
+		assert.NotEmpty(t, r.Header.Get("Sign"), "sign header is missing")
+		assert.NotEmpty(t, r.Header.Get("Timestamp"), "timestamp header is missing")
 
 		// Return success response with encrypted payload
 		// Encrypt a simple JSON response
@@ -249,7 +249,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 		assert.Equalf(t, "POST", r.Method, "Expected POST method, got %s", r.Method)
 
 		// Verify sign header is present
-		assert.NotEmpty(t, r.Header.Get("sign"), "sign header is missing")
+		assert.NotEmpty(t, r.Header.Get("Sign"), "sign header is missing")
 
 		// Return encrypted success response
 		testResponse := map[string]interface{}{

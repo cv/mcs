@@ -36,6 +36,7 @@ func TestUninstallSkill(t *testing.T) {
 		{
 			name: "removes existing directory",
 			setupFunc: func(t *testing.T, tempDir string) {
+				t.Helper()
 				// Create the directory structure
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
@@ -45,13 +46,13 @@ func TestUninstallSkill(t *testing.T) {
 				testFile := filepath.Join(skillPath, "test.txt")
 				err = os.WriteFile(testFile, []byte("test"), 0644)
 				require.NoError(t, err, "Failed to create test file: %v")
-
 			},
 			wantErr: false,
 		},
 		{
 			name: "handles non-existent directory gracefully",
 			setupFunc: func(t *testing.T, tempDir string) {
+				t.Helper()
 				// Don't create anything - directory doesn't exist
 			},
 			wantErr: false,
@@ -218,6 +219,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 		{
 			name: "removes existing installation",
 			setupFunc: func(t *testing.T, tempDir string) {
+				t.Helper()
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
@@ -225,13 +227,13 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 				testFile := filepath.Join(skillPath, "test.txt")
 				err = os.WriteFile(testFile, []byte("test"), 0644)
 				require.NoError(t, err, "Failed to create test file: %v")
-
 			},
 			expectedOutput: "Skill uninstalled from ",
 		},
 		{
 			name: "handles non-existent installation",
 			setupFunc: func(t *testing.T, tempDir string) {
+				t.Helper()
 				// Don't create anything
 			},
 			expectedOutput: "Skill not installed at ",
@@ -395,6 +397,7 @@ func TestCheckSkillVersion(t *testing.T) {
 		{
 			name: "returns SkillNotInstalled when skill directory does not exist",
 			setupFunc: func(t *testing.T, tempDir string) {
+				t.Helper()
 				// Don't create anything
 			},
 			expectedStatus:  SkillNotInstalled,
@@ -403,6 +406,7 @@ func TestCheckSkillVersion(t *testing.T) {
 		{
 			name: "returns SkillVersionUnknown when skill exists without version file",
 			setupFunc: func(t *testing.T, tempDir string) {
+				t.Helper()
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
@@ -418,6 +422,7 @@ func TestCheckSkillVersion(t *testing.T) {
 		{
 			name: "returns SkillVersionMatch when versions match",
 			setupFunc: func(t *testing.T, tempDir string) {
+				t.Helper()
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
@@ -425,7 +430,6 @@ func TestCheckSkillVersion(t *testing.T) {
 				versionPath := filepath.Join(skillPath, ".mcs-version")
 				err = os.WriteFile(versionPath, []byte(Version), 0644)
 				require.NoError(t, err, "Failed to create version file: %v")
-
 			},
 			expectedStatus:  SkillVersionMatch,
 			expectedVersion: Version,
@@ -433,6 +437,7 @@ func TestCheckSkillVersion(t *testing.T) {
 		{
 			name: "returns SkillVersionMismatch when versions differ",
 			setupFunc: func(t *testing.T, tempDir string) {
+				t.Helper()
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
@@ -440,7 +445,6 @@ func TestCheckSkillVersion(t *testing.T) {
 				versionPath := filepath.Join(skillPath, ".mcs-version")
 				err = os.WriteFile(versionPath, []byte("1.0.0"), 0644)
 				require.NoError(t, err, "Failed to create version file: %v")
-
 			},
 			expectedStatus:  SkillVersionMismatch,
 			expectedVersion: "1.0.0",
@@ -448,6 +452,7 @@ func TestCheckSkillVersion(t *testing.T) {
 		{
 			name: "handles version file with whitespace",
 			setupFunc: func(t *testing.T, tempDir string) {
+				t.Helper()
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
@@ -456,7 +461,6 @@ func TestCheckSkillVersion(t *testing.T) {
 				// Write version with trailing newline
 				err = os.WriteFile(versionPath, []byte(Version+"\n"), 0644)
 				require.NoError(t, err, "Failed to create version file: %v")
-
 			},
 			expectedStatus:  SkillVersionMatch,
 			expectedVersion: Version,

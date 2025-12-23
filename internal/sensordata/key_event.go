@@ -53,7 +53,7 @@ func (k *KeyEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 	idCharCodeSum := mathrand.Intn(2) + 517
 
 	for i := 0; i < eventCount; i++ {
-		eventTime := 0
+		var eventTime int
 		if i == 0 {
 			eventTime = mathrand.Intn(3000) + 5000
 		} else {

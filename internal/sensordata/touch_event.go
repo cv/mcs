@@ -56,7 +56,7 @@ func (t *TouchEventList) Randomize(sensorCollectionStartTimestamp time.Time) {
 		}
 	default:
 		for i := 0; i < 3; i++ {
-			timestampOffset := 0
+			var timestampOffset int
 			if i == 0 {
 				timestampOffset = timeSinceSensorCollectionStart - 9000
 			} else {

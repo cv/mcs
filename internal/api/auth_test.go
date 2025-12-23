@@ -28,7 +28,7 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 		assert.Equalf(t, "POST", r.Method, "Expected POST method, got %s", r.Method)
 
 		// Verify headers
-		assert.NotEmpty(t, r.Header.Get("app-code"), "Expected app-code header")
+		assert.NotEmpty(t, r.Header.Get("App-Code"), "Expected app-code header")
 
 		// Mock response - encrypt a simple JSON payload
 		response := map[string]interface{}{
