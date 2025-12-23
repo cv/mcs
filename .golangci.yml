@@ -74,12 +74,6 @@ linters:
       - path: _test\.go
         linters:
           - goconst
-      # TODO(mcs-e0yb): Temporarily exclude new linters until refactored
-      # Cyclomatic complexity - excluded paths that still need refactoring
-      - path: (cmd/|internal/cache/|internal/config/|internal/crypto/|internal/sensordata/)
-        linters:
-          - cyclop
-
       # Global variables - justified exclusions:
       # 1. Read-only lookup tables (RegionConfigs, screenSizes, androidVersionToSDK)
       - path: internal/api/auth\.go
