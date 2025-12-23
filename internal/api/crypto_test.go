@@ -44,7 +44,7 @@ func TestEncryptAES128CBC(t *testing.T) {
 			if !tt.wantErr {
 				// Should return base64 encoded string
 				_, err := base64.StdEncoding.DecodeString(encrypted)
-				assert.EqualValuesf(t, nil, err, "EncryptAES128CBC() returned invalid base64: %v", err)
+				require.NoErrorf(t, err, "EncryptAES128CBC() returned invalid base64: %v", err)
 			}
 		})
 	}
@@ -83,7 +83,7 @@ func TestGenerateUUIDFromSeed(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := GenerateUUIDFromSeed(tt.seed)
-			assert.EqualValuesf(t, tt.want, got, "GenerateUUIDFromSeed() = %v, want %v")
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -106,7 +106,7 @@ func TestGenerateUsherDeviceID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := GenerateUsherDeviceID(tt.seed)
-			assert.EqualValuesf(t, tt.want, got, "GenerateUsherDeviceID() = %v, want %v")
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -161,7 +161,7 @@ func TestSignWithMD5(t *testing.T) {
 	assert.Lenf(t, signature, 32, "SignWithMD5() returned wrong length = %d, want 32", len(signature))
 
 	// Should be uppercase
-	assert.EqualValuesf(t, "EB733A00C0C9D336E65691A37AB54293", signature, "SignWithMD5() = %s, want EB733A00C0C9D336E65691A37AB54293", signature)
+	assert.Equalf(t, "EB733A00C0C9D336E65691A37AB54293", signature, "SignWithMD5() = %s, want EB733A00C0C9D336E65691A37AB54293", signature)
 }
 
 func TestSignWithSHA256(t *testing.T) {
@@ -172,5 +172,5 @@ func TestSignWithSHA256(t *testing.T) {
 	assert.Lenf(t, signature, 64, "SignWithSHA256() returned wrong length = %d, want 64", len(signature))
 
 	// Should be uppercase
-	assert.EqualValuesf(t, "916F0027A575074CE72A331777C3478D6513F786A591BD892DA1A577BF2335F9", signature, "SignWithSHA256() = %s, want 916F0027A575074CE72A331777C3478D6513F786A591BD892DA1A577BF2335F9", signature)
+	assert.Equalf(t, "916F0027A575074CE72A331777C3478D6513F786A591BD892DA1A577BF2335F9", signature, "SignWithSHA256() = %s, want 916F0027A575074CE72A331777C3478D6513F786A591BD892DA1A577BF2335F9", signature)
 }

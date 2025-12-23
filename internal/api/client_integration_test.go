@@ -58,8 +58,7 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -79,7 +78,7 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
 
 	// Verify that retry occurred (3 requests: error, get keys, retry)
-	assert.EqualValuesf(t, 3, requestCount, "Expected 3 requests (error + get keys + retry), got %d", requestCount)
+	assert.Equalf(t, 3, requestCount, "Expected 3 requests (error + get keys + retry), got %d", requestCount)
 }
 
 // TestAPIRequest_MaxRetries tests that max retries is enforced
@@ -113,8 +112,7 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -145,8 +143,7 @@ func TestAPIRequest_EngineStartLimitError(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -160,14 +157,14 @@ func TestAPIRequest_EngineStartLimitError(t *testing.T) {
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, true, false)
 	require.Error(t, err, "Expected engine start limit error, got nil")
 
-	assert.IsType(t, (*EngineStartLimitError)(nil), err)
+	assert.ErrorAs(t, err, new(*EngineStartLimitError))
 }
 
 // TestAPIRequest_WithQueryParams tests GET request with query parameters
 func TestAPIRequest_WithQueryParams(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify params query parameter is present
-		assert.NotEqual(t, "", r.URL.Query().Get("params"), "Expected params query parameter to be present")
+		assert.NotEmpty(t, r.URL.Query().Get("params"), "Expected params query parameter to be present")
 
 		testResponse := map[string]interface{}{
 			"resultCode": "200S00",
@@ -182,8 +179,7 @@ func TestAPIRequest_WithQueryParams(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -222,7 +218,7 @@ func TestEncryptPayloadUsingKey_MissingKey(t *testing.T) {
 	_, err = client.encryptPayloadUsingKey("test data")
 	require.Error(t, err, "Expected error when encryption key is missing, got nil")
 
-	assert.IsType(t, (*APIError)(nil), err)
+	assert.ErrorAs(t, err, new(*APIError))
 }
 
 // TestDecryptPayloadUsingKey_MissingKey tests error when decryption key is missing
@@ -234,7 +230,7 @@ func TestDecryptPayloadUsingKey_MissingKey(t *testing.T) {
 	_, err = client.decryptPayloadUsingKey("test data")
 	require.Error(t, err, "Expected error when decryption key is missing, got nil")
 
-	assert.IsType(t, (*APIError)(nil), err)
+	assert.ErrorAs(t, err, new(*APIError))
 }
 
 // TestAPIRequest_TokenExpiredRetry tests that expired token triggers re-authentication
@@ -274,7 +270,7 @@ func TestAPIRequest_ContextCancellation(t *testing.T) {
 	_, err = client.APIRequest(ctx, "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error due to context cancellation, got nil")
 
-	assert.EqualValuesf(t, context.Canceled, err, "Expected context.Canceled error, got: %v", err)
+	assert.Equalf(t, context.Canceled, err, "Expected context.Canceled error, got: %v", err)
 }
 
 // TestAPIRequest_ComplexDataTypes tests request/response with various data types
@@ -300,8 +296,7 @@ func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -320,11 +315,11 @@ func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 	assert.EqualValuesf(t, "test string", result["stringValue"], "Expected stringValue 'test string', got %v", result["stringValue"])
 
 	// JSON numbers are float64
-	assert.EqualValuesf(t, float64(42), result["intValue"], "Expected intValue 42, got %v", result["intValue"])
+	assert.InDelta(t, float64(42), result["intValue"], 0.0001)
 
 	assert.EqualValuesf(t, true, result["boolValue"], "Expected boolValue true, got %v", result["boolValue"])
 
-	assert.EqualValuesf(t, nil, result["nullValue"], "Expected nullValue nil, got %v", result["nullValue"])
+	assert.Nilf(t, result["nullValue"], "Expected nullValue nil, got %v", result["nullValue"])
 
 	arrayValue, ok := getSlice(result, "arrayValue")
 	assert.Truef(t, ok, "Expected arrayValue to be []interface{}, got %T", result["arrayValue"])
@@ -347,8 +342,7 @@ func TestAPIRequest_RequestInProgressRetry(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -363,7 +357,7 @@ func TestAPIRequest_RequestInProgressRetry(t *testing.T) {
 	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]interface{}{"test": "data"}, false, false)
 	require.Error(t, err, "Expected RequestInProgressError, got nil")
 
-	assert.IsType(t, (*RequestInProgressError)(nil), err)
+	assert.ErrorAs(t, err, new(*RequestInProgressError))
 }
 
 // TestAPIRequestJSON_FullFlow tests the JSON request flow (returns raw bytes instead of parsed map)
@@ -382,8 +376,7 @@ func TestAPIRequestJSON_FullFlow(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()

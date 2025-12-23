@@ -70,19 +70,19 @@ func TestCheckResultCode_ReturnType(t *testing.T) {
 	resultCodeErr, ok := err.(*ResultCodeError)
 	require.Truef(t, ok, "Expected *ResultCodeError, got %T", err)
 
-	assert.EqualValuesf(t, "500E00", resultCodeErr.ResultCode, "Expected ResultCode '500E00', got '%s'", resultCodeErr.ResultCode)
+	assert.Equalf(t, "500E00", resultCodeErr.ResultCode, "Expected ResultCode '500E00', got '%s'", resultCodeErr.ResultCode)
 
-	assert.EqualValuesf(t, "test operation", resultCodeErr.Operation, "Expected Operation 'test operation', got '%s'", resultCodeErr.Operation)
+	assert.Equalf(t, "test operation", resultCodeErr.Operation, "Expected Operation 'test operation', got '%s'", resultCodeErr.Operation)
 }
 
 // TestNewResultCodeError tests the ResultCodeError constructor
 func TestNewResultCodeError(t *testing.T) {
 	err := NewResultCodeError("400E01", "unlock doors")
 
-	assert.EqualValuesf(t, "400E01", err.ResultCode, "Expected ResultCode '400E01', got '%s'", err.ResultCode)
+	assert.Equalf(t, "400E01", err.ResultCode, "Expected ResultCode '400E01', got '%s'", err.ResultCode)
 
-	assert.EqualValuesf(t, "unlock doors", err.Operation, "Expected Operation 'unlock doors', got '%s'", err.Operation)
+	assert.Equalf(t, "unlock doors", err.Operation, "Expected Operation 'unlock doors', got '%s'", err.Operation)
 
 	expectedMsg := "failed to unlock doors: result code 400E01"
-	assert.EqualValuesf(t, expectedMsg, err.Error(), "Expected error message '%s', got '%s'")
+	assert.Equal(t, expectedMsg, err.Error())
 }

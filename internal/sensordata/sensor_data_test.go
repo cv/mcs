@@ -31,7 +31,7 @@ func TestSensorDataBuilder_GenerateSensorData(t *testing.T) {
 	result, err := builder.GenerateSensorData()
 	require.NoError(t, err, "GenerateSensorData() error = %v")
 
-	assert.NotEqual(t, "", result, "Expected non-empty sensor data")
+	assert.NotEmpty(t, result, "Expected non-empty sensor data")
 
 	// Check format: should start with "1,a,"
 	assert.Truef(t, strings.HasPrefix(result, "1,a,"), "Expected result to start with '1,a,', got prefix: %s", result[:min(10, len(result))])
@@ -67,7 +67,7 @@ func TestFeistelCipher(t *testing.T) {
 	result1 := feistelCipher(100, 50, 12345)
 	result2 := feistelCipher(100, 50, 12345)
 
-	assert.Equalf(t, result2, result1, "feistelCipher should be deterministic: got %d and %d")
+	assert.Equal(t, result2, result1)
 
 	// Test that different inputs produce different outputs
 	result3 := feistelCipher(200, 50, 12345)
@@ -80,7 +80,7 @@ func TestTimestampToMillis(t *testing.T) {
 	expectedMillis := testTime.UnixMilli()
 
 	result := timestampToMillis(testTime)
-	assert.Equalf(t, expectedMillis, result, "timestampToMillis() = %d, want %d")
+	assert.Equal(t, expectedMillis, result)
 }
 
 func min(a, b int) int {

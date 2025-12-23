@@ -55,5 +55,5 @@ func TestPerformanceTestResults_ToString(t *testing.T) {
 	assert.Lenf(t, parts, 9, "Expected 9 comma-separated values, got %d", len(parts))
 
 	expected := "16,500,59,1000,100,800,75000,750,10000"
-	assert.Equalf(t, expected, result, "ToString() = %q, want %q")
+	assert.Equal(t, expected, result)
 }

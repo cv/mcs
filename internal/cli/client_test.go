@@ -40,7 +40,7 @@ func TestSetupVehicleClient_Success(t *testing.T) {
 	assert.NotNil(t, client)
 
 	// Verify VehicleInfo fields are populated
-	assert.NotEqual(t, "", vehicleInfo.InternalVIN, "Expected InternalVIN to be set")
+	assert.NotEmpty(t, vehicleInfo.InternalVIN, "Expected InternalVIN to be set")
 }
 
 // TestSetupVehicleClient_ConfigError tests error handling when config is invalid
@@ -90,7 +90,7 @@ func TestSetupVehicleClient_ContextCancellation(t *testing.T) {
 	_, _, err := setupVehicleClient(ctx)
 
 	// Should return an error (either context cancelled or connection error)
-	assert.Error(t, err, "Expected error with cancelled context, got nil")
+	require.Error(t, err, "Expected error with cancelled context, got nil")
 }
 
 // TestWithVehicleClient_CallbackExecuted tests that callback is executed with client
@@ -117,7 +117,7 @@ func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 
 	assert.NotNil(t, receivedClient)
 
-	assert.NotEqual(t, "", receivedVIN, "Expected VIN to be passed to callback")
+	assert.NotEmpty(t, receivedVIN, "Expected VIN to be passed to callback")
 }
 
 // TestWithVehicleClient_CallbackError tests that callback errors are propagated
@@ -184,7 +184,7 @@ func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 	assert.NotNil(t, receivedClient)
 
 	// Verify full VehicleInfo is passed
-	assert.NotEqual(t, "", receivedInfo.InternalVIN, "Expected InternalVIN to be set")
+	assert.NotEmpty(t, receivedInfo.InternalVIN, "Expected InternalVIN to be set")
 }
 
 // TestWithVehicleClientEx_CallbackError tests error propagation

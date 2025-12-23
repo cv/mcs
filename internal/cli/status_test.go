@@ -38,7 +38,7 @@ func TestStatusCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := NewStatusCmd()
 
-			assert.Equalf(t, tt.expectedUse, cmd.Use, "Expected Use to be '%s', got '%s'")
+			assert.Equal(t, tt.expectedUse, cmd.Use)
 
 			assert.False(t, tt.checkShortSet && cmd.Short == "", "Expected Short description to be set")
 		})
@@ -54,7 +54,7 @@ func TestStatusCommand_NoSubcommand(t *testing.T) {
 	// We need to inject a mock client - this will be handled in the actual implementation
 	// For now, we test that the command structure is correct
 	err := cmd.ValidateArgs([]string{})
-	assert.NoErrorf(t, err, "Status command should accept no arguments: %v", err)
+	require.NoErrorf(t, err, "Status command should accept no arguments: %v", err)
 
 }
 
@@ -69,7 +69,7 @@ func TestStatusCommand_Subcommands(t *testing.T) {
 
 			require.NotNilf(t, subCmd, "Expected %s subcommand to exist", name)
 
-			assert.NotEqualf(t, "", subCmd.Short, "Expected %s subcommand to have a description", name)
+			assert.NotEmptyf(t, subCmd.Short, "Expected %s subcommand to have a description", name)
 		})
 	}
 }
@@ -185,7 +185,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 			}
 			result, err := formatBatteryStatus(batteryInfo, false)
 			require.NoError(t, err, "Unexpected error: %v")
-			assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
+			assert.Equal(t, tt.expectedOutput, result)
 		})
 	}
 }
@@ -302,7 +302,7 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 			}
 			result, err := formatBatteryStatus(batteryInfo, false)
 			require.NoError(t, err, "Unexpected error: %v")
-			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -351,7 +351,7 @@ func TestFormatFuelStatus(t *testing.T) {
 					assertMapValue(t, data, key, expected)
 				}
 			} else {
-				assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
+				assert.Equal(t, tt.expectedOutput, result)
 			}
 		})
 	}
@@ -438,7 +438,7 @@ func TestFormatDoorsStatus(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := formatDoorsStatus(tt.doorStatus, false)
 			require.NoError(t, err, "Unexpected error: %v")
-			assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
+			assert.Equal(t, tt.expectedOutput, result)
 		})
 	}
 }
@@ -561,7 +561,7 @@ func TestGetInternalVIN(t *testing.T) {
 				require.Error(t, err, "Expected error, got nil")
 			} else {
 				require.NoError(t, err, "Expected no error, got: %v")
-				assert.Equalf(t, tt.expectedVIN, vin, "Expected VIN '%s', got '%s'")
+				assert.Equal(t, tt.expectedVIN, vin)
 			}
 		})
 	}
@@ -660,7 +660,7 @@ func TestFormatHvacStatus(t *testing.T) {
 			}
 			result, err := formatHvacStatus(hvacInfo, false)
 			require.NoError(t, err, "Unexpected error: %v")
-			assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
+			assert.Equal(t, tt.expectedOutput, result)
 		})
 	}
 }
@@ -773,11 +773,11 @@ func TestGetHvacInfo(t *testing.T) {
 				require.Error(t, err, "Expected error, got nil")
 			} else {
 				require.NoError(t, err, "Unexpected error: %v")
-				assert.Equalf(t, tt.expectedHVACOn, hvacInfo.HVACOn, "Expected HVACOn to be %v, got %v")
-				assert.Equalf(t, tt.expectedFrontDefr, hvacInfo.FrontDefroster, "Expected FrontDefroster to be %v, got %v")
-				assert.Equalf(t, tt.expectedRearDefr, hvacInfo.RearDefroster, "Expected RearDefroster to be %v, got %v")
-				assert.Equalf(t, tt.expectedInteriorC, hvacInfo.InteriorTempC, "Expected InteriorTempC %v, got %v")
-				assert.Equalf(t, tt.expectedTargetC, hvacInfo.TargetTempC, "Expected TargetTempC %v, got %v")
+				assert.Equal(t, tt.expectedHVACOn, hvacInfo.HVACOn)
+				assert.Equal(t, tt.expectedFrontDefr, hvacInfo.FrontDefroster)
+				assert.Equal(t, tt.expectedRearDefr, hvacInfo.RearDefroster)
+				assert.InDelta(t, tt.expectedInteriorC, hvacInfo.InteriorTempC, 0.0001)
+				assert.InDelta(t, tt.expectedTargetC, hvacInfo.TargetTempC, 0.0001)
 			}
 		})
 	}
@@ -867,7 +867,7 @@ func TestFormatOdometerStatus(t *testing.T) {
 			odometerInfo := api.OdometerInfo{OdometerKm: tt.odometerKm}
 			result, err := formatOdometerStatus(odometerInfo, false)
 			require.NoError(t, err, "Unexpected error: %v")
-			assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
+			assert.Equal(t, tt.expectedOutput, result)
 		})
 	}
 }
@@ -930,7 +930,7 @@ func TestGetOdometerInfo(t *testing.T) {
 			odometerInfo, err := tt.response.GetOdometerInfo()
 			require.NoError(t, err, "Expected no error, got: %v")
 
-			assert.Equalf(t, tt.expectedOdometer, odometerInfo.OdometerKm, "Expected odometer %v, got %v")
+			assert.InDelta(t, tt.expectedOdometer, odometerInfo.OdometerKm, 0.0001)
 		})
 	}
 }
@@ -1026,7 +1026,7 @@ func TestFormatChargeTime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatChargeTime(tt.acMinutes, tt.qbcMinutes)
-			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -1090,7 +1090,7 @@ func TestFormatVehicleHeader(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatVehicleHeader(tt.info)
-			assert.Equalf(t, tt.expected, result, "Expected %q, got %q")
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -1204,7 +1204,7 @@ func TestFormatRelativeTime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatRelativeTime(tt.time)
-			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -1358,7 +1358,7 @@ func TestFormatWindowsStatus(t *testing.T) {
 				assertMapValue(t, data, "rear_left_position", float64(tt.windowsInfo.RearLeftPosition))
 				assertMapValue(t, data, "rear_right_position", float64(tt.windowsInfo.RearRightPosition))
 			} else if tt.expectedOutput != "" {
-				assert.Equalf(t, tt.expectedOutput, result, "Expected '%s', got '%s'")
+				assert.Equal(t, tt.expectedOutput, result)
 			}
 		})
 	}
@@ -1730,9 +1730,9 @@ func TestDisplayAllStatus_ErrorHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := displayAllStatus(tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, false)
 			if tt.expectError {
-				assert.Error(t, err, "Expected error, got nil")
+				require.Error(t, err, "Expected error, got nil")
 			} else {
-				assert.Equalf(t, nil, err, "Expected no error, got: %v", err)
+				require.NoErrorf(t, err, "Expected no error, got: %v", err)
 			}
 		})
 	}

@@ -37,7 +37,7 @@ func TestKeyEvent_ToString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.event.ToString()
-			assert.Equalf(t, tt.want, got, "KeyEvent.ToString() = %q, want %q")
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -47,7 +47,7 @@ func TestNewKeyEventList(t *testing.T) {
 
 	require.NotNil(t, list, "Expected non-nil KeyEventList")
 
-	assert.Lenf(t, list.keyEvents, 0, "Expected empty keyEvents, got %d", len(list.keyEvents))
+	assert.Emptyf(t, list.keyEvents, "Expected empty keyEvents, got %d", len(list.keyEvents))
 }
 
 func TestKeyEventList_Randomize_ShortDuration(t *testing.T) {
@@ -58,7 +58,7 @@ func TestKeyEventList_Randomize_ShortDuration(t *testing.T) {
 	list.Randomize(timestamp)
 
 	// With duration < 10000ms, should have no events
-	assert.Lenf(t, list.keyEvents, 0, "Expected 0 events for short duration, got %d", len(list.keyEvents))
+	assert.Emptyf(t, list.keyEvents, "Expected 0 events for short duration, got %d", len(list.keyEvents))
 }
 
 func TestKeyEventList_ToString(t *testing.T) {
@@ -79,7 +79,7 @@ func TestKeyEventList_ToString_Empty(t *testing.T) {
 	list := NewKeyEventList()
 	result := list.ToString()
 
-	assert.Equalf(t, "", result, "ToString() for empty list = %q, want empty string", result)
+	assert.Emptyf(t, result, "ToString() for empty list = %q, want empty string", result)
 }
 
 func TestKeyEventList_GetSum(t *testing.T) {
@@ -93,7 +93,7 @@ func TestKeyEventList_GetSum(t *testing.T) {
 	// Sum = (idCharCodeSum + time + 2) for each event
 	expected := (517 + 5000 + 2) + (518 + 30 + 2)
 
-	assert.Equalf(t, expected, sum, "GetSum() = %d, want %d")
+	assert.Equal(t, expected, sum)
 }
 
 func TestKeyEventList_GetSum_Empty(t *testing.T) {

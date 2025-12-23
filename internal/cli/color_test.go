@@ -71,7 +71,7 @@ func TestProgressBar(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ProgressBar(tt.percent, tt.width)
-			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -125,22 +125,22 @@ func TestColorize_WithColors(t *testing.T) {
 	// Test Red
 	result := Red(text)
 	expected := "\033[31mtest\033[0m"
-	assert.Equalf(t, expected, result, "Expected '%s', got '%s'")
+	assert.Equal(t, expected, result)
 
 	// Test Green
 	result = Green(text)
 	expected = "\033[32mtest\033[0m"
-	assert.Equalf(t, expected, result, "Expected '%s', got '%s'")
+	assert.Equal(t, expected, result)
 
 	// Test Yellow
 	result = Yellow(text)
 	expected = "\033[33mtest\033[0m"
-	assert.Equalf(t, expected, result, "Expected '%s', got '%s'")
+	assert.Equal(t, expected, result)
 
 	// Test Bold
 	result = Bold(text)
 	expected = "\033[1mtest\033[0m"
-	assert.Equalf(t, expected, result, "Expected '%s', got '%s'")
+	assert.Equal(t, expected, result)
 }
 
 func TestSetColorEnabled(t *testing.T) {
@@ -184,7 +184,7 @@ func TestColorPressure(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ColorPressure(tt.pressure, target)
-			assert.Equalf(t, tt.expected, result, "Expected '%s', got '%s'")
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
@@ -215,7 +215,7 @@ func TestColorPressure_WithColors(t *testing.T) {
 			result := ColorPressure(tt.pressure, target)
 			// Check it starts with expected color code
 			assert.GreaterOrEqual(t, len(result), len(tt.expectedColor))
-			assert.Equalf(t, tt.expectedColor, result[:len(tt.expectedColor)], "Expected color %q, got prefix %q")
+			assert.Equal(t, tt.expectedColor, result[:len(tt.expectedColor)])
 		})
 	}
 }

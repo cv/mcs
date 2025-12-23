@@ -177,11 +177,11 @@ func TestWaitForCondition(t *testing.T) {
 			)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -301,11 +301,11 @@ func TestPollUntilCondition(t *testing.T) {
 			result := pollUntilCondition(ctx, &buf, tt.checkFunc, tt.timeout, tt.pollInterval, "Test")
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			assert.False(t, tt.expectTimeout && result.success, "Expected timeout but condition was met")
@@ -418,11 +418,11 @@ func TestWaitForDoorsLocked(t *testing.T) {
 			result := waitForDoorsLocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -492,11 +492,11 @@ func TestWaitForEngineRunning(t *testing.T) {
 			result := waitForEngineRunning(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -566,11 +566,11 @@ func TestWaitForEngineStopped(t *testing.T) {
 			result := waitForEngineStopped(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -670,11 +670,11 @@ func TestWaitForCharging(t *testing.T) {
 			result := waitForCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -744,11 +744,11 @@ func TestWaitForNotCharging(t *testing.T) {
 			result := waitForNotCharging(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -856,11 +856,11 @@ func TestWaitForHvacOn(t *testing.T) {
 			result := waitForHvacOn(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -934,11 +934,11 @@ func TestWaitForHvacOff(t *testing.T) {
 			result := waitForHvacOff(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -1054,11 +1054,11 @@ func TestWaitForHvacSettings(t *testing.T) {
 			)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -1212,15 +1212,15 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 			)
 
 			if tt.expectError {
-				assert.NotNil(t, err)
+				require.Error(t, err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, err, "Expected no error but got: %v", err)
+				require.NoErrorf(t, err, "Expected no error but got: %v", err)
 			}
 
 			output := buf.String()
-			assert.Equalf(t, tt.expectedOutput, output, "Expected output %q but got %q")
+			assert.Equal(t, tt.expectedOutput, output)
 		})
 	}
 }
@@ -1261,7 +1261,7 @@ func TestWaitForConditionRefreshesStatus(t *testing.T) {
 		"test action",
 	)
 
-	assert.Equalf(t, nil, result.err, "Expected no error but got: %v", result.err)
+	require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 
 	assert.True(t, result.success)
 
@@ -1383,11 +1383,11 @@ func TestWaitForDoorsUnlocked(t *testing.T) {
 			result := waitForDoorsUnlocked(ctx, &buf, mockClient, api.InternalVIN("test-vin"), timeout, 50*time.Millisecond)
 
 			if tt.expectError {
-				assert.NotNil(t, result.err)
+				require.Error(t, result.err)
 			}
 
 			if !tt.expectError {
-				assert.Nilf(t, result.err, "Expected no error but got: %v", result.err)
+				require.NoErrorf(t, result.err, "Expected no error but got: %v", result.err)
 			}
 
 			if tt.expectMet {
@@ -1411,7 +1411,7 @@ func TestClientAdapter(t *testing.T) {
 		// Create a mock API client with a wrapper that intercepts the method calls
 		mockAPIClient := &mockAPIClientForAdapter{}
 		mockAPIClient.getVehicleStatusFunc = func(ctx context.Context, vin string) (*api.VehicleStatusResponse, error) {
-			assert.Equalf(t, string(testVIN), vin, "Expected VIN to be %q, got %q")
+			assert.Equal(t, string(testVIN), vin)
 			return NewMockVehicleStatus().Build(), nil
 		}
 
@@ -1422,13 +1422,13 @@ func TestClientAdapter(t *testing.T) {
 
 		require.NotNil(t, resp, "Expected response to be non-nil")
 
-		assert.Equalf(t, api.ResultCodeSuccess, resp.ResultCode, "Expected result code %q, got %q")
+		assert.Equal(t, api.ResultCodeSuccess, resp.ResultCode)
 	})
 
 	t.Run("GetEVVehicleStatus", func(t *testing.T) {
 		mockAPIClient := &mockAPIClientForAdapter{}
 		mockAPIClient.getEVVehicleStatusFunc = func(ctx context.Context, vin string) (*api.EVVehicleStatusResponse, error) {
-			assert.Equalf(t, string(testVIN), vin, "Expected VIN to be %q, got %q")
+			assert.Equal(t, string(testVIN), vin)
 			return NewMockEVVehicleStatus().Build(), nil
 		}
 
@@ -1439,14 +1439,14 @@ func TestClientAdapter(t *testing.T) {
 
 		require.NotNil(t, resp, "Expected response to be non-nil")
 
-		assert.Equalf(t, api.ResultCodeSuccess, resp.ResultCode, "Expected result code %q, got %q")
+		assert.Equal(t, api.ResultCodeSuccess, resp.ResultCode)
 	})
 
 	t.Run("RefreshVehicleStatus", func(t *testing.T) {
 		refreshCalled := false
 		mockAPIClient := &mockAPIClientForAdapter{}
 		mockAPIClient.refreshVehicleStatusFunc = func(ctx context.Context, vin string) error {
-			assert.Equalf(t, string(testVIN), vin, "Expected VIN to be %q, got %q")
+			assert.Equal(t, string(testVIN), vin)
 			refreshCalled = true
 			return nil
 		}
@@ -1454,7 +1454,7 @@ func TestClientAdapter(t *testing.T) {
 		adapter := &testClientAdapter{mockAPIClient}
 		err := adapter.RefreshVehicleStatus(ctx, testVIN)
 
-		assert.Equalf(t, nil, err, "Expected no error, got: %v", err)
+		require.NoErrorf(t, err, "Expected no error, got: %v", err)
 
 		assert.True(t, refreshCalled)
 	})
@@ -1469,7 +1469,7 @@ func TestClientAdapter(t *testing.T) {
 		adapter := &testClientAdapter{mockAPIClient}
 		_, err := adapter.GetVehicleStatus(ctx, testVIN)
 
-		assert.Equalf(t, expectedErr, err, "Expected error %v, got %v")
+		assert.Equal(t, expectedErr, err)
 	})
 
 	t.Run("GetEVVehicleStatus error propagation", func(t *testing.T) {
@@ -1482,7 +1482,7 @@ func TestClientAdapter(t *testing.T) {
 		adapter := &testClientAdapter{mockAPIClient}
 		_, err := adapter.GetEVVehicleStatus(ctx, testVIN)
 
-		assert.Equalf(t, expectedErr, err, "Expected error %v, got %v")
+		assert.Equal(t, expectedErr, err)
 	})
 
 	t.Run("RefreshVehicleStatus error propagation", func(t *testing.T) {
@@ -1495,7 +1495,7 @@ func TestClientAdapter(t *testing.T) {
 		adapter := &testClientAdapter{mockAPIClient}
 		err := adapter.RefreshVehicleStatus(ctx, testVIN)
 
-		assert.Equalf(t, expectedErr, err, "Expected error %v, got %v")
+		assert.Equal(t, expectedErr, err)
 	})
 }
 

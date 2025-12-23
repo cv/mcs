@@ -17,7 +17,7 @@ func TestBackgroundEvent_ToString(t *testing.T) {
 	result := event.ToString()
 	expected := "2,1701446400000"
 
-	assert.Equalf(t, expected, result, "BackgroundEvent.ToString() = %q, want %q")
+	assert.Equal(t, expected, result)
 }
 
 func TestNewBackgroundEventList(t *testing.T) {
@@ -25,7 +25,7 @@ func TestNewBackgroundEventList(t *testing.T) {
 
 	require.NotNil(t, list, "Expected non-nil BackgroundEventList")
 
-	assert.Lenf(t, list.backgroundEvents, 0, "Expected empty backgroundEvents, got %d", len(list.backgroundEvents))
+	assert.Emptyf(t, list.backgroundEvents, "Expected empty backgroundEvents, got %d", len(list.backgroundEvents))
 }
 
 func TestBackgroundEventList_Randomize_ShortDuration(t *testing.T) {
@@ -36,7 +36,7 @@ func TestBackgroundEventList_Randomize_ShortDuration(t *testing.T) {
 	list.Randomize(timestamp)
 
 	// With duration < 10000ms, should have no events
-	assert.Lenf(t, list.backgroundEvents, 0, "Expected 0 events for short duration, got %d", len(list.backgroundEvents))
+	assert.Emptyf(t, list.backgroundEvents, "Expected 0 events for short duration, got %d", len(list.backgroundEvents))
 }
 
 func TestBackgroundEventList_ToString(t *testing.T) {
@@ -49,12 +49,12 @@ func TestBackgroundEventList_ToString(t *testing.T) {
 	result := list.ToString()
 	expected := "2,10000003,1005000"
 
-	assert.Equalf(t, expected, result, "ToString() = %q, want %q")
+	assert.Equal(t, expected, result)
 }
 
 func TestBackgroundEventList_ToString_Empty(t *testing.T) {
 	list := NewBackgroundEventList()
 	result := list.ToString()
 
-	assert.Equalf(t, "", result, "ToString() for empty list = %q, want empty string", result)
+	assert.Emptyf(t, result, "ToString() for empty list = %q, want empty string", result)
 }

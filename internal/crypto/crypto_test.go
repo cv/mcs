@@ -38,7 +38,7 @@ func TestPKCS7Pad(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := PKCS7Pad(tt.data, tt.blockSize)
-			assert.Equalf(t, tt.wantLen, len(result), "PKCS7Pad() length = %d, want %d")
+			assert.Len(t, result, tt.wantLen)
 			assert.Equal(t, 0, len(result)%tt.blockSize, "PKCS7Pad() result not multiple of block size")
 		})
 	}
@@ -116,7 +116,7 @@ func TestEncryptAES128CBC_InvalidKey(t *testing.T) {
 	plaintext := []byte("test")
 
 	_, err := EncryptAES128CBC(plaintext, key, iv)
-	assert.Error(t, err, "EncryptAES128CBC() expected error for invalid key length")
+	require.Error(t, err, "EncryptAES128CBC() expected error for invalid key length")
 }
 
 func TestDecryptAES128CBC_InvalidCiphertext(t *testing.T) {
@@ -126,5 +126,5 @@ func TestDecryptAES128CBC_InvalidCiphertext(t *testing.T) {
 	ciphertext := []byte("not valid")
 
 	_, err := DecryptAES128CBC(ciphertext, key, iv)
-	assert.Error(t, err, "DecryptAES128CBC() expected error for invalid ciphertext")
+	require.Error(t, err, "DecryptAES128CBC() expected error for invalid ciphertext")
 }

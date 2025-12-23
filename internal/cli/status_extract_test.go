@@ -110,7 +110,7 @@ func TestLocationInfoToMap(t *testing.T) {
 	mapsURL, ok := data["maps_url"].(string)
 	require.True(t, ok, "Expected maps_url to be a string")
 	expectedURL := "https://maps.google.com/?q=37.774900,-122.419400"
-	assert.Equalf(t, expectedURL, mapsURL, "Expected maps_url %q, got %q")
+	assert.Equal(t, expectedURL, mapsURL)
 }
 
 // TestTireInfoToMap tests tireInfoToMap conversion

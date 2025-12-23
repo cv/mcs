@@ -85,7 +85,7 @@ func createTestServer(t *testing.T, responseData map[string]interface{}, options
 		// Validate body if requested
 		if opts.validateBody {
 			body, _ := io.ReadAll(r.Body)
-			assert.NotEqual(t, 0, len(body), "Expected non-empty body")
+			assert.NotEmpty(t, body, "Expected non-empty body")
 		}
 
 		// Encrypt and wrap the response
@@ -98,8 +98,7 @@ func createTestServer(t *testing.T, responseData map[string]interface{}, options
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 }
@@ -138,8 +137,7 @@ func createErrorServer(t *testing.T, resultCode, message string, httpStatusCode 
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 }

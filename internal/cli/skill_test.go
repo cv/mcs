@@ -20,10 +20,10 @@ func TestGetSkillPath(t *testing.T) {
 	require.NoError(t, err, "Expected UserHomeDir to succeed, got error: %v")
 
 	expected := filepath.Join(home, ".claude", "skills", skill.SkillName)
-	assert.Equalf(t, expected, path, "Expected path to be '%s', got '%s'")
+	assert.Equal(t, expected, path)
 
 	// Verify it ends with the skill name
-	assert.Equalf(t, skill.SkillName, filepath.Base(path), "Expected path to end with '%s', got '%s'")
+	assert.Equal(t, skill.SkillName, filepath.Base(path))
 }
 
 // TestUninstallSkill tests the uninstallSkill function
@@ -138,7 +138,7 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 	output := outBuf.String()
 	skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
 	expectedOutput := "Skill installed to " + skillPath + "\n"
-	assert.Equalf(t, expectedOutput, output, "Expected output '%s', got '%s'")
+	assert.Equal(t, expectedOutput, output)
 
 	// Verify directory was created
 	assert.DirExists(t, skillPath)
@@ -155,8 +155,8 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 
 		// Verify file has content
 		content, err := os.ReadFile(filePath)
-		assert.NoErrorf(t, err, "Expected to read file %s, got error: %v", file, err)
-		assert.NotEqualf(t, 0, len(content), "Expected file %s to have content", file)
+		require.NoErrorf(t, err, "Expected to read file %s, got error: %v", file, err)
+		assert.NotEmptyf(t, content, "Expected file %s to have content", file)
 	}
 }
 
@@ -265,7 +265,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 
 			// Verify output message
 			output := outBuf.String()
-			assert.NotEqual(t, 0, len(output), "Expected output message")
+			assert.NotEmpty(t, output, "Expected output message")
 			if len(tt.expectedOutput) > 0 {
 				assert.Contains(t, output, tt.expectedOutput)
 			}
@@ -311,7 +311,7 @@ func TestSkillPathCommand_Execute(t *testing.T) {
 	// Verify output is the correct path
 	output := outBuf.String()
 	expectedPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName) + "\n"
-	assert.Equalf(t, expectedPath, output, "Expected path '%s', got '%s'")
+	assert.Equal(t, expectedPath, output)
 }
 
 // TestSkillPathCommand_OutputFormat tests that path output is just the path
@@ -381,7 +381,7 @@ func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
 	require.NoError(t, err, "Expected version file to exist, got error: %v")
 
 	// Verify content matches current version
-	assert.Equalf(t, Version, string(content), "Expected version file to contain '%s', got '%s'")
+	assert.Equal(t, Version, string(content))
 }
 
 // TestCheckSkillVersion tests the CheckSkillVersion function
@@ -482,9 +482,9 @@ func TestCheckSkillVersion(t *testing.T) {
 
 			status, version := CheckSkillVersion()
 
-			assert.Equalf(t, tt.expectedStatus, status, "Expected status %v, got %v")
+			assert.Equal(t, tt.expectedStatus, status)
 
-			assert.Equalf(t, tt.expectedVersion, version, "Expected version '%s', got '%s'")
+			assert.Equal(t, tt.expectedVersion, version)
 		})
 	}
 }

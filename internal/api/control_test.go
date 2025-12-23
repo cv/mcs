@@ -120,7 +120,7 @@ func TestControlError(t *testing.T) {
 	require.Error(t, err, "Expected error, got nil")
 
 	expectedError := "failed to lock doors: result code 500E00"
-	assert.EqualValuesf(t, expectedError, err.Error(), "Expected error '%s', got '%s'")
+	assert.Equal(t, expectedError, err.Error())
 }
 
 // TestBoolToInt tests the boolToInt helper function

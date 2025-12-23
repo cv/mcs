@@ -19,7 +19,7 @@ func TestTouchEvent_ToString(t *testing.T) {
 	result := event.ToString()
 	expected := "2,1000,0,0,1,1,1,-1;"
 
-	assert.Equalf(t, expected, result, "TouchEvent.ToString() = %q, want %q")
+	assert.Equal(t, expected, result)
 }
 
 func TestNewTouchEventList(t *testing.T) {
@@ -27,7 +27,7 @@ func TestNewTouchEventList(t *testing.T) {
 
 	require.NotNil(t, list, "Expected non-nil TouchEventList")
 
-	assert.Lenf(t, list.touchEvents, 0, "Expected empty touchEvents, got %d", len(list.touchEvents))
+	assert.Emptyf(t, list.touchEvents, "Expected empty touchEvents, got %d", len(list.touchEvents))
 }
 
 func TestTouchEventList_Randomize_ShortDuration(t *testing.T) {
@@ -38,7 +38,7 @@ func TestTouchEventList_Randomize_ShortDuration(t *testing.T) {
 	list.Randomize(recentTimestamp)
 
 	// With duration < 3000ms, should have no events
-	assert.Lenf(t, list.touchEvents, 0, "Expected 0 events for short duration, got %d", len(list.touchEvents))
+	assert.Emptyf(t, list.touchEvents, "Expected 0 events for short duration, got %d", len(list.touchEvents))
 }
 
 func TestTouchEventList_Randomize_MediumDuration(t *testing.T) {
@@ -87,7 +87,7 @@ func TestTouchEventList_ToString(t *testing.T) {
 	assert.Contains(t, result, "3,25", "third event")
 
 	// Should end with semicolon
-	assert.Truef(t, result[len(result)-1] == ';', "expected ToString to end with semicolon, got %q", result)
+	assert.Equal(t, byte(';'), result[len(result)-1])
 }
 
 func TestTouchEventList_GetSum(t *testing.T) {
@@ -101,7 +101,7 @@ func TestTouchEventList_GetSum(t *testing.T) {
 	sum := list.GetSum()
 	expected := (2 + 100) + (1 + 50) + (3 + 25)
 
-	assert.Equalf(t, expected, sum, "GetSum() = %d, want %d")
+	assert.Equal(t, expected, sum)
 }
 
 func TestTouchEventList_GetSum_Empty(t *testing.T) {

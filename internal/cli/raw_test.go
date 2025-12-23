@@ -63,7 +63,7 @@ func TestRawCommand_SubcommandStructure(t *testing.T) {
 
 			require.NotNilf(t, subCmd, "Expected %s subcommand to exist", tt.subcommandName)
 
-			assert.Equalf(t, tt.expectedUse, subCmd.Use, "Expected Use to be '%s', got '%s'")
+			assert.Equal(t, tt.expectedUse, subCmd.Use)
 
 			assert.False(t, tt.shouldHaveShort && subCmd.Short == "", "Expected Short description to be set")
 

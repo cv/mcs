@@ -108,7 +108,7 @@ func TestCreateAPIClient_WithCachedCredentials(t *testing.T) {
 	accessToken, expirationTs, encKey, signKey := client.GetCredentials()
 
 	assert.Equalf(t, "cached-token-12345", accessToken, "Expected cached access token, got %s", accessToken)
-	assert.Equalf(t, cachedToken.AccessTokenExpirationTs, expirationTs, "Expected cached expiration ts %d, got %d")
+	assert.Equal(t, cachedToken.AccessTokenExpirationTs, expirationTs)
 	assert.Equalf(t, "cached-enc-key", encKey, "Expected cached enc key, got %s", encKey)
 	assert.Equalf(t, "cached-sign-key", signKey, "Expected cached sign key, got %s", signKey)
 }

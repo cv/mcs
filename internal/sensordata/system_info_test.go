@@ -43,7 +43,7 @@ func TestSystemInfo_ToString(t *testing.T) {
 	result := si.ToString()
 
 	// Check that result is non-empty
-	assert.NotEqual(t, "", result, "Expected non-empty ToString result")
+	assert.NotEmpty(t, result, "Expected non-empty ToString result")
 
 	// Check that it starts with "-1,uaend,-1,"
 	assert.Truef(t, strings.HasPrefix(result, "-1,uaend,-1,"), "Expected ToString to start with '-1,uaend,-1,', got '%s'", result[:min(20, len(result))])

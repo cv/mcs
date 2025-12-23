@@ -89,7 +89,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
 	require.NoError(t, err, "GetVehicleStatus failed: %v")
 
-	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
+	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	// Test that we can parse the response as raw map to access undisplayed fields
 	require.Lenf(t, result.AlertInfos, 1, "Expected 1 alert info, got %d", len(result.AlertInfos))
@@ -108,7 +108,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		require.True(t, ok, "DriveInformation not found in response")
 		odometer, ok := getFloat64(driveInfo, "OdoDispValue")
 		require.True(t, ok, "OdoDispValue not found or wrong type")
-		assert.EqualValuesf(t, 12345.6, odometer, "Expected odometer 12345.6, got %v", odometer)
+		assert.InDelta(t, 12345.6, odometer, 0.0001)
 	})
 
 	t.Run("VerifyHoodStatusField", func(t *testing.T) {
@@ -120,7 +120,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		require.True(t, ok, "Door not found in response")
 		hoodStatus, ok := getFloat64(door, "DrStatHood")
 		require.True(t, ok, "DrStatHood not found or wrong type")
-		assert.EqualValuesf(t, 0, hoodStatus, "Expected hood status 0, got %v", hoodStatus)
+		assert.InDelta(t, 0, hoodStatus, 0.0001)
 	})
 
 	t.Run("VerifyFuelLidStatusField", func(t *testing.T) {
@@ -132,7 +132,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		require.True(t, ok, "Door not found in response")
 		fuelLid, ok := getFloat64(door, "FuelLidOpenStatus")
 		require.True(t, ok, "FuelLidOpenStatus not found or wrong type")
-		assert.EqualValuesf(t, 0, fuelLid, "Expected fuel lid status 0, got %v", fuelLid)
+		assert.InDelta(t, 0, fuelLid, 0.0001)
 	})
 
 	t.Run("VerifyIndividualDoorLockFields", func(t *testing.T) {
@@ -176,7 +176,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 		require.True(t, ok, "HazardLamp not found in response")
 		hazardSw, ok := getFloat64(hazard, "HazardSw")
 		require.True(t, ok, "HazardSw not found or wrong type")
-		assert.EqualValuesf(t, 0, hazardSw, "Expected hazard switch 0, got %v", hazardSw)
+		assert.InDelta(t, 0, hazardSw, 0.0001)
 	})
 }
 
@@ -231,7 +231,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
 	require.NoError(t, err, "GetEVVehicleStatus failed: %v")
 
-	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
+	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	require.Lenf(t, result.ResultData, 1, "Expected 1 result data, got %d", len(result.ResultData))
 
@@ -248,7 +248,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 		require.True(t, ok, "ChargeInfo not found in response")
 		acChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteAC")
 		require.True(t, ok, "MaxChargeMinuteAC not found or wrong type")
-		assert.EqualValuesf(t, 180, acChargeTime, "Expected AC charge time 180, got %v", acChargeTime)
+		assert.InDelta(t, 180, acChargeTime, 0.0001)
 	})
 
 	t.Run("VerifyQuickChargeTimeField", func(t *testing.T) {
@@ -264,7 +264,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 		require.True(t, ok, "ChargeInfo not found in response")
 		qbcChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteQBC")
 		require.True(t, ok, "MaxChargeMinuteQBC not found or wrong type")
-		assert.EqualValuesf(t, 45, qbcChargeTime, "Expected QBC charge time 45, got %v", qbcChargeTime)
+		assert.InDelta(t, 45, qbcChargeTime, 0.0001)
 	})
 
 	t.Run("VerifyBatteryHeaterAutoField", func(t *testing.T) {
@@ -280,7 +280,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 		require.True(t, ok, "ChargeInfo not found in response")
 		batHeatAuto, ok := getFloat64(chargeInfo, "CstmzStatBatHeatAutoSW")
 		require.True(t, ok, "CstmzStatBatHeatAutoSW not found or wrong type")
-		assert.EqualValuesf(t, 1, batHeatAuto, "Expected battery heater auto 1, got %v", batHeatAuto)
+		assert.InDelta(t, 1, batHeatAuto, 0.0001)
 	})
 
 	t.Run("VerifyBatteryHeaterOnField", func(t *testing.T) {
@@ -296,7 +296,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 		require.True(t, ok, "ChargeInfo not found in response")
 		batHeaterOn, ok := getFloat64(chargeInfo, "BatteryHeaterON")
 		require.True(t, ok, "BatteryHeaterON not found or wrong type")
-		assert.EqualValuesf(t, 0, batHeaterOn, "Expected battery heater on 0, got %v", batHeaterOn)
+		assert.InDelta(t, 0, batHeaterOn, 0.0001)
 	})
 
 	t.Run("VerifyInteriorTempField", func(t *testing.T) {
@@ -312,7 +312,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 		require.True(t, ok, "RemoteHvacInfo not found in response")
 		interiorTemp, ok := getFloat64(hvacInfo, "InteriorTemp")
 		require.True(t, ok, "InteriorTemp not found or wrong type")
-		assert.EqualValuesf(t, 22, interiorTemp, "Expected interior temp 22, got %v", interiorTemp)
+		assert.InDelta(t, 22, interiorTemp, 0.0001)
 	})
 
 	t.Run("VerifyTargetTempField", func(t *testing.T) {
@@ -328,7 +328,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 		require.True(t, ok, "RemoteHvacInfo not found in response")
 		targetTemp, ok := getFloat64(hvacInfo, "TargetTemp")
 		require.True(t, ok, "TargetTemp not found or wrong type")
-		assert.EqualValuesf(t, 21, targetTemp, "Expected target temp 21, got %v", targetTemp)
+		assert.InDelta(t, 21, targetTemp, 0.0001)
 	})
 }
 
@@ -396,7 +396,7 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
 	require.NoError(t, err, "GetVehicleStatus failed: %v")
 
-	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
+	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	// Verify varied values
 	alertInfos, ok := getMapSlice(responseData, "alertInfos")
@@ -406,27 +406,27 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	require.True(t, ok, "Door not found")
 	hoodStatus, ok := getFloat64(door, "DrStatHood")
 	require.True(t, ok)
-	assert.EqualValues(t, 1, hoodStatus)
+	assert.InDelta(t, 1, hoodStatus, 0.0001)
 
 	fuelLid, ok := getFloat64(door, "FuelLidOpenStatus")
 	require.True(t, ok)
-	assert.EqualValues(t, 1, fuelLid)
+	assert.InDelta(t, 1, fuelLid, 0.0001)
 
 	pw, ok := getMap(alertInfos[0], "Pw")
 	require.True(t, ok, "Pw not found")
 	drvWindow, ok := getFloat64(pw, "PwPosDrv")
 	require.True(t, ok)
-	assert.EqualValues(t, 50, drvWindow)
+	assert.InDelta(t, 50, drvWindow, 0.0001)
 
 	psWindow, ok := getFloat64(pw, "PwPosPsngr")
 	require.True(t, ok)
-	assert.EqualValues(t, 100, psWindow)
+	assert.InDelta(t, 100, psWindow, 0.0001)
 
 	hazard, ok := getMap(alertInfos[0], "HazardLamp")
 	require.True(t, ok, "HazardLamp not found")
 	hazardSw, ok := getFloat64(hazard, "HazardSw")
 	require.True(t, ok)
-	assert.EqualValues(t, 1, hazardSw)
+	assert.InDelta(t, 1, hazardSw, 0.0001)
 
 	remoteInfos, ok := getMapSlice(responseData, "remoteInfos")
 	require.True(t, ok, "remoteInfos not found in response")
@@ -435,7 +435,7 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 	require.True(t, ok, "DriveInformation not found")
 	odometer, ok := getFloat64(driveInfo, "OdoDispValue")
 	require.True(t, ok)
-	assert.EqualValues(t, 99999.9, odometer)
+	assert.InDelta(t, 99999.9, odometer, 0.0001)
 
 }
 
@@ -481,7 +481,7 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
 	require.NoError(t, err, "GetEVVehicleStatus failed: %v")
 
-	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
+	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	// Verify varied values
 	resultData, ok := getMapSlice(responseData, "resultData")
@@ -495,20 +495,20 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 	require.True(t, ok, "ChargeInfo not found in response")
 	acChargeTime, ok := getFloat64(chargeInfo, "MaxChargeMinuteAC")
 	require.True(t, ok)
-	assert.EqualValues(t, 240, acChargeTime)
+	assert.InDelta(t, 240, acChargeTime, 0.0001)
 
 	batHeaterOn, ok := getFloat64(chargeInfo, "BatteryHeaterON")
 	require.True(t, ok)
-	assert.EqualValues(t, 1, batHeaterOn)
+	assert.InDelta(t, 1, batHeaterOn, 0.0001)
 
 	hvacInfo, ok := getMap(vehicleInfo, "RemoteHvacInfo")
 	require.True(t, ok, "RemoteHvacInfo not found in response")
 	interiorTemp, ok := getFloat64(hvacInfo, "InteriorTemp")
 	require.True(t, ok)
-	assert.EqualValues(t, 18, interiorTemp)
+	assert.InDelta(t, 18, interiorTemp, 0.0001)
 
 	targetTemp, ok := getFloat64(hvacInfo, "TargetTemp")
 	require.True(t, ok)
-	assert.EqualValues(t, 24, targetTemp)
+	assert.InDelta(t, 24, targetTemp, 0.0001)
 
 }

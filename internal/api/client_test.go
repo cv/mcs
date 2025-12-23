@@ -18,11 +18,11 @@ func TestAPIRequest_Success(t *testing.T) {
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify headers
-		assert.NotEqual(t, "", r.Header.Get("device-id"), "device-id header is missing")
-		assert.NotEqual(t, "", r.Header.Get("app-code"), "app-code header is missing")
-		assert.EqualValuesf(t, UserAgentBaseAPI, r.Header.Get("user-agent"), "expected user-agent %s, got %s")
-		assert.NotEqual(t, "", r.Header.Get("sign"), "sign header is missing")
-		assert.NotEqual(t, "", r.Header.Get("timestamp"), "timestamp header is missing")
+		assert.NotEmpty(t, r.Header.Get("device-id"), "device-id header is missing")
+		assert.NotEmpty(t, r.Header.Get("app-code"), "app-code header is missing")
+		assert.Equal(t, UserAgentBaseAPI, r.Header.Get("user-agent"))
+		assert.NotEmpty(t, r.Header.Get("sign"), "sign header is missing")
+		assert.NotEmpty(t, r.Header.Get("timestamp"), "timestamp header is missing")
 
 		// Return success response with encrypted payload
 		// Encrypt a simple JSON response
@@ -38,8 +38,7 @@ func TestAPIRequest_Success(t *testing.T) {
 			"payload": encrypted,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -70,8 +69,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 			"message":   "Encryption error",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -87,7 +85,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 
 	// APIRequest retries on EncryptionError by fetching new keys
 	// Since our mock server always returns the same error, it eventually fails with wrapped error
-	assert.ErrorContains(t, err, "failed to retrieve encryption keys")
+	require.ErrorContains(t, err, "failed to retrieve encryption keys")
 }
 
 // TestAPIRequest_TokenExpired tests handling of expired token error
@@ -99,8 +97,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 			"message":   "Token expired",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -116,7 +113,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 
 	// APIRequest retries on TokenExpiredError by re-logging in
 	// Since re-login will fail (mock server only handles one endpoint), we get a wrapped error
-	assert.ErrorContains(t, err, "failed to login")
+	require.ErrorContains(t, err, "failed to login")
 }
 
 // TestAPIRequest_RequestInProgress tests handling of request in progress error
@@ -129,8 +126,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 			"message":   "Request in progress",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -145,7 +141,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 	require.Error(t, err, "Expected error, got nil")
 
 	// Verify it's a RequestInProgressError
-	assert.IsType(t, (*RequestInProgressError)(nil), err)
+	assert.ErrorAs(t, err, new(*RequestInProgressError))
 }
 
 // TestEncryptPayloadUsingKey tests payload encryption
@@ -166,10 +162,10 @@ func TestEncryptPayloadUsingKey(t *testing.T) {
 	encrypted, err := client.encryptPayloadUsingKey(string(dataJSON))
 	require.NoError(t, err, "Failed to encrypt payload: %v")
 
-	assert.NotEqual(t, "", encrypted, "Encrypted payload is empty")
+	assert.NotEmpty(t, encrypted, "Encrypted payload is empty")
 
 	// Verify it's base64 encoded
-	assert.NotEqual(t, 0, len(encrypted), "Encrypted payload should not be empty")
+	assert.NotEmpty(t, encrypted, "Encrypted payload should not be empty")
 }
 
 // TestDecryptPayloadUsingKey tests payload decryption
@@ -212,7 +208,7 @@ func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
 	timestamp := "1234567890123"
 
 	sign := client.getSignFromPayloadAndTimestamp(payload, timestamp)
-	assert.NotEqual(t, "", sign, "Signature should not be empty")
+	assert.NotEmpty(t, sign, "Signature should not be empty")
 
 	// Verify it's uppercase hex (SHA256)
 	assert.Lenf(t, sign, 64, "Expected signature length of 64, got %d", len(sign))
@@ -227,8 +223,7 @@ func TestAPIRequest_MissingKeys(t *testing.T) {
 			"message": "Server error",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -250,10 +245,10 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 		requestReceived = true
 
 		// Verify method
-		assert.EqualValuesf(t, "POST", r.Method, "Expected POST method, got %s", r.Method)
+		assert.Equalf(t, "POST", r.Method, "Expected POST method, got %s", r.Method)
 
 		// Verify sign header is present
-		assert.NotEqual(t, "", r.Header.Get("sign"), "sign header is missing")
+		assert.NotEmpty(t, r.Header.Get("sign"), "sign header is missing")
 
 		// Return encrypted success response
 		testResponse := map[string]interface{}{
@@ -268,8 +263,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 			"payload": encrypted,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -295,10 +289,10 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 		requestReceived = true
 
 		// Verify method
-		assert.EqualValuesf(t, "GET", r.Method, "Expected GET method, got %s", r.Method)
+		assert.Equalf(t, "GET", r.Method, "Expected GET method, got %s", r.Method)
 
 		// Verify params query parameter exists
-		assert.NotEqual(t, "", r.URL.Query().Get("params"), "params query parameter is missing")
+		assert.NotEmpty(t, r.URL.Query().Get("params"), "params query parameter is missing")
 
 		// Return encrypted success response
 		testResponse := map[string]interface{}{
@@ -313,8 +307,7 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 			"payload": encrypted,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -351,7 +344,7 @@ func TestCalculateBackoff(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(strings.Join([]string{"retry", strings.Repeat("x", tt.retryCount)}, "_"), func(t *testing.T) {
 			result := calculateBackoff(tt.retryCount)
-			assert.EqualValuesf(t, tt.expected, result, "calculateBackoff(%d) = %v, want %v", tt.retryCount, result, tt.expected)
+			assert.Equalf(t, tt.expected, result, "calculateBackoff(%d) = %v, want %v", tt.retryCount, result, tt.expected)
 		})
 	}
 }
@@ -365,7 +358,7 @@ func TestSleepWithContext_Completes(t *testing.T) {
 	err := sleepWithContext(ctx, duration)
 	elapsed := time.Since(start)
 
-	assert.EqualValuesf(t, nil, err, "sleepWithContext returned error: %v", err)
+	require.NoErrorf(t, err, "sleepWithContext returned error: %v", err)
 
 	// Allow 50ms tolerance
 	assert.GreaterOrEqual(t, elapsed, duration)
@@ -388,9 +381,9 @@ func TestSleepWithContext_Cancelled(t *testing.T) {
 	err := sleepWithContext(ctx, duration)
 	elapsed := time.Since(start)
 
-	assert.Error(t, err, "sleepWithContext should return error on cancellation")
+	require.Error(t, err, "sleepWithContext should return error on cancellation")
 
-	assert.EqualValuesf(t, context.Canceled, err, "sleepWithContext returned %v, want context.Canceled", err)
+	assert.Equalf(t, context.Canceled, err, "sleepWithContext returned %v, want context.Canceled", err)
 
 	// Should return much earlier than 5 seconds
 	assert.LessOrEqual(t, elapsed, 1*time.Second)
@@ -404,7 +397,7 @@ func TestSleepWithContext_ZeroDuration(t *testing.T) {
 	err := sleepWithContext(ctx, 0)
 	elapsed := time.Since(start)
 
-	assert.EqualValuesf(t, nil, err, "sleepWithContext returned error: %v", err)
+	require.NoErrorf(t, err, "sleepWithContext returned error: %v", err)
 
 	assert.LessOrEqual(t, elapsed, 10*time.Millisecond)
 }
@@ -432,8 +425,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 				"payload": encrypted,
 			}
 			w.Header().Set("Content-Type", "application/json")
-			err := json.NewEncoder(w).Encode(response)
-			assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+			_ = json.NewEncoder(w).Encode(response)
 
 			return
 		}
@@ -447,8 +439,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 			"message":   "Encryption error",
 		}
 		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoErrorf(t, err, "Failed to encode response: %v", err)
+		_ = json.NewEncoder(w).Encode(response)
 
 	}))
 	defer server.Close()
@@ -475,7 +466,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 
 	// Check if error is or contains context.Canceled
 	if err != context.Canceled {
-		assert.Truef(t, strings.Contains(err.Error(), "context canceled"), "Expected context.Canceled error, got: %v", err)
+		assert.Containsf(t, err.Error(), "context canceled", "Expected context.Canceled error, got: %v", err)
 	}
 
 	// Should return quickly after cancellation (within 1 second total)

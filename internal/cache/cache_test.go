@@ -60,7 +60,7 @@ func TestTokenCache_IsValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, tt.cache.IsValid(), "TokenCache.IsValid() = %v, want %v")
+			assert.Equal(t, tt.want, tt.cache.IsValid())
 		})
 	}
 }
@@ -93,10 +93,10 @@ func TestSaveAndLoad(t *testing.T) {
 	require.NotNil(t, loadedCache, "Load() returned nil cache")
 
 	// Verify loaded data matches saved data
-	assert.Equalf(t, testCache.AccessToken, loadedCache.AccessToken, "AccessToken mismatch: got %v, want %v")
-	assert.Equalf(t, testCache.AccessTokenExpirationTs, loadedCache.AccessTokenExpirationTs, "AccessTokenExpirationTs mismatch: got %v, want %v")
-	assert.Equalf(t, testCache.EncKey, loadedCache.EncKey, "EncKey mismatch: got %v, want %v")
-	assert.Equalf(t, testCache.SignKey, loadedCache.SignKey, "SignKey mismatch: got %v, want %v")
+	assert.Equal(t, testCache.AccessToken, loadedCache.AccessToken)
+	assert.Equal(t, testCache.AccessTokenExpirationTs, loadedCache.AccessTokenExpirationTs)
+	assert.Equal(t, testCache.EncKey, loadedCache.EncKey)
+	assert.Equal(t, testCache.SignKey, loadedCache.SignKey)
 }
 
 func TestLoad_NoCache(t *testing.T) {
@@ -124,7 +124,7 @@ func TestLoad_InvalidJSON(t *testing.T) {
 
 	// Load should fail with parse error
 	_, err = Load()
-	assert.Error(t, err, "Load() should fail with invalid JSON")
+	require.Error(t, err, "Load() should fail with invalid JSON")
 }
 
 func TestIsTokenValid(t *testing.T) {
@@ -162,7 +162,7 @@ func TestIsTokenValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, IsTokenValid(tt.accessToken, tt.expirationTs), "IsTokenValid() = %v, want %v")
+			assert.Equal(t, tt.want, IsTokenValid(tt.accessToken, tt.expirationTs))
 		})
 	}
 }
@@ -227,7 +227,7 @@ func TestCachePersistence_ConcurrentAccess(t *testing.T) {
 		go func(id int) {
 			cache, err := Load()
 			assert.NoErrorf(t, err, "Concurrent load %d failed: %v", id, err)
-			assert.NotEqualf(t, nil, cache, "Concurrent load %d returned nil", id)
+			assert.NotNilf(t, cache, "Concurrent load %d returned nil", id)
 			done <- true
 		}(i)
 	}
@@ -255,7 +255,7 @@ func TestCachePersistence_CorruptedData(t *testing.T) {
 
 	// Load should fail gracefully
 	_, err = Load()
-	assert.Error(t, err, "Expected error when loading corrupted cache")
+	require.Error(t, err, "Expected error when loading corrupted cache")
 }
 
 // TestCachePersistence_PartialData tests cache with missing fields
@@ -277,7 +277,7 @@ func TestCachePersistence_PartialData(t *testing.T) {
 	cache, err := Load()
 	require.NoError(t, err, "Load() failed: %v")
 
-	assert.Equalf(t, "", cache.SignKey, "Expected empty SignKey, got %s", cache.SignKey)
+	assert.Emptyf(t, cache.SignKey, "Expected empty SignKey, got %s", cache.SignKey)
 
 	// Note: IsValid only checks token validity, not presence of keys
 	// So this cache will be considered "valid" even though signKey is missing
@@ -355,7 +355,7 @@ func TestCacheValidation_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, tt.cache.IsValid(), "TokenCache.IsValid() = %v, want %v")
+			assert.Equal(t, tt.want, tt.cache.IsValid())
 		})
 	}
 }
@@ -422,5 +422,5 @@ func TestCachePersistence_EmptyHomeDir(t *testing.T) {
 
 	// Save should fail gracefully when HOME is empty
 	err := Save(cache)
-	assert.Error(t, err, "Expected error when HOME is empty, got nil")
+	require.Error(t, err, "Expected error when HOME is empty, got nil")
 }

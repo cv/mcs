@@ -36,7 +36,7 @@ func TestGetVecBaseInfos(t *testing.T) {
 	result, err := client.GetVecBaseInfos(context.Background())
 	require.NoError(t, err, "GetVecBaseInfos failed: %v")
 
-	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
+	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	assert.Lenf(t, result.VecBaseInfos, 1, "Expected 1 vehicle, got %d", len(result.VecBaseInfos))
 }
@@ -79,7 +79,7 @@ func TestGetVehicleStatus(t *testing.T) {
 	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
 	require.NoError(t, err, "GetVehicleStatus failed: %v")
 
-	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
+	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	assert.Lenf(t, result.AlertInfos, 1, "Expected 1 alert info, got %d", len(result.AlertInfos))
 
@@ -97,7 +97,7 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 	require.Error(t, err, "Expected error, got nil")
 
 	expectedError := "failed to get vehicle status: result code 500E00"
-	assert.EqualValuesf(t, expectedError, err.Error(), "Expected error '%s', got '%s'")
+	assert.Equal(t, expectedError, err.Error())
 }
 
 // TestGetEVVehicleStatus tests getting EV vehicle status
@@ -133,16 +133,16 @@ func TestGetEVVehicleStatus(t *testing.T) {
 	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
 	require.NoError(t, err, "GetEVVehicleStatus failed: %v")
 
-	assert.EqualValuesf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
+	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
 
 	assert.Lenf(t, result.ResultData, 1, "Expected 1 result data, got %d", len(result.ResultData))
 
 	// Verify charge info
 	chargeInfo := result.ResultData[0].PlusBInformation.VehicleInfo.ChargeInfo
 
-	assert.EqualValuesf(t, float64(85), chargeInfo.SmaphSOC, "Expected battery level 85, got %v", chargeInfo.SmaphSOC)
+	assert.InDelta(t, float64(85), chargeInfo.SmaphSOC, 0.0001)
 
-	assert.EqualValuesf(t, float64(1), chargeInfo.ChargerConnectorFitting, "Expected plugged in (1), got %v", chargeInfo.ChargerConnectorFitting)
+	assert.InDelta(t, float64(1), chargeInfo.ChargerConnectorFitting, 0.0001)
 }
 
 // TestGetEVVehicleStatus_Error tests error handling
@@ -156,5 +156,5 @@ func TestGetEVVehicleStatus_Error(t *testing.T) {
 	require.Error(t, err, "Expected error, got nil")
 
 	expectedError := "failed to get EV vehicle status: result code 500E00"
-	assert.EqualValuesf(t, expectedError, err.Error(), "Expected error '%s', got '%s'")
+	assert.Equal(t, expectedError, err.Error())
 }

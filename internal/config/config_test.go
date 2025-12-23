@@ -61,8 +61,8 @@ func TestLoad(t *testing.T) {
 			}
 
 			if !tt.wantErr {
-				assert.Equalf(t, tt.wantEmail, cfg.Email, "Load() Email = %v, want %v")
-				assert.Equalf(t, tt.wantRegion, cfg.Region, "Load() Region = %v, want %v")
+				assert.Equal(t, tt.wantEmail, cfg.Email)
+				assert.Equal(t, tt.wantRegion, cfg.Region)
 			}
 		})
 	}
@@ -193,5 +193,5 @@ func TestLoad_propagatesReadError(t *testing.T) {
 	// Load should return an error because reading the unreadable file failed
 	cfg, err := Load(configPath)
 	assert.Nil(t, cfg)
-	assert.Error(t, err, "expected error when reading unreadable config file")
+	require.Error(t, err, "expected error when reading unreadable config file")
 }

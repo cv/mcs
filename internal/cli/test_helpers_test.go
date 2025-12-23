@@ -27,16 +27,16 @@ func findSubcommand(cmd *cobra.Command, name string) *cobra.Command {
 func assertCommandBasics(t *testing.T, cmd *cobra.Command, expectedUse string) {
 	t.Helper()
 
-	assert.Equalf(t, expectedUse, cmd.Use, "Expected Use to be '%s', got '%s'")
+	assert.Equal(t, expectedUse, cmd.Use)
 
-	assert.NotEqual(t, "", cmd.Short, "Expected Short description to be set")
+	assert.NotEmpty(t, cmd.Short, "Expected Short description to be set")
 }
 
 // assertNoArgsCommand tests that a command accepts no arguments.
 func assertNoArgsCommand(t *testing.T, cmd *cobra.Command) {
 	t.Helper()
 
-	assert.Equal(t, nil, cmd.ValidateArgs([]string{}))
+	require.NoError(t, cmd.ValidateArgs([]string{}))
 }
 
 // assertSubcommandExists verifies that a subcommand exists, has a description,
@@ -47,10 +47,10 @@ func assertSubcommandExists(t *testing.T, parent *cobra.Command, subcommandName 
 	subCmd := findSubcommand(parent, subcommandName)
 	require.NotNilf(t, subCmd, "Expected %s subcommand to exist", subcommandName)
 
-	assert.NotEqualf(t, "", subCmd.Short, "Expected %s subcommand to have a description", subcommandName)
+	assert.NotEmptyf(t, subCmd.Short, "Expected %s subcommand to have a description", subcommandName)
 
 	if shouldAcceptNoArgs {
-		assert.Equal(t, nil, subCmd.ValidateArgs([]string{}))
+		require.NoError(t, subCmd.ValidateArgs([]string{}))
 	}
 
 	return subCmd
@@ -79,7 +79,7 @@ func assertFlagExists(t *testing.T, cmd *cobra.Command, assertion FlagAssertion)
 	t.Helper()
 
 	flag := cmd.Flags().Lookup(assertion.Name)
-	assert.NotEqualf(t, nil, flag, "Expected --%s flag to exist", assertion.Name)
+	assert.NotNilf(t, flag, "Expected --%s flag to exist", assertion.Name)
 
 	if assertion.DefaultValue != "" {
 		assert.Equal(t, assertion.DefaultValue, flag.DefValue)

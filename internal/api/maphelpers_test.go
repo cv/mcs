@@ -54,8 +54,8 @@ func TestGetString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getString(tt.input, tt.key)
-			assert.EqualValuesf(t, tt.wantValue, gotValue, "getString() value = %v, want %v")
-			assert.EqualValuesf(t, tt.wantOk, gotOk, "getString() ok = %v, want %v")
+			assert.Equal(t, tt.wantValue, gotValue)
+			assert.Equal(t, tt.wantOk, gotOk)
 		})
 	}
 }
@@ -115,8 +115,8 @@ func TestGetInt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getInt(tt.input, tt.key)
-			assert.EqualValuesf(t, tt.wantValue, gotValue, "getInt() value = %v, want %v")
-			assert.EqualValuesf(t, tt.wantOk, gotOk, "getInt() ok = %v, want %v")
+			assert.Equal(t, tt.wantValue, gotValue)
+			assert.Equal(t, tt.wantOk, gotOk)
 		})
 	}
 }
@@ -169,8 +169,8 @@ func TestGetFloat64(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getFloat64(tt.input, tt.key)
-			assert.EqualValuesf(t, tt.wantValue, gotValue, "getFloat64() value = %v, want %v")
-			assert.EqualValuesf(t, tt.wantOk, gotOk, "getFloat64() ok = %v, want %v")
+			assert.InDelta(t, tt.wantValue, gotValue, 0.0001)
+			assert.Equal(t, tt.wantOk, gotOk)
 		})
 	}
 }
@@ -223,8 +223,8 @@ func TestGetBool(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getBool(tt.input, tt.key)
-			assert.EqualValuesf(t, tt.wantValue, gotValue, "getBool() value = %v, want %v")
-			assert.EqualValuesf(t, tt.wantOk, gotOk, "getBool() ok = %v, want %v")
+			assert.Equal(t, tt.wantValue, gotValue)
+			assert.Equal(t, tt.wantOk, gotOk)
 		})
 	}
 }
@@ -267,7 +267,7 @@ func TestGetMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getMap(tt.input, tt.key)
-			assert.EqualValuesf(t, tt.wantOk, gotOk, "getMap() ok = %v, want %v")
+			assert.Equal(t, tt.wantOk, gotOk)
 			if tt.wantOk {
 				assert.NotNil(t, gotValue)
 			}
@@ -314,7 +314,7 @@ func TestGetSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getSlice(tt.input, tt.key)
-			assert.EqualValuesf(t, tt.wantOk, gotOk, "getSlice() ok = %v, want %v")
+			assert.Equal(t, tt.wantOk, gotOk)
 			if tt.wantOk {
 				assert.NotNil(t, gotValue)
 			}
@@ -383,8 +383,8 @@ func TestGetMapSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getMapSlice(tt.input, tt.key)
-			assert.EqualValuesf(t, tt.wantOk, gotOk, "getMapSlice() ok = %v, want %v")
-			assert.EqualValuesf(t, tt.wantLen, len(gotValue), "getMapSlice() len = %v, want %v")
+			assert.Equal(t, tt.wantOk, gotOk)
+			assert.Len(t, gotValue, tt.wantLen)
 		})
 	}
 }
@@ -443,7 +443,7 @@ func TestGetMapFromSlice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := getMapFromSlice(tt.slice, tt.index)
-			assert.EqualValuesf(t, tt.wantOk, gotOk, "getMapFromSlice() ok = %v, want %v")
+			assert.Equal(t, tt.wantOk, gotOk)
 			if tt.wantOk {
 				assert.NotNil(t, gotValue)
 			}
