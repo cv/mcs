@@ -17,6 +17,7 @@ linters:
     - gosec              # Security issues
 
     # Code quality
+    - dupl               # Duplicated code blocks
     - gochecknoinits     # Disallow init functions
     - canonicalheader    # HTTP header canonicalization
     - dupword            # Duplicate words (typos)
