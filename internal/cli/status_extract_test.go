@@ -10,6 +10,7 @@ import (
 
 // TestBatteryInfoToMap tests batteryInfoToMap conversion
 func TestBatteryInfoToMap(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		batteryInfo api.BatteryInfo
@@ -63,6 +64,7 @@ func TestBatteryInfoToMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			data := batteryInfoToMap(tt.batteryInfo)
 
 			for key, expected := range tt.wantFields {
@@ -82,6 +84,7 @@ func TestBatteryInfoToMap(t *testing.T) {
 
 // TestFuelInfoToMap tests fuelInfoToMap conversion
 func TestFuelInfoToMap(t *testing.T) {
+	t.Parallel()
 	fuelInfo := api.FuelInfo{
 		FuelLevel: 92,
 		RangeKm:   630.0,
@@ -95,6 +98,7 @@ func TestFuelInfoToMap(t *testing.T) {
 
 // TestLocationInfoToMap tests locationInfoToMap conversion
 func TestLocationInfoToMap(t *testing.T) {
+	t.Parallel()
 	locationInfo := api.LocationInfo{
 		Latitude:  37.7749,
 		Longitude: -122.4194,
@@ -115,6 +119,7 @@ func TestLocationInfoToMap(t *testing.T) {
 
 // TestTireInfoToMap tests tireInfoToMap conversion
 func TestTireInfoToMap(t *testing.T) {
+	t.Parallel()
 	tireInfo := api.TireInfo{
 		FrontLeftPsi:  32.5,
 		FrontRightPsi: 32.0,
@@ -132,6 +137,7 @@ func TestTireInfoToMap(t *testing.T) {
 
 // TestDoorStatusToMap tests doorStatusToMap conversion
 func TestDoorStatusToMap(t *testing.T) {
+	t.Parallel()
 	doorStatus := api.DoorStatus{
 		AllLocked:       true,
 		DriverOpen:      false,
@@ -156,6 +162,7 @@ func TestDoorStatusToMap(t *testing.T) {
 
 // TestOdometerInfoToMap tests odometerInfoToMap conversion
 func TestOdometerInfoToMap(t *testing.T) {
+	t.Parallel()
 	odometerInfo := api.OdometerInfo{OdometerKm: 12345.6}
 
 	data := odometerInfoToMap(odometerInfo)
@@ -165,6 +172,7 @@ func TestOdometerInfoToMap(t *testing.T) {
 
 // TestHvacInfoToMap tests hvacInfoToMap conversion
 func TestHvacInfoToMap(t *testing.T) {
+	t.Parallel()
 	hvacInfo := api.HVACInfo{
 		HVACOn:         true,
 		FrontDefroster: true,
@@ -184,6 +192,7 @@ func TestHvacInfoToMap(t *testing.T) {
 
 // TestWindowStatusToMap tests windowStatusToMap conversion
 func TestWindowStatusToMap(t *testing.T) {
+	t.Parallel()
 	windowStatus := api.WindowStatus{
 		DriverPosition:    25,
 		PassengerPosition: 50,
@@ -201,6 +210,7 @@ func TestWindowStatusToMap(t *testing.T) {
 
 // TestExtractVehicleInfoDataHelper tests vehicle info extraction
 func TestExtractVehicleInfoDataHelper(t *testing.T) {
+	t.Parallel()
 	info := VehicleInfo{
 		VIN:       "JM3KKEHC1R0123456",
 		Nickname:  "My CX-90",
@@ -218,6 +228,7 @@ func TestExtractVehicleInfoDataHelper(t *testing.T) {
 
 // TestExtractWithGetter tests the generic extraction helper
 func TestExtractWithGetter(t *testing.T) {
+	t.Parallel()
 	// Test with fuel info
 	vehicleStatus := &api.VehicleStatusResponse{
 		ResultCode: api.ResultCodeSuccess,
@@ -242,6 +253,7 @@ func TestExtractWithGetter(t *testing.T) {
 
 // TestExtractWithGetterError tests the generic extraction helper with an error case
 func TestExtractWithGetterError(t *testing.T) {
+	t.Parallel()
 	// Test with empty response that will cause an error
 	vehicleStatus := &api.VehicleStatusResponse{
 		ResultCode:  api.ResultCodeSuccess,

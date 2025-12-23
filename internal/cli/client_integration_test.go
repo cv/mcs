@@ -268,6 +268,7 @@ func TestCreateAPIClient_MissingCredentials(t *testing.T) {
 
 // TestVehicleInfo_InternalVINType tests that VehicleInfo.InternalVIN uses api.InternalVIN type
 func TestVehicleInfo_InternalVINType(t *testing.T) {
+	t.Parallel()
 	// This test verifies compile-time type safety for InternalVIN
 	// Create a VehicleInfo with api.InternalVIN type
 	vehicleInfo := VehicleInfo{

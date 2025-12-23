@@ -9,12 +9,14 @@ import (
 )
 
 func TestNewPerformanceTestResults(t *testing.T) {
+	t.Parallel()
 	p := NewPerformanceTestResults()
 
 	require.NotNil(t, p, "Expected non-nil PerformanceTestResults")
 }
 
 func TestPerformanceTestResults_Randomize(t *testing.T) {
+	t.Parallel()
 	p := NewPerformanceTestResults()
 	p.Randomize()
 
@@ -36,6 +38,7 @@ func TestPerformanceTestResults_Randomize(t *testing.T) {
 }
 
 func TestPerformanceTestResults_ToString(t *testing.T) {
+	t.Parallel()
 	p := &PerformanceTestResults{
 		modTestResult:   16,
 		modTestIters:    500,

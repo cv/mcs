@@ -9,11 +9,13 @@ import (
 )
 
 func TestNewSystemInfo(t *testing.T) {
+	t.Parallel()
 	si := NewSystemInfo()
 	require.NotNil(t, si, "Expected non-nil SystemInfo")
 }
 
 func TestSystemInfo_Randomize(t *testing.T) {
+	t.Parallel()
 	si := NewSystemInfo()
 	si.Randomize()
 
@@ -37,6 +39,7 @@ func TestSystemInfo_Randomize(t *testing.T) {
 }
 
 func TestSystemInfo_ToString(t *testing.T) {
+	t.Parallel()
 	si := NewSystemInfo()
 	si.Randomize()
 
@@ -53,6 +56,7 @@ func TestSystemInfo_ToString(t *testing.T) {
 }
 
 func TestSystemInfo_GetCharCodeSum(t *testing.T) {
+	t.Parallel()
 	si := NewSystemInfo()
 	si.Randomize()
 
@@ -67,6 +71,7 @@ func TestSystemInfo_GetCharCodeSum(t *testing.T) {
 }
 
 func TestPercentEncode(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -82,6 +87,7 @@ func TestPercentEncode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := percentEncode(tt.input)
 			assert.Equalf(t, tt.want, got, "percentEncode(%q) = %q, want %q", tt.input, got, tt.want)
 		})
@@ -89,6 +95,7 @@ func TestPercentEncode(t *testing.T) {
 }
 
 func TestSumCharCodes(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -101,6 +108,7 @@ func TestSumCharCodes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := sumCharCodes(tt.input)
 			assert.Equalf(t, tt.want, got, "sumCharCodes(%q) = %d, want %d", tt.input, got, tt.want)
 		})

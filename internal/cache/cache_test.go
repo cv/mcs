@@ -11,6 +11,7 @@ import (
 )
 
 func TestTokenCache_IsValid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		cache *TokenCache
@@ -60,6 +61,7 @@ func TestTokenCache_IsValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tt.want, tt.cache.IsValid())
 		})
 	}
@@ -128,6 +130,7 @@ func TestLoad_InvalidJSON(t *testing.T) {
 }
 
 func TestIsTokenValid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		accessToken  string
@@ -162,6 +165,7 @@ func TestIsTokenValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tt.want, IsTokenValid(tt.accessToken, tt.expirationTs))
 		})
 	}
@@ -286,6 +290,7 @@ func TestCachePersistence_PartialData(t *testing.T) {
 
 // TestCacheValidation_EdgeCases tests edge cases in cache validation
 func TestCacheValidation_EdgeCases(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		cache *TokenCache
@@ -355,6 +360,7 @@ func TestCacheValidation_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tt.want, tt.cache.IsValid())
 		})
 	}

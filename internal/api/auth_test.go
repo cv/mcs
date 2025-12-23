@@ -13,6 +13,7 @@ import (
 )
 
 func TestClient_GetEncryptionKeys(t *testing.T) {
+	t.Parallel()
 	// Create a test client to get the correct decryption key
 	testClient := &Client{
 		email:    "test@example.com",
@@ -68,6 +69,7 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 }
 
 func TestClient_GetUsherEncryptionKey(t *testing.T) {
+	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equalf(t, "/appapi/v1/"+EndpointEncryptionKey, r.URL.Path, "Expected path /appapi/v1/"+EndpointEncryptionKey+", got %s", r.URL.Path)
 		assert.Equalf(t, "GET", r.Method, "Expected GET method, got %s", r.Method)
@@ -102,6 +104,7 @@ func TestClient_GetUsherEncryptionKey(t *testing.T) {
 }
 
 func TestClient_Login(t *testing.T) {
+	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/appapi/v1/" + EndpointEncryptionKey:
@@ -151,6 +154,7 @@ func TestClient_Login(t *testing.T) {
 }
 
 func TestClient_IsTokenValid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		token      string
@@ -179,6 +183,7 @@ func TestClient_IsTokenValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			client := &Client{
 				accessToken:             tt.token,
 				accessTokenExpirationTs: tt.expiration,
@@ -190,6 +195,7 @@ func TestClient_IsTokenValid(t *testing.T) {
 }
 
 func TestRegion_String(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		region Region
@@ -214,6 +220,7 @@ func TestRegion_String(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := tt.region.String()
 			assert.Equal(t, tt.want, got)
 		})
@@ -221,6 +228,7 @@ func TestRegion_String(t *testing.T) {
 }
 
 func TestParseRegion(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		input   string
@@ -267,6 +275,7 @@ func TestParseRegion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := ParseRegion(tt.input)
 			if tt.wantErr {
 				require.Error(t, err, "ParseRegion() error = %v, wantErr %v")
@@ -280,6 +289,7 @@ func TestParseRegion(t *testing.T) {
 }
 
 func TestRegion_IsValid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		region Region
@@ -314,6 +324,7 @@ func TestRegion_IsValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := tt.region.IsValid()
 			assert.Equal(t, tt.want, got)
 		})

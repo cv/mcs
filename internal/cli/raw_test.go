@@ -14,18 +14,21 @@ import (
 
 // TestRawCommand tests the raw command
 func TestRawCommand(t *testing.T) {
+	t.Parallel()
 	cmd := NewRawCmd()
 	assertCommandBasics(t, cmd, "raw")
 }
 
 // TestRawCommand_Subcommands tests raw subcommands
 func TestRawCommand_Subcommands(t *testing.T) {
+	t.Parallel()
 	cmd := NewRawCmd()
 	assertSubcommandsExist(t, cmd, []string{"status", "ev", "vehicle"})
 }
 
 // TestRawCommand_SubcommandStructure tests structure of each raw subcommand using table-driven pattern
 func TestRawCommand_SubcommandStructure(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name            string
 		subcommandName  string
@@ -58,6 +61,7 @@ func TestRawCommand_SubcommandStructure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			cmd := NewRawCmd()
 			subCmd := findSubcommand(cmd, tt.subcommandName)
 
@@ -74,6 +78,7 @@ func TestRawCommand_SubcommandStructure(t *testing.T) {
 
 // TestRawCommand_SubcommandSilenceUsage tests that raw subcommands silence usage on errors
 func TestRawCommand_SubcommandSilenceUsage(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		subcommandName string
@@ -85,6 +90,7 @@ func TestRawCommand_SubcommandSilenceUsage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			cmd := NewRawCmd()
 			subCmd := findSubcommand(cmd, tt.subcommandName)
 
@@ -97,6 +103,7 @@ func TestRawCommand_SubcommandSilenceUsage(t *testing.T) {
 
 // TestRunRawStatus_OutputFormat tests that runRawStatus would produce valid JSON
 func TestRunRawStatus_OutputFormat(t *testing.T) {
+	t.Parallel()
 	// This test verifies the JSON marshaling logic without needing a real API client
 	// We test the pattern: API response -> JSON marshal -> output
 
@@ -128,6 +135,7 @@ func TestRunRawStatus_OutputFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Test that the response can be marshaled to JSON (same logic as runRawStatus)
 			jsonBytes, err := json.MarshalIndent(tt.response, "", "  ")
 			require.NoError(t, err, "Expected successful JSON marshal, got error: %v")
@@ -145,6 +153,7 @@ func TestRunRawStatus_OutputFormat(t *testing.T) {
 
 // TestRunRawEV_OutputFormat tests that runRawEV would produce valid JSON
 func TestRunRawEV_OutputFormat(t *testing.T) {
+	t.Parallel()
 	// This test verifies the JSON marshaling logic without needing a real API client
 	// We test the pattern: API response -> JSON marshal -> output
 
@@ -172,6 +181,7 @@ func TestRunRawEV_OutputFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Test that the response can be marshaled to JSON (same logic as runRawEV)
 			jsonBytes, err := json.MarshalIndent(tt.response, "", "  ")
 			require.NoError(t, err, "Expected successful JSON marshal, got error: %v")
@@ -189,6 +199,7 @@ func TestRunRawEV_OutputFormat(t *testing.T) {
 
 // TestRunRawVehicle_OutputFormat tests that runRawVehicle would produce valid JSON
 func TestRunRawVehicle_OutputFormat(t *testing.T) {
+	t.Parallel()
 	// This test verifies the JSON marshaling logic without needing a real API client
 	// We test the pattern: API response -> JSON marshal -> output
 
@@ -261,6 +272,7 @@ func TestRunRawVehicle_OutputFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Test that the response can be marshaled to JSON (same logic as runRawVehicle)
 			jsonBytes, err := json.MarshalIndent(tt.response, "", "  ")
 			require.NoError(t, err, "Expected successful JSON marshal, got error: %v")
@@ -278,6 +290,7 @@ func TestRunRawVehicle_OutputFormat(t *testing.T) {
 
 // TestRawHandlers_ErrorContext tests that error messages include proper context
 func TestRawHandlers_ErrorContext(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name            string
 		handlerFunc     func(*cobra.Command) error
@@ -302,6 +315,7 @@ func TestRawHandlers_ErrorContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Create a command with a canceled context to trigger an error
 			cmd := &cobra.Command{}
 			ctx, cancel := context.WithCancel(context.Background())

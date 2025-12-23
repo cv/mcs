@@ -11,6 +11,7 @@ import (
 // TestUndisplayedFieldsInVehicleStatus verifies that undisplayed fields from GetVehicleStatus
 // can be parsed correctly from the API response structure
 func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
+	t.Parallel()
 	// Create a comprehensive mock response with ALL fields we want to verify
 	responseData := map[string]any{
 		"resultCode": "200S00",
@@ -100,6 +101,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	// Note: The current typed structs don't include these fields, so we need to
 	// test against the raw response data structure
 	t.Run("VerifyOdometerField", func(t *testing.T) {
+		t.Parallel()
 		// DriveInformation.OdoDispValue
 		remoteInfos, ok := getMapSlice(responseData, "remoteInfos")
 		require.True(t, ok, "remoteInfos not found in response")
@@ -112,6 +114,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyHoodStatusField", func(t *testing.T) {
+		t.Parallel()
 		// alertInfos[].Door.DrStatHood
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
@@ -124,6 +127,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyFuelLidStatusField", func(t *testing.T) {
+		t.Parallel()
 		// alertInfos[].Door.FuelLidOpenStatus
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
@@ -136,6 +140,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyIndividualDoorLockFields", func(t *testing.T) {
+		t.Parallel()
 		// alertInfos[].Door.LockLinkSwDrv/Psngr/Rl/Rr
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
@@ -152,6 +157,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyWindowPositionFields", func(t *testing.T) {
+		t.Parallel()
 		// alertInfos[].Pw.PwPosDrv/Psngr/Rl/Rr
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
@@ -168,6 +174,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyHazardLightField", func(t *testing.T) {
+		t.Parallel()
 		// alertInfos[].HazardLamp.HazardSw
 		alertInfos, ok := getMapSlice(responseData, "alertInfos")
 		require.True(t, ok, "alertInfos not found in response")
@@ -183,6 +190,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 // TestUndisplayedFieldsInEVVehicleStatus verifies that undisplayed fields from GetEVVehicleStatus
 // can be parsed correctly from the API response structure
 func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
+	t.Parallel()
 	// Create a comprehensive mock response with ALL fields we want to verify
 	responseData := map[string]any{
 		"resultCode": "200S00",
@@ -236,6 +244,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	require.Lenf(t, result.ResultData, 1, "Expected 1 result data, got %d", len(result.ResultData))
 
 	t.Run("VerifyACChargeTimeField", func(t *testing.T) {
+		t.Parallel()
 		// ChargeInfo.MaxChargeMinuteAC
 		resultData, ok := getMapSlice(responseData, "resultData")
 		require.True(t, ok, "resultData not found in response")
@@ -252,6 +261,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyQuickChargeTimeField", func(t *testing.T) {
+		t.Parallel()
 		// ChargeInfo.MaxChargeMinuteQBC
 		resultData, ok := getMapSlice(responseData, "resultData")
 		require.True(t, ok, "resultData not found in response")
@@ -268,6 +278,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyBatteryHeaterAutoField", func(t *testing.T) {
+		t.Parallel()
 		// ChargeInfo.CstmzStatBatHeatAutoSW
 		resultData, ok := getMapSlice(responseData, "resultData")
 		require.True(t, ok, "resultData not found in response")
@@ -284,6 +295,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyBatteryHeaterOnField", func(t *testing.T) {
+		t.Parallel()
 		// ChargeInfo.BatteryHeaterON
 		resultData, ok := getMapSlice(responseData, "resultData")
 		require.True(t, ok, "resultData not found in response")
@@ -300,6 +312,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyInteriorTempField", func(t *testing.T) {
+		t.Parallel()
 		// RemoteHvacInfo.InteriorTemp
 		resultData, ok := getMapSlice(responseData, "resultData")
 		require.True(t, ok, "resultData not found in response")
@@ -316,6 +329,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 	})
 
 	t.Run("VerifyTargetTempField", func(t *testing.T) {
+		t.Parallel()
 		// RemoteHvacInfo.TargetTemp
 		resultData, ok := getMapSlice(responseData, "resultData")
 		require.True(t, ok, "resultData not found in response")
@@ -334,6 +348,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 
 // TestVehicleStatusWithVariedValues tests that fields can handle different values
 func TestVehicleStatusWithVariedValues(t *testing.T) {
+	t.Parallel()
 	// Test with hood open, fuel lid open, windows partially open, hazard on
 	responseData := map[string]any{
 		"resultCode": "200S00",
@@ -441,6 +456,7 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 
 // TestEVVehicleStatusWithVariedValues tests EV fields with different values
 func TestEVVehicleStatusWithVariedValues(t *testing.T) {
+	t.Parallel()
 	// Test with battery heater on, different temps
 	responseData := map[string]any{
 		"resultCode": "200S00",

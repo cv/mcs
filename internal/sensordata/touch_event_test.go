@@ -9,6 +9,7 @@ import (
 )
 
 func TestTouchEvent_ToString(t *testing.T) {
+	t.Parallel()
 	event := &TouchEvent{
 		eventType:    2,
 		time:         1000,
@@ -23,6 +24,7 @@ func TestTouchEvent_ToString(t *testing.T) {
 }
 
 func TestNewTouchEventList(t *testing.T) {
+	t.Parallel()
 	list := NewTouchEventList()
 
 	require.NotNil(t, list, "Expected non-nil TouchEventList")
@@ -31,6 +33,7 @@ func TestNewTouchEventList(t *testing.T) {
 }
 
 func TestTouchEventList_Randomize_ShortDuration(t *testing.T) {
+	t.Parallel()
 	list := NewTouchEventList()
 	// Create a timestamp that's very recent (less than 3 seconds ago)
 	recentTimestamp := time.Now().UTC()
@@ -42,6 +45,7 @@ func TestTouchEventList_Randomize_ShortDuration(t *testing.T) {
 }
 
 func TestTouchEventList_Randomize_MediumDuration(t *testing.T) {
+	t.Parallel()
 	list := NewTouchEventList()
 	// Create a timestamp ~4 seconds ago (between 3000 and 5000ms)
 	timestamp := time.Now().UTC().Add(-4 * time.Second)
@@ -59,6 +63,7 @@ func TestTouchEventList_Randomize_MediumDuration(t *testing.T) {
 }
 
 func TestTouchEventList_Randomize_LongDuration(t *testing.T) {
+	t.Parallel()
 	list := NewTouchEventList()
 	// Create a timestamp ~12 seconds ago (>= 10000ms)
 	timestamp := time.Now().UTC().Add(-12 * time.Second)
@@ -72,6 +77,7 @@ func TestTouchEventList_Randomize_LongDuration(t *testing.T) {
 }
 
 func TestTouchEventList_ToString(t *testing.T) {
+	t.Parallel()
 	list := NewTouchEventList()
 	list.touchEvents = []*TouchEvent{
 		{eventType: 2, time: 100, pointerCount: 1, toolType: 1},
@@ -91,6 +97,7 @@ func TestTouchEventList_ToString(t *testing.T) {
 }
 
 func TestTouchEventList_GetSum(t *testing.T) {
+	t.Parallel()
 	list := NewTouchEventList()
 	list.touchEvents = []*TouchEvent{
 		{eventType: 2, time: 100, pointerCount: 1, toolType: 1},
@@ -105,6 +112,7 @@ func TestTouchEventList_GetSum(t *testing.T) {
 }
 
 func TestTouchEventList_GetSum_Empty(t *testing.T) {
+	t.Parallel()
 	list := NewTouchEventList()
 	sum := list.GetSum()
 

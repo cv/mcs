@@ -16,6 +16,7 @@ import (
 
 // TestAPIRequest_Success tests successful API request with encryption
 func TestAPIRequest_Success(t *testing.T) {
+	t.Parallel()
 	// Create a mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify headers
@@ -63,6 +64,7 @@ func TestAPIRequest_Success(t *testing.T) {
 
 // TestAPIRequest_EncryptionError tests handling of encryption error response
 func TestAPIRequest_EncryptionError(t *testing.T) {
+	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]any{
 			"state":     "E",
@@ -91,6 +93,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 
 // TestAPIRequest_TokenExpired tests handling of expired token error
 func TestAPIRequest_TokenExpired(t *testing.T) {
+	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]any{
 			"state":     "E",
@@ -119,6 +122,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 
 // TestAPIRequest_RequestInProgress tests handling of request in progress error
 func TestAPIRequest_RequestInProgress(t *testing.T) {
+	t.Parallel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]any{
 			"state":     "E",
@@ -147,6 +151,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 
 // TestEncryptPayloadUsingKey tests payload encryption
 func TestEncryptPayloadUsingKey(t *testing.T) {
+	t.Parallel()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	require.NoError(t, err, "Failed to create client: %v")
 
@@ -171,6 +176,7 @@ func TestEncryptPayloadUsingKey(t *testing.T) {
 
 // TestDecryptPayloadUsingKey tests payload decryption
 func TestDecryptPayloadUsingKey(t *testing.T) {
+	t.Parallel()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	require.NoError(t, err, "Failed to create client: %v")
 
@@ -199,6 +205,7 @@ func TestDecryptPayloadUsingKey(t *testing.T) {
 
 // TestGetSignFromPayloadAndTimestamp tests signature generation
 func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
+	t.Parallel()
 	client, err := NewClient("test@example.com", "password", RegionMNAO)
 	require.NoError(t, err, "Failed to create client: %v")
 
@@ -217,6 +224,7 @@ func TestGetSignFromPayloadAndTimestamp(t *testing.T) {
 
 // TestAPIRequest_MissingKeys tests that APIRequest attempts to get keys when missing
 func TestAPIRequest_MissingKeys(t *testing.T) {
+	t.Parallel()
 	// Create a server that returns error for checkVersion (key retrieval)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response := map[string]any{
@@ -241,6 +249,7 @@ func TestAPIRequest_MissingKeys(t *testing.T) {
 
 // TestAPIRequest_POST_WithBody tests POST request with body encryption
 func TestAPIRequest_POST_WithBody(t *testing.T) {
+	t.Parallel()
 	requestReceived := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestReceived = true
@@ -285,6 +294,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 
 // TestAPIRequest_GET_WithQuery tests GET request with query parameter encryption
 func TestAPIRequest_GET_WithQuery(t *testing.T) {
+	t.Parallel()
 	requestReceived := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestReceived = true
@@ -329,6 +339,7 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 
 // TestCalculateBackoff tests the backoff calculation
 func TestCalculateBackoff(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		retryCount int
 		expected   time.Duration
@@ -344,6 +355,7 @@ func TestCalculateBackoff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(strings.Join([]string{"retry", strings.Repeat("x", tt.retryCount)}, "_"), func(t *testing.T) {
+			t.Parallel()
 			result := calculateBackoff(tt.retryCount)
 			assert.Equalf(t, tt.expected, result, "calculateBackoff(%d) = %v, want %v", tt.retryCount, result, tt.expected)
 		})
@@ -352,6 +364,7 @@ func TestCalculateBackoff(t *testing.T) {
 
 // TestSleepWithContext_Completes tests that sleep completes normally
 func TestSleepWithContext_Completes(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	start := time.Now()
 	duration := 100 * time.Millisecond
@@ -369,6 +382,7 @@ func TestSleepWithContext_Completes(t *testing.T) {
 
 // TestSleepWithContext_Cancelled tests that sleep returns early on context cancellation
 func TestSleepWithContext_Cancelled(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithCancel(context.Background())
 	start := time.Now()
 	duration := 5 * time.Second // Long sleep
@@ -392,6 +406,7 @@ func TestSleepWithContext_Cancelled(t *testing.T) {
 
 // TestSleepWithContext_ZeroDuration tests that zero duration returns immediately
 func TestSleepWithContext_ZeroDuration(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	start := time.Now()
 
@@ -405,6 +420,7 @@ func TestSleepWithContext_ZeroDuration(t *testing.T) {
 
 // TestAPIRequest_RetryWithContextCancellation tests that context cancellation during backoff returns immediately
 func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
+	t.Parallel()
 	callCount := 0
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

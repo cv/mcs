@@ -17,6 +17,7 @@ func init() {
 
 // TestStatusCommand tests the status command
 func TestStatusCommand(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		expectedUse   string
@@ -36,6 +37,7 @@ func TestStatusCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			cmd := NewStatusCmd()
 
 			assert.Equal(t, tt.expectedUse, cmd.Use)
@@ -47,6 +49,7 @@ func TestStatusCommand(t *testing.T) {
 
 // TestStatusCommand_NoSubcommand tests status command without subcommand
 func TestStatusCommand_NoSubcommand(t *testing.T) {
+	t.Parallel()
 	// This should show all status information
 	cmd := NewStatusCmd()
 	cmd.SetArgs([]string{})
@@ -60,10 +63,12 @@ func TestStatusCommand_NoSubcommand(t *testing.T) {
 
 // TestStatusCommand_Subcommands tests all status subcommands using table-driven pattern
 func TestStatusCommand_Subcommands(t *testing.T) {
+	t.Parallel()
 	subcommands := []string{"battery", "fuel", "location", "tires", "doors"}
 
 	for _, name := range subcommands {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			cmd := NewStatusCmd()
 			subCmd := findSubcommand(cmd, name)
 
@@ -76,6 +81,7 @@ func TestStatusCommand_Subcommands(t *testing.T) {
 
 // TestStatusCommand_JSONFlag tests the JSON output flag
 func TestStatusCommand_JSONFlag(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		flagName     string
@@ -92,6 +98,7 @@ func TestStatusCommand_JSONFlag(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			cmd := NewStatusCmd()
 			flag := cmd.PersistentFlags().Lookup(tt.flagName)
 
@@ -109,6 +116,7 @@ func TestStatusCommand_JSONFlag(t *testing.T) {
 
 // TestFormatBatteryStatus tests battery status formatting
 func TestFormatBatteryStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name             string
 		batteryLevel     float64
@@ -173,6 +181,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			batteryInfo := api.BatteryInfo{
 				BatteryLevel:     tt.batteryLevel,
 				RangeKm:          tt.range_,
@@ -192,6 +201,7 @@ func TestFormatBatteryStatus(t *testing.T) {
 
 // TestFormatBatteryStatus_JSON tests battery status JSON formatting
 func TestFormatBatteryStatus_JSON(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		batteryInfo  api.BatteryInfo
@@ -222,6 +232,7 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := formatBatteryStatus(tt.batteryInfo, true)
 			require.NoError(t, err, "Unexpected error: %v")
 
@@ -235,6 +246,7 @@ func TestFormatBatteryStatus_JSON(t *testing.T) {
 
 // TestFormatBatteryStatus_WithHeater tests battery heater display
 func TestFormatBatteryStatus_WithHeater(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		heaterOn   bool
@@ -275,6 +287,7 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			var batteryInfo api.BatteryInfo
 			if i == 4 {
 				// Last test case includes charging
@@ -309,6 +322,7 @@ func TestFormatBatteryStatus_WithHeater(t *testing.T) {
 
 // TestFormatFuelStatus tests fuel status formatting
 func TestFormatFuelStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		fuelLevel      float64
@@ -338,6 +352,7 @@ func TestFormatFuelStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			fuelInfo := api.FuelInfo{
 				FuelLevel: tt.fuelLevel,
 				RangeKm:   tt.rangeKm,
@@ -359,6 +374,7 @@ func TestFormatFuelStatus(t *testing.T) {
 
 // TestFormatDoorsStatus tests doors status formatting
 func TestFormatDoorsStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		doorStatus     api.DoorStatus
@@ -436,6 +452,7 @@ func TestFormatDoorsStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := formatDoorsStatus(tt.doorStatus, false)
 			require.NoError(t, err, "Unexpected error: %v")
 			assert.Equal(t, tt.expectedOutput, result)
@@ -445,6 +462,7 @@ func TestFormatDoorsStatus(t *testing.T) {
 
 // TestFormatTiresStatus tests tire status formatting
 func TestFormatTiresStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		frontLeftPsi  float64
@@ -465,6 +483,7 @@ func TestFormatTiresStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			tireInfo := api.TireInfo{
 				FrontLeftPsi:  tt.frontLeftPsi,
 				FrontRightPsi: tt.frontRightPsi,
@@ -481,6 +500,7 @@ func TestFormatTiresStatus(t *testing.T) {
 
 // TestFormatLocationStatus tests location status formatting
 func TestFormatLocationStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name             string
 		latitude         float64
@@ -503,6 +523,7 @@ func TestFormatLocationStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			locationInfo := api.LocationInfo{
 				Latitude:  tt.latitude,
 				Longitude: tt.longitude,
@@ -520,6 +541,7 @@ func TestFormatLocationStatus(t *testing.T) {
 
 // TestGetInternalVIN tests getting internal VIN from vehicle base info
 func TestGetInternalVIN(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		response    *api.VecBaseInfosResponse
@@ -555,6 +577,7 @@ func TestGetInternalVIN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			vin, err := tt.response.GetInternalVIN()
 
 			if tt.expectError {
@@ -569,6 +592,7 @@ func TestGetInternalVIN(t *testing.T) {
 
 // TestRunStatus_Integration tests the full status command integration
 func TestRunStatus_Integration(t *testing.T) {
+	t.Parallel()
 	// This would require mocking the API client
 	// For now, we just test that the function signature is correct
 	cmd := NewStatusCmd()
@@ -584,6 +608,7 @@ func TestRunStatus_Integration(t *testing.T) {
 
 // TestFormatHvacStatus tests HVAC status formatting
 func TestFormatHvacStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		hvacOn         bool
@@ -651,6 +676,7 @@ func TestFormatHvacStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			hvacInfo := api.HVACInfo{
 				HVACOn:         tt.hvacOn,
 				FrontDefroster: tt.frontDefroster,
@@ -667,6 +693,7 @@ func TestFormatHvacStatus(t *testing.T) {
 
 // TestFormatHvacStatus_JSON tests HVAC status JSON formatting
 func TestFormatHvacStatus_JSON(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		hvacInfo     api.HVACInfo
@@ -693,6 +720,7 @@ func TestFormatHvacStatus_JSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := formatHvacStatus(tt.hvacInfo, true)
 			require.NoError(t, err, "Unexpected error: %v")
 
@@ -706,6 +734,7 @@ func TestFormatHvacStatus_JSON(t *testing.T) {
 
 // TestGetHvacInfo tests extracting HVAC info from EV status
 func TestGetHvacInfo(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name              string
 		response          *api.EVVehicleStatusResponse
@@ -767,6 +796,7 @@ func TestGetHvacInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			hvacInfo, err := tt.response.GetHvacInfo()
 
 			if tt.expectError {
@@ -785,6 +815,7 @@ func TestGetHvacInfo(t *testing.T) {
 
 // TestExtractHvacData tests extracting HVAC data for JSON output
 func TestExtractHvacData(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		response     *api.EVVehicleStatusResponse
@@ -824,6 +855,7 @@ func TestExtractHvacData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			data := extractHvacData(tt.response)
 
 			for key, expected := range tt.expectedData {
@@ -835,6 +867,7 @@ func TestExtractHvacData(t *testing.T) {
 
 // TestFormatOdometerStatus tests odometer status formatting
 func TestFormatOdometerStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		odometerKm     float64
@@ -864,6 +897,7 @@ func TestFormatOdometerStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			odometerInfo := api.OdometerInfo{OdometerKm: tt.odometerKm}
 			result, err := formatOdometerStatus(odometerInfo, false)
 			require.NoError(t, err, "Unexpected error: %v")
@@ -874,6 +908,7 @@ func TestFormatOdometerStatus(t *testing.T) {
 
 // TestFormatOdometerStatus_JSON tests odometer status JSON formatting
 func TestFormatOdometerStatus_JSON(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		odometerKm   float64
@@ -890,6 +925,7 @@ func TestFormatOdometerStatus_JSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			odometerInfo := api.OdometerInfo{OdometerKm: tt.odometerKm}
 			result, err := formatOdometerStatus(odometerInfo, true)
 			require.NoError(t, err, "Unexpected error: %v")
@@ -904,6 +940,7 @@ func TestFormatOdometerStatus_JSON(t *testing.T) {
 
 // TestGetOdometerInfo tests extracting odometer info from vehicle status
 func TestGetOdometerInfo(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name             string
 		response         *api.VehicleStatusResponse
@@ -927,6 +964,7 @@ func TestGetOdometerInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			odometerInfo, err := tt.response.GetOdometerInfo()
 			require.NoError(t, err, "Expected no error, got: %v")
 
@@ -937,6 +975,7 @@ func TestGetOdometerInfo(t *testing.T) {
 
 // TestExtractOdometerData tests extracting odometer data for JSON output
 func TestExtractOdometerData(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		response     *api.VehicleStatusResponse
@@ -962,6 +1001,7 @@ func TestExtractOdometerData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			data := extractOdometerData(tt.response)
 
 			for key, expected := range tt.expectedData {
@@ -973,6 +1013,7 @@ func TestExtractOdometerData(t *testing.T) {
 
 // TestFormatChargeTime tests charge time formatting
 func TestFormatChargeTime(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		acMinutes  float64
@@ -1025,6 +1066,7 @@ func TestFormatChargeTime(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := formatChargeTime(tt.acMinutes, tt.qbcMinutes)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -1033,6 +1075,7 @@ func TestFormatChargeTime(t *testing.T) {
 
 // TestFormatVehicleHeader tests vehicle header formatting
 func TestFormatVehicleHeader(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		info     VehicleInfo
@@ -1089,6 +1132,7 @@ func TestFormatVehicleHeader(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := formatVehicleHeader(tt.info)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -1097,6 +1141,7 @@ func TestFormatVehicleHeader(t *testing.T) {
 
 // TestExtractVehicleInfoData tests vehicle info extraction for JSON
 func TestExtractVehicleInfoData(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		vehicleInfo  VehicleInfo
@@ -1121,6 +1166,7 @@ func TestExtractVehicleInfoData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			data := extractVehicleInfoData(tt.vehicleInfo)
 
 			for key, expected := range tt.expectedData {
@@ -1132,6 +1178,7 @@ func TestExtractVehicleInfoData(t *testing.T) {
 
 // TestFormatRelativeTime tests the formatRelativeTime function
 func TestFormatRelativeTime(t *testing.T) {
+	t.Parallel()
 	now := time.Now()
 
 	tests := []struct {
@@ -1203,6 +1250,7 @@ func TestFormatRelativeTime(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := formatRelativeTime(tt.time)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -1211,6 +1259,7 @@ func TestFormatRelativeTime(t *testing.T) {
 
 // TestFormatTimestamp tests the formatTimestamp function
 func TestFormatTimestamp(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name             string
 		timestamp        string
@@ -1252,6 +1301,7 @@ func TestFormatTimestamp(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := formatTimestamp(tt.timestamp)
 
 			if tt.expectedFormat != "" {
@@ -1271,6 +1321,7 @@ func TestFormatTimestamp(t *testing.T) {
 
 // TestFormatWindowsStatus tests the formatWindowsStatus function
 func TestFormatWindowsStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		windowsInfo    api.WindowStatus
@@ -1348,6 +1399,7 @@ func TestFormatWindowsStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := formatWindowsStatus(tt.windowsInfo, tt.jsonOutput)
 			require.NoError(t, err, "Unexpected error: %v")
 
@@ -1366,6 +1418,7 @@ func TestFormatWindowsStatus(t *testing.T) {
 
 // TestDisplayStatusWithVehicle tests the displayStatusWithVehicle function
 func TestDisplayStatusWithVehicle(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		statusType     StatusType
@@ -1501,6 +1554,7 @@ func TestDisplayStatusWithVehicle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// Create a cobra command with a buffer for output
 			buf := new(bytes.Buffer)
 			cmd := NewStatusCmd()
@@ -1520,6 +1574,7 @@ func TestDisplayStatusWithVehicle(t *testing.T) {
 
 // TestDisplayAllStatus tests the displayAllStatus function
 func TestDisplayAllStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		vehicleStatus  *api.VehicleStatusResponse
@@ -1675,6 +1730,7 @@ func TestDisplayAllStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := displayAllStatus(tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, tt.jsonOutput)
 			require.NoError(t, err, "Unexpected error: %v")
 
@@ -1696,6 +1752,7 @@ func TestDisplayAllStatus(t *testing.T) {
 
 // TestDisplayAllStatus_ErrorHandling tests error cases in displayAllStatus
 func TestDisplayAllStatus_ErrorHandling(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		vehicleStatus *api.VehicleStatusResponse
@@ -1728,6 +1785,7 @@ func TestDisplayAllStatus_ErrorHandling(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			_, err := displayAllStatus(tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, false)
 			if tt.expectError {
 				require.Error(t, err, "Expected error, got nil")

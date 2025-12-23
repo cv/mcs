@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRootCmd_Version(t *testing.T) {
+func TestRootCmd_Version(t *testing.T) { //nolint:paralleltest // NewRootCmd writes to package-level vars
 	rootCmd := NewRootCmd()
 	rootCmd.SetArgs([]string{"--version"})
 
@@ -27,7 +27,7 @@ func TestRootCmd_Version(t *testing.T) {
 	assert.Contains(t, result, "mcs version")
 }
 
-func TestRootCmd_Help(t *testing.T) {
+func TestRootCmd_Help(t *testing.T) { //nolint:paralleltest // NewRootCmd writes to package-level vars
 	rootCmd := NewRootCmd()
 	rootCmd.SetArgs([]string{"--help"})
 
@@ -43,7 +43,7 @@ func TestRootCmd_Help(t *testing.T) {
 	assert.Contains(t, result, "manufacturer API")
 }
 
-func TestRootCmd_NoArgs(t *testing.T) {
+func TestRootCmd_NoArgs(t *testing.T) { //nolint:paralleltest // NewRootCmd writes to package-level vars
 	rootCmd := NewRootCmd()
 	rootCmd.SetArgs([]string{})
 
@@ -57,7 +57,7 @@ func TestRootCmd_NoArgs(t *testing.T) {
 	require.NoError(t, err, "Execute() error = %v")
 }
 
-func TestExecute_SignalHandling(t *testing.T) {
+func TestExecute_SignalHandling(t *testing.T) { //nolint:paralleltest // NewRootCmd writes to package-level vars
 	// Create a command that blocks until context is cancelled
 	rootCmd := NewRootCmd()
 
@@ -99,6 +99,7 @@ func TestExecute_SignalHandling(t *testing.T) {
 }
 
 func TestExecute_WithRealSignal(t *testing.T) {
+	t.Parallel()
 	// This test verifies that signal.NotifyContext properly captures signals
 	// We'll test the signal mechanism without actually running a full command
 
@@ -126,7 +127,7 @@ func TestExecute_WithRealSignal(t *testing.T) {
 	}
 }
 
-func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) {
+func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) { //nolint:paralleltest // modifies os.Stderr
 	// Create a skill command
 	skillCmd := &cobra.Command{Use: "skill"}
 
@@ -147,7 +148,7 @@ func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) {
 	assert.Empty(t, errBuf.String())
 }
 
-func TestCheckSkillVersionMismatch_SkipsSkillSubcommands(t *testing.T) {
+func TestCheckSkillVersionMismatch_SkipsSkillSubcommands(t *testing.T) { //nolint:paralleltest // modifies os.Stderr
 	// Create a skill subcommand (e.g., skill install)
 	skillCmd := &cobra.Command{Use: "skill"}
 	installCmd := &cobra.Command{Use: "install"}

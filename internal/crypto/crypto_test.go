@@ -9,6 +9,7 @@ import (
 )
 
 func TestPKCS7Pad(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		data      []byte
@@ -37,6 +38,7 @@ func TestPKCS7Pad(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := PKCS7Pad(tt.data, tt.blockSize)
 			assert.Len(t, result, tt.wantLen)
 			assert.Equal(t, 0, len(result)%tt.blockSize, "PKCS7Pad() result not multiple of block size")
@@ -45,6 +47,7 @@ func TestPKCS7Pad(t *testing.T) {
 }
 
 func TestPKCS7Unpad(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		data    []byte
@@ -73,6 +76,7 @@ func TestPKCS7Unpad(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result, err := PKCS7Unpad(tt.data)
 			if tt.wantErr {
 				require.Error(t, err, "PKCS7Unpad() error = %v, wantErr %v")
@@ -89,6 +93,7 @@ func TestPKCS7Unpad(t *testing.T) {
 }
 
 func TestPKCS7PadUnpad_RoundTrip(t *testing.T) {
+	t.Parallel()
 	data := []byte("test data for padding")
 	padded := PKCS7Pad(data, aes.BlockSize)
 	unpadded, err := PKCS7Unpad(padded)
@@ -97,6 +102,7 @@ func TestPKCS7PadUnpad_RoundTrip(t *testing.T) {
 }
 
 func TestEncryptDecryptAES128CBC(t *testing.T) {
+	t.Parallel()
 	key := []byte("0123456789abcdef") // 16 bytes for AES-128
 	iv := []byte("abcdef0123456789")  // 16 bytes
 	plaintext := []byte("Hello, World! This is a test message.")
@@ -111,6 +117,7 @@ func TestEncryptDecryptAES128CBC(t *testing.T) {
 }
 
 func TestEncryptAES128CBC_InvalidKey(t *testing.T) {
+	t.Parallel()
 	key := []byte("short") // Invalid key length
 	iv := []byte("abcdef0123456789")
 	plaintext := []byte("test")
@@ -120,6 +127,7 @@ func TestEncryptAES128CBC_InvalidKey(t *testing.T) {
 }
 
 func TestDecryptAES128CBC_InvalidCiphertext(t *testing.T) {
+	t.Parallel()
 	key := []byte("0123456789abcdef")
 	iv := []byte("abcdef0123456789")
 	// Invalid ciphertext length (not multiple of block size)

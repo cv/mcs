@@ -13,6 +13,7 @@ import (
 
 // TestGetSkillPath tests that getSkillPath returns the correct path
 func TestGetSkillPath(t *testing.T) {
+	t.Parallel()
 	path, err := getSkillPath()
 	require.NoError(t, err, "Expected getSkillPath to succeed, got error: %v")
 
@@ -86,18 +87,21 @@ func TestUninstallSkill(t *testing.T) {
 
 // TestSkillCommand tests the skill parent command
 func TestSkillCommand(t *testing.T) {
+	t.Parallel()
 	cmd := NewSkillCmd()
 	assertCommandBasics(t, cmd, "skill")
 }
 
 // TestSkillCommand_Subcommands tests that skill subcommands exist
 func TestSkillCommand_Subcommands(t *testing.T) {
+	t.Parallel()
 	cmd := NewSkillCmd()
 	assertSubcommandsExist(t, cmd, []string{"install", "uninstall", "path"})
 }
 
 // TestSkillInstallCommand tests the skill install subcommand
 func TestSkillInstallCommand(t *testing.T) {
+	t.Parallel()
 	cmd := NewSkillInstallCmd()
 	assertCommandBasics(t, cmd, "install")
 	assertNoArgsCommand(t, cmd)
@@ -176,6 +180,7 @@ func TestSkillInstallCommand_ReinstallRemovesOld(t *testing.T) {
 
 // TestSkillUninstallCommand tests the skill uninstall subcommand
 func TestSkillUninstallCommand(t *testing.T) {
+	t.Parallel()
 	cmd := NewSkillUninstallCmd()
 	assertCommandBasics(t, cmd, "uninstall")
 	assertNoArgsCommand(t, cmd)
@@ -243,6 +248,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 
 // TestSkillPathCommand tests the skill path subcommand
 func TestSkillPathCommand(t *testing.T) {
+	t.Parallel()
 	cmd := NewSkillPathCmd()
 	assertCommandBasics(t, cmd, "path")
 	assertNoArgsCommand(t, cmd)

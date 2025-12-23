@@ -9,6 +9,7 @@ import (
 )
 
 func TestKeyEvent_ToString(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		event *KeyEvent
@@ -36,6 +37,7 @@ func TestKeyEvent_ToString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := tt.event.ToString()
 			assert.Equal(t, tt.want, got)
 		})
@@ -43,6 +45,7 @@ func TestKeyEvent_ToString(t *testing.T) {
 }
 
 func TestNewKeyEventList(t *testing.T) {
+	t.Parallel()
 	list := NewKeyEventList()
 
 	require.NotNil(t, list, "Expected non-nil KeyEventList")
@@ -51,6 +54,7 @@ func TestNewKeyEventList(t *testing.T) {
 }
 
 func TestKeyEventList_Randomize_ShortDuration(t *testing.T) {
+	t.Parallel()
 	list := NewKeyEventList()
 	// Create a timestamp that's less than 10 seconds ago
 	timestamp := time.Now().UTC().Add(-5 * time.Second)
@@ -62,6 +66,7 @@ func TestKeyEventList_Randomize_ShortDuration(t *testing.T) {
 }
 
 func TestKeyEventList_ToString(t *testing.T) {
+	t.Parallel()
 	list := NewKeyEventList()
 	list.keyEvents = []*KeyEvent{
 		{time: 5000, idCharCodeSum: 517, longerThanBefore: false},
@@ -76,6 +81,7 @@ func TestKeyEventList_ToString(t *testing.T) {
 }
 
 func TestKeyEventList_ToString_Empty(t *testing.T) {
+	t.Parallel()
 	list := NewKeyEventList()
 	result := list.ToString()
 
@@ -83,6 +89,7 @@ func TestKeyEventList_ToString_Empty(t *testing.T) {
 }
 
 func TestKeyEventList_GetSum(t *testing.T) {
+	t.Parallel()
 	list := NewKeyEventList()
 	list.keyEvents = []*KeyEvent{
 		{time: 5000, idCharCodeSum: 517, longerThanBefore: false},
@@ -97,6 +104,7 @@ func TestKeyEventList_GetSum(t *testing.T) {
 }
 
 func TestKeyEventList_GetSum_Empty(t *testing.T) {
+	t.Parallel()
 	list := NewKeyEventList()
 	sum := list.GetSum()
 

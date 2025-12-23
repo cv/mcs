@@ -15,6 +15,7 @@ import (
 
 // TestWaitForCondition tests the generic condition waiting logic
 func TestWaitForCondition(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		useEVStatus   bool
@@ -134,6 +135,7 @@ func TestWaitForCondition(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -198,6 +200,7 @@ func TestWaitForCondition(t *testing.T) {
 
 // TestPollUntilCondition tests the polling logic
 func TestPollUntilCondition(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		checkFunc      func() (bool, error)
@@ -295,6 +298,7 @@ func TestPollUntilCondition(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -320,6 +324,7 @@ func TestPollUntilCondition(t *testing.T) {
 
 // TestWaitForDoorsLocked tests the door lock confirmation logic
 func TestWaitForDoorsLocked(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		doorStatus  []api.DoorStatus
@@ -393,6 +398,7 @@ func TestWaitForDoorsLocked(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -439,6 +445,7 @@ func TestWaitForDoorsLocked(t *testing.T) {
 
 // TestWaitForEngineRunning tests the engine running confirmation logic
 func TestWaitForEngineRunning(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		hvacStatus  []bool
@@ -467,6 +474,7 @@ func TestWaitForEngineRunning(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -513,6 +521,7 @@ func TestWaitForEngineRunning(t *testing.T) {
 
 // TestWaitForEngineStopped tests the engine stopped confirmation logic
 func TestWaitForEngineStopped(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		hvacStatus  []bool
@@ -541,6 +550,7 @@ func TestWaitForEngineStopped(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -617,6 +627,7 @@ func (m *mockClientForConfirm) RefreshVehicleStatus(ctx context.Context, interna
 
 // TestWaitForCharging tests the charging started confirmation logic
 func TestWaitForCharging(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		chargingStatus []bool
@@ -645,6 +656,7 @@ func TestWaitForCharging(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -691,6 +703,7 @@ func TestWaitForCharging(t *testing.T) {
 
 // TestWaitForNotCharging tests the charging stopped confirmation logic
 func TestWaitForNotCharging(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		chargingStatus []bool
@@ -719,6 +732,7 @@ func TestWaitForNotCharging(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -765,6 +779,7 @@ func TestWaitForNotCharging(t *testing.T) {
 
 // TestWaitForHvacOn tests the HVAC on confirmation logic
 func TestWaitForHvacOn(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		hvacStatus   []bool
@@ -818,6 +833,7 @@ func TestWaitForHvacOn(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -881,6 +897,7 @@ func TestWaitForHvacOn(t *testing.T) {
 
 // TestWaitForHvacOff tests the HVAC off confirmation logic
 func TestWaitForHvacOff(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		hvacStatus  []bool
@@ -909,6 +926,7 @@ func TestWaitForHvacOff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -955,6 +973,7 @@ func TestWaitForHvacOff(t *testing.T) {
 
 // TestWaitForHvacSettings tests the HVAC settings confirmation logic
 func TestWaitForHvacSettings(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		targetTemp     float64
@@ -1014,6 +1033,7 @@ func TestWaitForHvacSettings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -1083,6 +1103,7 @@ type hvacSettings struct {
 
 // TestExecuteConfirmableCommand tests the executeConfirmableCommand helper
 func TestExecuteConfirmableCommand(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		config         ConfirmableCommandConfig
@@ -1198,6 +1219,7 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -1228,6 +1250,7 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 // TestWaitForConditionRefreshesStatus tests that confirmation polling calls RefreshVehicleStatus
 // before starting to poll. This ensures we get fresh data from the vehicle, not stale cached data.
 func TestWaitForConditionRefreshesStatus(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	var buf bytes.Buffer
 
@@ -1271,6 +1294,7 @@ func TestWaitForConditionRefreshesStatus(t *testing.T) {
 
 // TestWaitForDoorsUnlocked tests the door unlock confirmation logic
 func TestWaitForDoorsUnlocked(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		doorStatus  []api.DoorStatus
@@ -1358,6 +1382,7 @@ func TestWaitForDoorsUnlocked(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 			var buf bytes.Buffer
 
@@ -1404,10 +1429,12 @@ func TestWaitForDoorsUnlocked(t *testing.T) {
 
 // TestClientAdapter tests the clientAdapter wrapper that converts InternalVIN types
 func TestClientAdapter(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	testVIN := api.InternalVIN("123456789")
 
 	t.Run("GetVehicleStatus", func(t *testing.T) {
+		t.Parallel()
 		// Create a mock API client with a wrapper that intercepts the method calls
 		mockAPIClient := &mockAPIClientForAdapter{}
 		mockAPIClient.getVehicleStatusFunc = func(ctx context.Context, vin string) (*api.VehicleStatusResponse, error) {
@@ -1426,6 +1453,7 @@ func TestClientAdapter(t *testing.T) {
 	})
 
 	t.Run("GetEVVehicleStatus", func(t *testing.T) {
+		t.Parallel()
 		mockAPIClient := &mockAPIClientForAdapter{}
 		mockAPIClient.getEVVehicleStatusFunc = func(ctx context.Context, vin string) (*api.EVVehicleStatusResponse, error) {
 			assert.Equal(t, string(testVIN), vin)
@@ -1443,6 +1471,7 @@ func TestClientAdapter(t *testing.T) {
 	})
 
 	t.Run("RefreshVehicleStatus", func(t *testing.T) {
+		t.Parallel()
 		refreshCalled := false
 		mockAPIClient := &mockAPIClientForAdapter{}
 		mockAPIClient.refreshVehicleStatusFunc = func(ctx context.Context, vin string) error {
@@ -1460,6 +1489,7 @@ func TestClientAdapter(t *testing.T) {
 	})
 
 	t.Run("GetVehicleStatus error propagation", func(t *testing.T) {
+		t.Parallel()
 		expectedErr := errors.New("API error")
 		mockAPIClient := &mockAPIClientForAdapter{}
 		mockAPIClient.getVehicleStatusFunc = func(ctx context.Context, vin string) (*api.VehicleStatusResponse, error) {
@@ -1473,6 +1503,7 @@ func TestClientAdapter(t *testing.T) {
 	})
 
 	t.Run("GetEVVehicleStatus error propagation", func(t *testing.T) {
+		t.Parallel()
 		expectedErr := errors.New("API error")
 		mockAPIClient := &mockAPIClientForAdapter{}
 		mockAPIClient.getEVVehicleStatusFunc = func(ctx context.Context, vin string) (*api.EVVehicleStatusResponse, error) {
@@ -1486,6 +1517,7 @@ func TestClientAdapter(t *testing.T) {
 	})
 
 	t.Run("RefreshVehicleStatus error propagation", func(t *testing.T) {
+		t.Parallel()
 		expectedErr := errors.New("refresh error")
 		mockAPIClient := &mockAPIClientForAdapter{}
 		mockAPIClient.refreshVehicleStatusFunc = func(ctx context.Context, vin string) error {

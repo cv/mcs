@@ -26,6 +26,7 @@ func mockAPIClientSetup(t *testing.T) string {
 
 // TestSetupVehicleClient_Success tests successful vehicle client setup
 func TestSetupVehicleClient_Success(t *testing.T) {
+	t.Parallel()
 	// This is an integration test that requires real API interaction
 	// Skip if we don't have valid credentials
 	t.Skip("Requires real API credentials - integration test")
@@ -44,7 +45,7 @@ func TestSetupVehicleClient_Success(t *testing.T) {
 }
 
 // TestSetupVehicleClient_ConfigError tests error handling when config is invalid
-func TestSetupVehicleClient_ConfigError(t *testing.T) {
+func TestSetupVehicleClient_ConfigError(t *testing.T) { //nolint:paralleltest // uses t.Setenv
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
 
@@ -61,7 +62,7 @@ func TestSetupVehicleClient_ConfigError(t *testing.T) {
 }
 
 // TestSetupVehicleClient_MissingConfig tests error when config file doesn't exist
-func TestSetupVehicleClient_MissingConfig(t *testing.T) {
+func TestSetupVehicleClient_MissingConfig(t *testing.T) { //nolint:paralleltest // uses t.Setenv
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
 
@@ -80,7 +81,7 @@ func TestSetupVehicleClient_MissingConfig(t *testing.T) {
 }
 
 // TestSetupVehicleClient_ContextCancellation tests context cancellation handling
-func TestSetupVehicleClient_ContextCancellation(t *testing.T) {
+func TestSetupVehicleClient_ContextCancellation(t *testing.T) { //nolint:paralleltest // uses t.Setenv via mockAPIClientSetup
 	mockAPIClientSetup(t)
 
 	// Create a cancelled context
@@ -95,6 +96,7 @@ func TestSetupVehicleClient_ContextCancellation(t *testing.T) {
 
 // TestWithVehicleClient_CallbackExecuted tests that callback is executed with client
 func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
+	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
 	mockAPIClientSetup(t)
@@ -122,6 +124,7 @@ func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 
 // TestWithVehicleClient_CallbackError tests that callback errors are propagated
 func TestWithVehicleClient_CallbackError(t *testing.T) {
+	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
 	mockAPIClientSetup(t)
@@ -137,7 +140,7 @@ func TestWithVehicleClient_CallbackError(t *testing.T) {
 }
 
 // TestWithVehicleClient_SetupError tests that setup errors are propagated
-func TestWithVehicleClient_SetupError(t *testing.T) {
+func TestWithVehicleClient_SetupError(t *testing.T) { //nolint:paralleltest // uses t.Setenv
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
 	t.Setenv("MCS_EMAIL", "")
@@ -161,6 +164,7 @@ func TestWithVehicleClient_SetupError(t *testing.T) {
 
 // TestWithVehicleClientEx_CallbackExecuted tests extended callback execution
 func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
+	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
 	mockAPIClientSetup(t)
@@ -189,6 +193,7 @@ func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 
 // TestWithVehicleClientEx_CallbackError tests error propagation
 func TestWithVehicleClientEx_CallbackError(t *testing.T) {
+	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
 	mockAPIClientSetup(t)
@@ -204,7 +209,7 @@ func TestWithVehicleClientEx_CallbackError(t *testing.T) {
 }
 
 // TestWithVehicleClientEx_SetupError tests setup error propagation
-func TestWithVehicleClientEx_SetupError(t *testing.T) {
+func TestWithVehicleClientEx_SetupError(t *testing.T) { //nolint:paralleltest // uses t.Setenv
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
 	t.Setenv("MCS_EMAIL", "")
@@ -228,6 +233,7 @@ func TestWithVehicleClientEx_SetupError(t *testing.T) {
 
 // TestVehicleInfo_StructFields tests VehicleInfo struct field types
 func TestVehicleInfo_StructFields(t *testing.T) {
+	t.Parallel()
 	// Test that VehicleInfo struct has correct field types
 	info := VehicleInfo{
 		InternalVIN: api.InternalVIN("test123"),
@@ -257,7 +263,7 @@ func TestVehicleInfo_StructFields(t *testing.T) {
 }
 
 // TestSetupVehicleClient_ConfigFromFile tests config loading from file
-func TestSetupVehicleClient_ConfigFromFile(t *testing.T) {
+func TestSetupVehicleClient_ConfigFromFile(t *testing.T) { //nolint:paralleltest // uses t.Setenv
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
 	configPath := filepath.Join(tmpDir, "test-config.toml")

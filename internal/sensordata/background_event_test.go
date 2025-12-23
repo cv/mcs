@@ -9,6 +9,7 @@ import (
 )
 
 func TestBackgroundEvent_ToString(t *testing.T) {
+	t.Parallel()
 	event := &BackgroundEvent{
 		eventType: 2,
 		timestamp: 1701446400000,
@@ -21,6 +22,7 @@ func TestBackgroundEvent_ToString(t *testing.T) {
 }
 
 func TestNewBackgroundEventList(t *testing.T) {
+	t.Parallel()
 	list := NewBackgroundEventList()
 
 	require.NotNil(t, list, "Expected non-nil BackgroundEventList")
@@ -29,6 +31,7 @@ func TestNewBackgroundEventList(t *testing.T) {
 }
 
 func TestBackgroundEventList_Randomize_ShortDuration(t *testing.T) {
+	t.Parallel()
 	list := NewBackgroundEventList()
 	// Create a timestamp that's less than 10 seconds ago
 	timestamp := time.Now().UTC().Add(-5 * time.Second)
@@ -40,6 +43,7 @@ func TestBackgroundEventList_Randomize_ShortDuration(t *testing.T) {
 }
 
 func TestBackgroundEventList_ToString(t *testing.T) {
+	t.Parallel()
 	list := NewBackgroundEventList()
 	list.backgroundEvents = []*BackgroundEvent{
 		{eventType: 2, timestamp: 1000000},
@@ -53,6 +57,7 @@ func TestBackgroundEventList_ToString(t *testing.T) {
 }
 
 func TestBackgroundEventList_ToString_Empty(t *testing.T) {
+	t.Parallel()
 	list := NewBackgroundEventList()
 	result := list.ToString()
 

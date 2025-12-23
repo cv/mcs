@@ -10,6 +10,7 @@ import (
 )
 
 func TestNewSensorDataBuilder(t *testing.T) {
+	t.Parallel()
 	builder := NewSensorDataBuilder()
 
 	require.NotNil(t, builder, "Expected non-nil builder")
@@ -26,6 +27,7 @@ func TestNewSensorDataBuilder(t *testing.T) {
 }
 
 func TestSensorDataBuilder_GenerateSensorData(t *testing.T) {
+	t.Parallel()
 	builder := NewSensorDataBuilder()
 
 	result, err := builder.GenerateSensorData()
@@ -42,6 +44,7 @@ func TestSensorDataBuilder_GenerateSensorData(t *testing.T) {
 }
 
 func TestCountSeparators(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		input string
@@ -56,6 +59,7 @@ func TestCountSeparators(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := countSeparators(tt.input)
 			assert.Equalf(t, tt.want, got, "countSeparators(%q) = %d, want %d", tt.input, got, tt.want)
 		})
@@ -63,6 +67,7 @@ func TestCountSeparators(t *testing.T) {
 }
 
 func TestFeistelCipher(t *testing.T) {
+	t.Parallel()
 	// Test that feistelCipher produces consistent results
 	result1 := feistelCipher(100, 50, 12345)
 	result2 := feistelCipher(100, 50, 12345)
@@ -75,6 +80,7 @@ func TestFeistelCipher(t *testing.T) {
 }
 
 func TestTimestampToMillis(t *testing.T) {
+	t.Parallel()
 	// Use a fixed time for testing
 	testTime := time.Date(2023, 12, 1, 12, 0, 0, 0, time.UTC)
 	expectedMillis := testTime.UnixMilli()

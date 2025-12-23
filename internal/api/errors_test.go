@@ -10,6 +10,7 @@ import (
 
 // TestCheckResultCode tests the checkResultCode helper function
 func TestCheckResultCode(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		resultCode string
@@ -48,6 +49,7 @@ func TestCheckResultCode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := checkResultCode(tt.resultCode, tt.operation)
 			if tt.wantErr {
 				require.Error(t, err, "checkResultCode() error = %v, wantErr %v")
@@ -65,6 +67,7 @@ func TestCheckResultCode(t *testing.T) {
 
 // TestCheckResultCode_ReturnType tests that checkResultCode returns ResultCodeError
 func TestCheckResultCode_ReturnType(t *testing.T) {
+	t.Parallel()
 	err := checkResultCode("500E00", "test operation")
 	require.Error(t, err, "Expected error, got nil")
 
@@ -79,6 +82,7 @@ func TestCheckResultCode_ReturnType(t *testing.T) {
 
 // TestNewResultCodeError tests the ResultCodeError constructor
 func TestNewResultCodeError(t *testing.T) {
+	t.Parallel()
 	err := NewResultCodeError("400E01", "unlock doors")
 
 	assert.Equalf(t, "400E01", err.ResultCode, "Expected ResultCode '400E01', got '%s'", err.ResultCode)

@@ -7,6 +7,7 @@ import (
 )
 
 func TestGetString(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		input     map[string]any
@@ -53,6 +54,7 @@ func TestGetString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotValue, gotOk := getString(tt.input, tt.key)
 			assert.Equal(t, tt.wantValue, gotValue)
 			assert.Equal(t, tt.wantOk, gotOk)
@@ -61,6 +63,7 @@ func TestGetString(t *testing.T) {
 }
 
 func TestGetInt(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		input     map[string]any
@@ -114,6 +117,7 @@ func TestGetInt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotValue, gotOk := getInt(tt.input, tt.key)
 			assert.Equal(t, tt.wantValue, gotValue)
 			assert.Equal(t, tt.wantOk, gotOk)
@@ -122,6 +126,7 @@ func TestGetInt(t *testing.T) {
 }
 
 func TestGetFloat64(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		input     map[string]any
@@ -168,6 +173,7 @@ func TestGetFloat64(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotValue, gotOk := getFloat64(tt.input, tt.key)
 			assert.InDelta(t, tt.wantValue, gotValue, 0.0001)
 			assert.Equal(t, tt.wantOk, gotOk)
@@ -176,6 +182,7 @@ func TestGetFloat64(t *testing.T) {
 }
 
 func TestGetBool(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		input     map[string]any
@@ -222,6 +229,7 @@ func TestGetBool(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotValue, gotOk := getBool(tt.input, tt.key)
 			assert.Equal(t, tt.wantValue, gotValue)
 			assert.Equal(t, tt.wantOk, gotOk)
@@ -230,6 +238,7 @@ func TestGetBool(t *testing.T) {
 }
 
 func TestGetMap(t *testing.T) {
+	t.Parallel()
 	nested := map[string]any{"nested": "value"}
 
 	tests := []struct {
@@ -266,6 +275,7 @@ func TestGetMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotValue, gotOk := getMap(tt.input, tt.key)
 			assert.Equal(t, tt.wantOk, gotOk)
 			if tt.wantOk {
@@ -277,6 +287,7 @@ func TestGetMap(t *testing.T) {
 }
 
 func TestGetSlice(t *testing.T) {
+	t.Parallel()
 	slice := []any{"a", "b", "c"}
 
 	tests := []struct {
@@ -313,6 +324,7 @@ func TestGetSlice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotValue, gotOk := getSlice(tt.input, tt.key)
 			assert.Equal(t, tt.wantOk, gotOk)
 			if tt.wantOk {
@@ -324,6 +336,7 @@ func TestGetSlice(t *testing.T) {
 }
 
 func TestGetMapSlice(t *testing.T) {
+	t.Parallel()
 	mapSlice := []any{
 		map[string]any{"a": 1},
 		map[string]any{"b": 2},
@@ -382,6 +395,7 @@ func TestGetMapSlice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotValue, gotOk := getMapSlice(tt.input, tt.key)
 			assert.Equal(t, tt.wantOk, gotOk)
 			assert.Len(t, gotValue, tt.wantLen)
@@ -390,6 +404,7 @@ func TestGetMapSlice(t *testing.T) {
 }
 
 func TestGetMapFromSlice(t *testing.T) {
+	t.Parallel()
 	slice := []any{
 		map[string]any{"a": 1},
 		map[string]any{"b": 2},
@@ -442,6 +457,7 @@ func TestGetMapFromSlice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			gotValue, gotOk := getMapFromSlice(tt.slice, tt.index)
 			assert.Equal(t, tt.wantOk, gotOk)
 			if tt.wantOk {

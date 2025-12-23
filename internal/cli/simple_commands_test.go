@@ -8,6 +8,7 @@ import (
 
 // TestSimpleCommands tests basic properties of simple control commands
 func TestSimpleCommands(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		cmdFactory  func() *cobra.Command
@@ -21,6 +22,7 @@ func TestSimpleCommands(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			cmd := tt.cmdFactory()
 			assertCommandBasics(t, cmd, tt.expectedUse)
 		})
@@ -29,6 +31,7 @@ func TestSimpleCommands(t *testing.T) {
 
 // TestSimpleCommands_NoArgs tests that simple control commands reject arguments
 func TestSimpleCommands_NoArgs(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		cmdFactory func() *cobra.Command
@@ -41,6 +44,7 @@ func TestSimpleCommands_NoArgs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			cmd := tt.cmdFactory()
 			assertNoArgsCommand(t, cmd)
 		})

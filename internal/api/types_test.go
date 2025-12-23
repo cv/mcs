@@ -9,6 +9,7 @@ import (
 )
 
 func TestVecBaseInfosResponse_Unmarshal(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"resultCode": "200S00",
 		"vecBaseInfos": [
@@ -35,6 +36,7 @@ func TestVecBaseInfosResponse_Unmarshal(t *testing.T) {
 }
 
 func TestVecBaseInfosResponse_VehicleInfo(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"resultCode": "200S00",
 		"vecBaseInfos": [
@@ -64,6 +66,7 @@ func TestVecBaseInfosResponse_VehicleInfo(t *testing.T) {
 }
 
 func TestVecBaseInfosResponse_GetVehicleInfo(t *testing.T) {
+	t.Parallel()
 	// Test with JSON parsing to verify vehicleInformation string is properly parsed
 	jsonData := `{
 		"resultCode": "200S00",
@@ -92,12 +95,14 @@ func TestVecBaseInfosResponse_GetVehicleInfo(t *testing.T) {
 }
 
 func TestVecBaseInfosResponse_GetVehicleInfo_Empty(t *testing.T) {
+	t.Parallel()
 	resp := &VecBaseInfosResponse{}
 	_, _, _, _, err := resp.GetVehicleInfo()
 	require.Error(t, err, "Expected error for empty response")
 }
 
 func TestVecBaseInfosResponse_InternalVINAsNumber(t *testing.T) {
+	t.Parallel()
 	// The API sometimes returns internalVin as a number
 	jsonData := `{
 		"resultCode": "200S00",
@@ -122,6 +127,7 @@ func TestVecBaseInfosResponse_InternalVINAsNumber(t *testing.T) {
 }
 
 func TestVehicleStatusResponse_Unmarshal(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"resultCode": "200S00",
 		"remoteInfos": [
@@ -195,6 +201,7 @@ func TestVehicleStatusResponse_Unmarshal(t *testing.T) {
 }
 
 func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"resultCode": "200S00",
 		"resultData": [
@@ -255,6 +262,7 @@ func TestEVVehicleStatusResponse_Unmarshal(t *testing.T) {
 }
 
 func TestEVVehicleStatusResponse_MissingHvacInfo(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"resultCode": "200S00",
 		"resultData": [
@@ -283,6 +291,7 @@ func TestEVVehicleStatusResponse_MissingHvacInfo(t *testing.T) {
 }
 
 func TestInternalVIN_UnmarshalString(t *testing.T) {
+	t.Parallel()
 	var vin InternalVIN
 	err := json.Unmarshal([]byte(`"ABC123"`), &vin)
 	require.NoError(t, err, "Failed to unmarshal string: %v")
@@ -291,6 +300,7 @@ func TestInternalVIN_UnmarshalString(t *testing.T) {
 }
 
 func TestInternalVIN_UnmarshalNumber(t *testing.T) {
+	t.Parallel()
 	var vin InternalVIN
 	err := json.Unmarshal([]byte(`12345`), &vin)
 	require.NoError(t, err, "Failed to unmarshal number: %v")
@@ -299,6 +309,7 @@ func TestInternalVIN_UnmarshalNumber(t *testing.T) {
 }
 
 func TestInternalVIN_UnmarshalLargeNumber(t *testing.T) {
+	t.Parallel()
 	// Test with a large number that would lose precision as float64
 	var vin InternalVIN
 	err := json.Unmarshal([]byte(`12345678901234567`), &vin)
@@ -311,6 +322,7 @@ func TestInternalVIN_UnmarshalLargeNumber(t *testing.T) {
 // Auth response struct tests
 
 func TestCheckVersionResponse_Unmarshal(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"encKey": "test-encryption-key-1234",
 		"signKey": "test-signing-key-5678"
@@ -325,6 +337,7 @@ func TestCheckVersionResponse_Unmarshal(t *testing.T) {
 }
 
 func TestUsherEncryptionKeyResponse_Unmarshal(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"data": {
 			"publicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ...",
@@ -341,6 +354,7 @@ func TestUsherEncryptionKeyResponse_Unmarshal(t *testing.T) {
 }
 
 func TestLoginResponse_Unmarshal(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"status": "OK",
 		"data": {
@@ -359,6 +373,7 @@ func TestLoginResponse_Unmarshal(t *testing.T) {
 }
 
 func TestLoginResponse_InvalidCredential(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"status": "INVALID_CREDENTIAL"
 	}`
@@ -371,6 +386,7 @@ func TestLoginResponse_InvalidCredential(t *testing.T) {
 }
 
 func TestAPIBaseResponse_Unmarshal(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		jsonData  string
@@ -393,6 +409,7 @@ func TestAPIBaseResponse_Unmarshal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			var resp APIBaseResponse
 			err := json.Unmarshal([]byte(tt.jsonData), &resp)
 			require.NoError(t, err, "Failed to unmarshal: %v")
@@ -406,6 +423,7 @@ func TestAPIBaseResponse_Unmarshal(t *testing.T) {
 // TemperatureUnit tests
 
 func TestTemperatureUnit_String(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		unit TemperatureUnit
 		want string
@@ -417,12 +435,14 @@ func TestTemperatureUnit_String(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tt.want, tt.unit.String())
 		})
 	}
 }
 
 func TestParseTemperatureUnit(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input   string
 		want    TemperatureUnit
@@ -447,6 +467,7 @@ func TestParseTemperatureUnit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
+			t.Parallel()
 			got, err := ParseTemperatureUnit(tt.input)
 			assert.Equalf(t, tt.wantErr, (err != nil), "ParseTemperatureUnit(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
 			assert.Equalf(t, tt.want, got, "ParseTemperatureUnit(%q) = %v, want %v", tt.input, got, tt.want)
@@ -455,6 +476,7 @@ func TestParseTemperatureUnit(t *testing.T) {
 }
 
 func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		resp    *VehicleStatusResponse
@@ -513,6 +535,7 @@ func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := tt.resp.GetOdometerInfo()
 			if tt.wantErr {
 				require.Error(t, err, "GetOdometerInfo() error = %v, wantErr %v")
@@ -526,6 +549,7 @@ func TestVehicleStatusResponse_GetOdometerInfo(t *testing.T) {
 }
 
 func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		resp       *VehicleStatusResponse
@@ -690,6 +714,7 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			status, err := tt.resp.GetDoorsInfo()
 			if tt.wantErr {
 				require.Error(t, err, "GetDoorsInfo() error = %v, wantErr %v")
@@ -703,6 +728,7 @@ func TestVehicleStatusResponse_GetDoorsInfo(t *testing.T) {
 }
 
 func TestVehicleStatusResponse_WindowParsing(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"resultCode": "200S00",
 		"remoteInfos": [],
@@ -749,6 +775,7 @@ func TestVehicleStatusResponse_WindowParsing(t *testing.T) {
 }
 
 func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		resp    *VehicleStatusResponse
@@ -831,6 +858,7 @@ func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := tt.resp.GetWindowsInfo()
 			if tt.wantErr {
 				require.Error(t, err, "GetWindowsInfo() error = %v, wantErr %v")
@@ -844,6 +872,7 @@ func TestVehicleStatusResponse_GetWindowsInfo(t *testing.T) {
 }
 
 func TestVehicleStatusResponse_HazardParsing(t *testing.T) {
+	t.Parallel()
 	jsonData := `{
 		"resultCode": "200S00",
 		"remoteInfos": [],
@@ -884,6 +913,7 @@ func TestVehicleStatusResponse_HazardParsing(t *testing.T) {
 }
 
 func TestVehicleStatusResponse_GetHazardInfo(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		resp        *VehicleStatusResponse
@@ -928,6 +958,7 @@ func TestVehicleStatusResponse_GetHazardInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			hazards, err := tt.resp.GetHazardInfo()
 			if tt.wantErr {
 				require.Error(t, err, "GetHazardInfo() error = %v, wantErr %v")
@@ -941,6 +972,7 @@ func TestVehicleStatusResponse_GetHazardInfo(t *testing.T) {
 }
 
 func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		resp    *EVVehicleStatusResponse
@@ -1027,6 +1059,7 @@ func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := tt.resp.GetHvacInfo()
 			if tt.wantErr {
 				require.Error(t, err, "GetHvacInfo() error = %v, wantErr %v")
@@ -1040,6 +1073,7 @@ func TestEVVehicleStatusResponse_GetHvacInfo(t *testing.T) {
 }
 
 func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		resp    *EVVehicleStatusResponse
@@ -1154,6 +1188,7 @@ func TestEVVehicleStatusResponse_GetBatteryInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := tt.resp.GetBatteryInfo()
 			if tt.wantErr {
 				require.Error(t, err, "GetBatteryInfo() error = %v, wantErr %v")

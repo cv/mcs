@@ -9,6 +9,7 @@ import (
 )
 
 func TestEncryptAES128CBC(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		data    []byte
@@ -34,6 +35,7 @@ func TestEncryptAES128CBC(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			encrypted, err := EncryptAES128CBC(tt.data, tt.key, tt.iv)
 			if tt.wantErr {
 				require.Error(t, err, "EncryptAES128CBC() error = %v, wantErr %v")
@@ -51,6 +53,7 @@ func TestEncryptAES128CBC(t *testing.T) {
 }
 
 func TestDecryptAES128CBC(t *testing.T) {
+	t.Parallel()
 	key := "1234567890123456"
 	iv := "0102030405060708"
 	original := []byte("Hello, World!")
@@ -67,6 +70,7 @@ func TestDecryptAES128CBC(t *testing.T) {
 }
 
 func TestGenerateUUIDFromSeed(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		seed string
@@ -82,6 +86,7 @@ func TestGenerateUUIDFromSeed(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := GenerateUUIDFromSeed(tt.seed)
 			assert.Equal(t, tt.want, got)
 		})
@@ -89,6 +94,7 @@ func TestGenerateUUIDFromSeed(t *testing.T) {
 }
 
 func TestGenerateUsherDeviceID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		seed string
@@ -105,6 +111,7 @@ func TestGenerateUsherDeviceID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := GenerateUsherDeviceID(tt.seed)
 			assert.Equal(t, tt.want, got)
 		})
@@ -112,6 +119,7 @@ func TestGenerateUsherDeviceID(t *testing.T) {
 }
 
 func TestEncryptRSA(t *testing.T) {
+	t.Parallel()
 	// Valid test RSA public key (base64 encoded DER format, 2048-bit)
 	// Generated using: openssl genrsa 2048 | openssl rsa -pubout -outform DER | base64
 	publicKeyBase64 := "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlVKZRa1pkk88B1ydifsFNEv/pOf854egpFu1HHf1wr3YKqmLSG1p39YhNqGLQzIDit1jTLz3MYAOeWiFQSz7h5hvMNccq76zh3Hsg93LurcKA9EmYoj9VsqUetk0evXoqOSGKXPgZosbGT0t8AW2CC7s8FeSPz2tH9T7zjvKQvdyS0BFrVFo1EUBa1UEdMfYW0jLsvLOCYP911X1zTlewV/sTQnAtiTHCrd3jfH2of8PYtTOsmfqCDdL476yGMgeHJ+ZXA/IX2beSrHXU0gCNc/agD+ScCZgpRjfptSbRtBHqtmU4IyF0eqQXCCcrcutjzSHg+3ppmB9x/YvhJvmGQIDAQAB"
@@ -138,6 +146,7 @@ func TestEncryptRSA(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			encrypted, err := EncryptRSA(tt.data, tt.pubKey)
 			if tt.wantErr {
 				require.Error(t, err, "EncryptRSA() error = %v, wantErr %v")
@@ -154,6 +163,7 @@ func TestEncryptRSA(t *testing.T) {
 }
 
 func TestSignWithMD5(t *testing.T) {
+	t.Parallel()
 	data := "test data"
 	signature := SignWithMD5(data)
 
@@ -165,6 +175,7 @@ func TestSignWithMD5(t *testing.T) {
 }
 
 func TestSignWithSHA256(t *testing.T) {
+	t.Parallel()
 	data := "test data"
 	signature := SignWithSHA256(data)
 

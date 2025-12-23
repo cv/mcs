@@ -10,6 +10,7 @@ import (
 
 // TestGetVecBaseInfos tests getting vehicle base information
 func TestGetVecBaseInfos(t *testing.T) {
+	t.Parallel()
 	responseData := map[string]any{
 		"resultCode": "200S00",
 		"vecBaseInfos": []map[string]any{
@@ -43,6 +44,7 @@ func TestGetVecBaseInfos(t *testing.T) {
 
 // TestGetVehicleStatus tests getting vehicle status
 func TestGetVehicleStatus(t *testing.T) {
+	t.Parallel()
 	responseData := map[string]any{
 		"resultCode": "200S00",
 		"alertInfos": []map[string]any{
@@ -88,6 +90,7 @@ func TestGetVehicleStatus(t *testing.T) {
 
 // TestGetVehicleStatus_Error tests error handling
 func TestGetVehicleStatus_Error(t *testing.T) {
+	t.Parallel()
 	server := createErrorServer(t, "500E00", "Internal error")
 	defer server.Close()
 
@@ -102,6 +105,7 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 
 // TestGetEVVehicleStatus tests getting EV vehicle status
 func TestGetEVVehicleStatus(t *testing.T) {
+	t.Parallel()
 	responseData := map[string]any{
 		"resultCode": "200S00",
 		"resultData": []map[string]any{
@@ -147,6 +151,7 @@ func TestGetEVVehicleStatus(t *testing.T) {
 
 // TestGetEVVehicleStatus_Error tests error handling
 func TestGetEVVehicleStatus_Error(t *testing.T) {
+	t.Parallel()
 	server := createErrorServer(t, "500E00", "Internal error")
 	defer server.Close()
 

@@ -8,12 +8,14 @@ import (
 
 // TestClimateCommand tests the climate command
 func TestClimateCommand(t *testing.T) {
+	t.Parallel()
 	cmd := NewClimateCmd()
 	assertCommandBasics(t, cmd, "climate")
 }
 
 // TestClimateCommand_Subcommands tests climate subcommands
 func TestClimateCommand_Subcommands(t *testing.T) {
+	t.Parallel()
 	cmd := NewClimateCmd()
 
 	// Test on/off subcommands (accept no args)
@@ -27,6 +29,7 @@ func TestClimateCommand_Subcommands(t *testing.T) {
 
 // TestClimateCommand_SetSubcommand_Flags tests climate set subcommand flags
 func TestClimateCommand_SetSubcommand_Flags(t *testing.T) {
+	t.Parallel()
 	cmd := NewClimateCmd()
 	setCmd := findSubcommand(cmd, "set")
 

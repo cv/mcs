@@ -119,6 +119,7 @@ region = "MME"
 }
 
 func TestConfig_Validate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		config  *Config
@@ -162,6 +163,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.config.Validate()
 			if tt.wantErr {
 				require.Error(t, err, "Config.Validate() error = %v, wantErr %v")

@@ -10,6 +10,7 @@ import (
 
 // TestControlEndpoints tests all simple control endpoints using table-driven approach
 func TestControlEndpoints(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		endpoint string
@@ -76,6 +77,7 @@ func TestControlEndpoints(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			server := createControlTestServer(t, "/"+tt.endpoint)
 			defer server.Close()
 
@@ -89,6 +91,7 @@ func TestControlEndpoints(t *testing.T) {
 
 // TestSetHVACSetting tests setting HVAC settings
 func TestSetHVACSetting(t *testing.T) {
+	t.Parallel()
 	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4")
 	defer server.Close()
 
@@ -100,6 +103,7 @@ func TestSetHVACSetting(t *testing.T) {
 
 // TestSetHVACSetting_Fahrenheit tests setting HVAC with Fahrenheit
 func TestSetHVACSetting_Fahrenheit(t *testing.T) {
+	t.Parallel()
 	server := createControlTestServer(t, "/remoteServices/updateHVACSetting/v4")
 	defer server.Close()
 
@@ -111,6 +115,7 @@ func TestSetHVACSetting_Fahrenheit(t *testing.T) {
 
 // TestControlError tests error handling for control endpoints
 func TestControlError(t *testing.T) {
+	t.Parallel()
 	server := createErrorServer(t, "500E00", "Internal error")
 	defer server.Close()
 
@@ -125,6 +130,7 @@ func TestControlError(t *testing.T) {
 
 // TestBoolToInt tests the boolToInt helper function
 func TestBoolToInt(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input bool
 		want  int
