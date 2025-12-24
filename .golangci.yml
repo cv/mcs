@@ -84,7 +84,13 @@ linters:
           - goconst
           - forcetypeassert
       # Global variables - justified exclusions:
-      # 1. Read-only lookup tables (RegionConfigs, screenSizes, androidVersionToSDK)
+      # 1. Version set by ldflags at build time
+      - path: cmd/mcs/main\.go
+        linters:
+          - gochecknoglobals
+        text: Version
+
+      # 3. Read-only lookup tables (RegionConfigs, screenSizes, androidVersionToSDK)
       - path: internal/api/auth\.go
         linters:
           - gochecknoglobals
@@ -94,19 +100,13 @@ linters:
           - gochecknoglobals
         text: (screenSizes|androidVersionToSDK)
 
-      # 2. CLI flags bound by Cobra framework (Version, ConfigFile, NoColor)
-      - path: internal/cli/root\.go
-        linters:
-          - gochecknoglobals
-        text: (Version|ConfigFile|NoColor)
-
-      # 3. Color state management - global state needed for CLI output formatting
+      # 4. Color state management - global state needed for CLI output formatting
       - path: internal/cli/color\.go
         linters:
           - gochecknoglobals
         text: (colorEnabled|colorMu)
 
-      # 4. Test helper mutex for serializing parallel tests
+      # 5. Test helper mutex for serializing parallel tests
       - path: internal/cli/color_test\.go
         linters:
           - gochecknoglobals

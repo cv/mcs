@@ -7,8 +7,11 @@ import (
 	"github.com/cv/mcs/internal/cli"
 )
 
+// Version is set at build time via ldflags.
+var Version = "dev"
+
 func main() {
-	if err := cli.Execute(); err != nil {
+	if err := cli.Execute(Version); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}

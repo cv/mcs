@@ -13,9 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint:paralleltest // NewRootCmd writes to package-level vars
+// testCLIConfig creates a CLIConfig for testing.
+func testCLIConfig() *CLIConfig {
+	return &CLIConfig{Version: "test-version"}
+}
+
 func TestRootCmd_Version(t *testing.T) {
-	rootCmd := NewRootCmd()
+	t.Parallel()
+	cfg := testCLIConfig()
+	rootCmd := NewRootCmd(cfg)
 	rootCmd.SetArgs([]string{"--version"})
 
 	var output bytes.Buffer
@@ -28,9 +34,10 @@ func TestRootCmd_Version(t *testing.T) {
 	assert.Contains(t, result, "mcs version")
 }
 
-//nolint:paralleltest // NewRootCmd writes to package-level vars
 func TestRootCmd_Help(t *testing.T) {
-	rootCmd := NewRootCmd()
+	t.Parallel()
+	cfg := testCLIConfig()
+	rootCmd := NewRootCmd(cfg)
 	rootCmd.SetArgs([]string{"--help"})
 
 	var output bytes.Buffer
@@ -45,9 +52,10 @@ func TestRootCmd_Help(t *testing.T) {
 	assert.Contains(t, result, "manufacturer API")
 }
 
-//nolint:paralleltest // NewRootCmd writes to package-level vars
 func TestRootCmd_NoArgs(t *testing.T) {
-	rootCmd := NewRootCmd()
+	t.Parallel()
+	cfg := testCLIConfig()
+	rootCmd := NewRootCmd(cfg)
 	rootCmd.SetArgs([]string{})
 
 	var output bytes.Buffer
@@ -60,10 +68,11 @@ func TestRootCmd_NoArgs(t *testing.T) {
 	require.NoError(t, err, "Execute() error = %v")
 }
 
-//nolint:paralleltest // NewRootCmd writes to package-level vars
 func TestExecute_SignalHandling(t *testing.T) {
+	t.Parallel()
+	cfg := testCLIConfig()
 	// Create a command that blocks until context is cancelled
-	rootCmd := NewRootCmd()
+	rootCmd := NewRootCmd(cfg)
 
 	// Add a test subcommand that respects context cancellation
 	testCmd := &cobra.Command{
@@ -132,13 +141,15 @@ func TestExecute_WithRealSignal(t *testing.T) {
 	}
 }
 
-//nolint:paralleltest // modifies os.Stderr
 func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) {
-	// Create a skill command
+	t.Parallel()
+	// Create a skill command with context containing config
 	skillCmd := &cobra.Command{Use: "skill"}
+	cfg := testCLIConfig()
+	ctx := ContextWithConfig(context.Background(), cfg)
+	skillCmd.SetContext(ctx)
 
-	// Capture stderr
-	var errBuf bytes.Buffer
+	// Capture stderr by redirecting it
 	oldStderr := os.Stderr
 	r, w, _ := os.Pipe()
 	os.Stderr = w
@@ -148,21 +159,24 @@ func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) {
 	_ = w.Close()
 	os.Stderr = oldStderr
 
+	var errBuf bytes.Buffer
 	_, _ = errBuf.ReadFrom(r)
 
 	// Should not print anything for skill command
 	assert.Empty(t, errBuf.String())
 }
 
-//nolint:paralleltest // modifies os.Stderr
 func TestCheckSkillVersionMismatch_SkipsSkillSubcommands(t *testing.T) {
+	t.Parallel()
 	// Create a skill subcommand (e.g., skill install)
 	skillCmd := &cobra.Command{Use: "skill"}
 	installCmd := &cobra.Command{Use: "install"}
 	skillCmd.AddCommand(installCmd)
+	cfg := testCLIConfig()
+	ctx := ContextWithConfig(context.Background(), cfg)
+	installCmd.SetContext(ctx)
 
-	// Capture stderr
-	var errBuf bytes.Buffer
+	// Capture stderr by redirecting it
 	oldStderr := os.Stderr
 	r, w, _ := os.Pipe()
 	os.Stderr = w
@@ -172,6 +186,7 @@ func TestCheckSkillVersionMismatch_SkipsSkillSubcommands(t *testing.T) {
 	_ = w.Close()
 	os.Stderr = oldStderr
 
+	var errBuf bytes.Buffer
 	_, _ = errBuf.ReadFrom(r)
 
 	// Should not print anything for skill subcommand

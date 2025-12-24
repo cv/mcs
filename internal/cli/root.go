@@ -10,50 +10,48 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	// Version is set at build time.
-	Version = "dev"
-
-	// ConfigFile is the path to the config file.
-	ConfigFile string
-
-	// NoColor disables color output.
-	NoColor bool
-)
-
 // checkSkillVersionMismatch checks if the installed skill version differs from the current
 // mcs version and prints a warning to stderr if so.
 func checkSkillVersionMismatch(cmd *cobra.Command) {
-	// Skip the check for skill commands themselves to avoid confusing output
+	// Skip the check for skill commands themselves to avoid confusing output.
 	if cmd.Name() == "skill" || (cmd.Parent() != nil && cmd.Parent().Name() == "skill") {
 		return
 	}
 
-	status, installedVersion := CheckSkillVersion()
+	cfg := ConfigFromContext(cmd.Context())
+	if cfg == nil {
+		return
+	}
+
+	status, installedVersion := CheckSkillVersion(cfg.Version)
 	switch status {
 	case SkillVersionMismatch:
-		_, _ = fmt.Fprintf(os.Stderr, "Warning: Claude Code skill was installed with mcs %s (current: %s)\n", installedVersion, Version)
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: Claude Code skill was installed with mcs %s (current: %s)\n", installedVersion, cfg.Version)
 		_, _ = fmt.Fprintf(os.Stderr, "Run 'mcs skill install' to update the skill.\n\n")
 	case SkillVersionUnknown:
 		_, _ = fmt.Fprintf(os.Stderr, "Warning: Claude Code skill may be outdated (no version info)\n")
 		_, _ = fmt.Fprintf(os.Stderr, "Run 'mcs skill install' to update the skill.\n\n")
 	case SkillNotInstalled, SkillVersionMatch:
-		// No warning needed
+		// No warning needed.
 	}
 }
 
-// NewRootCmd creates the root command.
-func NewRootCmd() *cobra.Command {
+// NewRootCmd creates the root command with the given configuration.
+func NewRootCmd(cfg *CLIConfig) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "mcs",
 		Short: "Control your connected vehicle",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			// Disable colors if --no-color flag is set or not a TTY
-			if NoColor || !IsTTY(os.Stdout) {
+			// Attach config to context for use by subcommands.
+			ctx := ContextWithConfig(cmd.Context(), cfg)
+			cmd.SetContext(ctx)
+
+			// Disable colors if --no-color flag is set or not a TTY.
+			if cfg.NoColor || !IsTTY(os.Stdout) {
 				SetColorEnabled(false)
 			}
 
-			// Check for skill version mismatch and warn user
+			// Check for skill version mismatch and warn user.
 			checkSkillVersionMismatch(cmd)
 		},
 		Long: `mcs is a CLI tool for controlling your connected vehicle via manufacturer API.
@@ -108,26 +106,29 @@ Example config.toml:
 		SilenceErrors: true,
 	}
 
-	// Add version flag
-	rootCmd.Version = Version
+	// Add version flag.
+	rootCmd.Version = cfg.Version
 	rootCmd.SetVersionTemplate("mcs version {{.Version}}\n")
 
-	// Add global flags
-	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "c", "", "config file (default is ~/.config/mcs/config.toml)")
-	rootCmd.PersistentFlags().BoolVar(&NoColor, "no-color", false, "disable colored output")
+	// Add global flags - these bind to the config struct fields.
+	rootCmd.PersistentFlags().StringVarP(&cfg.ConfigFile, "config", "c", "", "config file (default is ~/.config/mcs/config.toml)")
+	rootCmd.PersistentFlags().BoolVar(&cfg.NoColor, "no-color", false, "disable colored output")
 
 	return rootCmd
 }
 
 // Execute runs the root command with signal-aware context.
-func Execute() error {
-	// Create context that cancels on SIGINT or SIGTERM
+func Execute(version string) error {
+	// Create context that cancels on SIGINT or SIGTERM.
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	rootCmd := NewRootCmd()
+	// Create config with version from main package.
+	cfg := &CLIConfig{Version: version}
 
-	// Add subcommands
+	rootCmd := NewRootCmd(cfg)
+
+	// Add subcommands.
 	rootCmd.AddCommand(NewStatusCmd())
 	rootCmd.AddCommand(NewLockCmd())
 	rootCmd.AddCommand(NewUnlockCmd())
@@ -136,7 +137,7 @@ func Execute() error {
 	rootCmd.AddCommand(NewChargeCmd())
 	rootCmd.AddCommand(NewClimateCmd())
 	rootCmd.AddCommand(NewRawCmd())
-	rootCmd.AddCommand(NewSkillCmd())
+	rootCmd.AddCommand(NewSkillCmd(cfg))
 
 	return rootCmd.ExecuteContext(ctx)
 }

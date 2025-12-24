@@ -125,7 +125,7 @@ func runRawEV(cmd *cobra.Command) error {
 
 // runRawVehicle executes the raw vehicle command.
 func runRawVehicle(cmd *cobra.Command) error {
-	client, err := createAPIClient()
+	client, err := createAPIClient(cmd.Context())
 	if err != nil {
 		return err
 	}

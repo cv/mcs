@@ -44,7 +44,7 @@ func uninstallSkill() error {
 }
 
 // NewSkillCmd creates the skill command.
-func NewSkillCmd() *cobra.Command {
+func NewSkillCmd(cfg *CLIConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "skill",
 		Short: "Manage Claude Code skill",
@@ -59,7 +59,7 @@ func NewSkillCmd() *cobra.Command {
   mcs skill path`,
 	}
 
-	cmd.AddCommand(NewSkillInstallCmd())
+	cmd.AddCommand(NewSkillInstallCmd(cfg))
 	cmd.AddCommand(NewSkillUninstallCmd())
 	cmd.AddCommand(NewSkillPathCmd())
 
@@ -107,7 +107,7 @@ func installSkillFiles(skillPath string) error {
 }
 
 // NewSkillInstallCmd creates the skill install subcommand.
-func NewSkillInstallCmd() *cobra.Command {
+func NewSkillInstallCmd(cfg *CLIConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install",
 		Short: "Install the Claude Code skill",
@@ -128,24 +128,24 @@ For example, you can say "warm up the car" and Claude will run "mcs climate on".
 				return err
 			}
 
-			// Remove old version first
+			// Remove old version first.
 			if err := uninstallSkill(); err != nil {
 				return fmt.Errorf("failed to remove old skill: %w", err)
 			}
 
-			// Create skill directory
+			// Create skill directory.
 			if err := os.MkdirAll(skillPath, 0755); err != nil {
 				return fmt.Errorf("failed to create skill directory: %w", err)
 			}
 
-			// Copy embedded files to skill directory
+			// Copy embedded files to skill directory.
 			if err := installSkillFiles(skillPath); err != nil {
 				return fmt.Errorf("failed to install skill files: %w", err)
 			}
 
-			// Write version file to track which mcs version installed the skill
+			// Write version file to track which mcs version installed the skill.
 			versionPath := filepath.Join(skillPath, skillVersionFile)
-			if err := os.WriteFile(versionPath, []byte(Version), 0644); err != nil {
+			if err := os.WriteFile(versionPath, []byte(cfg.Version), 0644); err != nil {
 				return fmt.Errorf("failed to write version file: %w", err)
 			}
 
@@ -173,29 +173,29 @@ const (
 	SkillVersionUnknown
 )
 
-// CheckSkillVersion checks if the installed skill version matches the current mcs version.
+// CheckSkillVersion checks if the installed skill version matches the given version.
 // Returns the status and the installed version (empty string if not available).
-func CheckSkillVersion() (SkillVersionStatus, string) {
+func CheckSkillVersion(currentVersion string) (SkillVersionStatus, string) {
 	skillPath, err := getSkillPath()
 	if err != nil {
 		return SkillNotInstalled, ""
 	}
 
-	// Check if skill directory exists
+	// Check if skill directory exists.
 	if _, err := os.Stat(skillPath); os.IsNotExist(err) {
 		return SkillNotInstalled, ""
 	}
 
-	// Read version file
+	// Read version file.
 	versionPath := filepath.Join(skillPath, skillVersionFile)
 	content, err := os.ReadFile(versionPath)
 	if err != nil {
-		// Skill exists but no version file - legacy install
+		// Skill exists but no version file - legacy install.
 		return SkillVersionUnknown, ""
 	}
 
 	installedVersion := strings.TrimSpace(string(content))
-	if installedVersion == Version {
+	if installedVersion == currentVersion {
 		return SkillVersionMatch, installedVersion
 	}
 

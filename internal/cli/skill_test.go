@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testVersion = "1.2.3"
+
 // TestGetSkillPath tests that getSkillPath returns the correct path.
 func TestGetSkillPath(t *testing.T) {
 	t.Parallel()
@@ -88,21 +90,24 @@ func TestUninstallSkill(t *testing.T) {
 // TestSkillCommand tests the skill parent command.
 func TestSkillCommand(t *testing.T) {
 	t.Parallel()
-	cmd := NewSkillCmd()
+	cfg := &CLIConfig{Version: testVersion}
+	cmd := NewSkillCmd(cfg)
 	assertCommandBasics(t, cmd, "skill")
 }
 
 // TestSkillCommand_Subcommands tests that skill subcommands exist.
 func TestSkillCommand_Subcommands(t *testing.T) {
 	t.Parallel()
-	cmd := NewSkillCmd()
+	cfg := &CLIConfig{Version: testVersion}
+	cmd := NewSkillCmd(cfg)
 	assertSubcommandsExist(t, cmd, []string{"install", "uninstall", "path"})
 }
 
 // TestSkillInstallCommand tests the skill install subcommand.
 func TestSkillInstallCommand(t *testing.T) {
 	t.Parallel()
-	cmd := NewSkillInstallCmd()
+	cfg := &CLIConfig{Version: testVersion}
+	cmd := NewSkillInstallCmd(cfg)
 	assertCommandBasics(t, cmd, "install")
 	assertNoArgsCommand(t, cmd)
 }
@@ -114,7 +119,8 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 	t.Setenv("HOME", tempDir)
 
 	// Execute install command
-	cmd := NewSkillInstallCmd()
+	cfg := &CLIConfig{Version: testVersion}
+	cmd := NewSkillInstallCmd(cfg)
 	var outBuf bytes.Buffer
 	cmd.SetOut(&outBuf)
 
@@ -164,7 +170,8 @@ func TestSkillInstallCommand_ReinstallRemovesOld(t *testing.T) {
 	require.NoError(t, err, "Failed to create old file: %v")
 
 	// Execute install command
-	cmd := NewSkillInstallCmd()
+	cfg := &CLIConfig{Version: testVersion}
+	cmd := NewSkillInstallCmd(cfg)
 	cmd.SetOut(&bytes.Buffer{})
 
 	err = cmd.Execute()
@@ -307,7 +314,8 @@ func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
 	t.Setenv("HOME", tempDir)
 
 	// Execute install command
-	cmd := NewSkillInstallCmd()
+	cfg := &CLIConfig{Version: testVersion}
+	cmd := NewSkillInstallCmd(cfg)
 	cmd.SetOut(&bytes.Buffer{})
 
 	err := cmd.Execute()
@@ -320,20 +328,22 @@ func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
 	content, err := os.ReadFile(versionPath)
 	require.NoError(t, err, "Expected version file to exist, got error: %v")
 
-	// Verify content matches current version
-	assert.Equal(t, Version, string(content))
+	// Verify content matches the test version
+	assert.Equal(t, testVersion, string(content))
 }
 
 // TestCheckSkillVersion tests the CheckSkillVersion function.
 func TestCheckSkillVersion(t *testing.T) {
 	tests := []struct {
 		name            string
+		currentVersion  string
 		setupFunc       func(t *testing.T, tempDir string)
 		expectedStatus  SkillVersionStatus
 		expectedVersion string
 	}{
 		{
-			name: "returns SkillNotInstalled when skill directory does not exist",
+			name:           "returns SkillNotInstalled when skill directory does not exist",
+			currentVersion: testVersion,
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
 				// Don't create anything
@@ -342,7 +352,8 @@ func TestCheckSkillVersion(t *testing.T) {
 			expectedVersion: "",
 		},
 		{
-			name: "returns SkillVersionUnknown when skill exists without version file",
+			name:           "returns SkillVersionUnknown when skill exists without version file",
+			currentVersion: testVersion,
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
@@ -358,7 +369,8 @@ func TestCheckSkillVersion(t *testing.T) {
 			expectedVersion: "",
 		},
 		{
-			name: "returns SkillVersionMatch when versions match",
+			name:           "returns SkillVersionMatch when versions match",
+			currentVersion: testVersion,
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
@@ -366,14 +378,15 @@ func TestCheckSkillVersion(t *testing.T) {
 				require.NoError(t, err, "Failed to create skill directory: %v")
 
 				versionPath := filepath.Join(skillPath, ".mcs-version")
-				err = os.WriteFile(versionPath, []byte(Version), 0644)
+				err = os.WriteFile(versionPath, []byte(testVersion), 0644)
 				require.NoError(t, err, "Failed to create version file: %v")
 			},
 			expectedStatus:  SkillVersionMatch,
-			expectedVersion: Version,
+			expectedVersion: testVersion,
 		},
 		{
-			name: "returns SkillVersionMismatch when versions differ",
+			name:           "returns SkillVersionMismatch when versions differ",
+			currentVersion: testVersion,
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
@@ -388,7 +401,8 @@ func TestCheckSkillVersion(t *testing.T) {
 			expectedVersion: "1.0.0",
 		},
 		{
-			name: "handles version file with whitespace",
+			name:           "handles version file with whitespace",
+			currentVersion: testVersion,
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
 				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
@@ -397,11 +411,11 @@ func TestCheckSkillVersion(t *testing.T) {
 
 				versionPath := filepath.Join(skillPath, ".mcs-version")
 				// Write version with trailing newline
-				err = os.WriteFile(versionPath, []byte(Version+"\n"), 0644)
+				err = os.WriteFile(versionPath, []byte(testVersion+"\n"), 0644)
 				require.NoError(t, err, "Failed to create version file: %v")
 			},
 			expectedStatus:  SkillVersionMatch,
-			expectedVersion: Version,
+			expectedVersion: testVersion,
 		},
 	}
 
@@ -412,7 +426,7 @@ func TestCheckSkillVersion(t *testing.T) {
 			tt.setupFunc(t, tempDir)
 			t.Setenv("HOME", tempDir)
 
-			status, version := CheckSkillVersion()
+			status, version := CheckSkillVersion(tt.currentVersion)
 
 			assert.Equal(t, tt.expectedStatus, status)
 

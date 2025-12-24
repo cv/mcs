@@ -11,9 +11,16 @@ import (
 )
 
 // createAPIClient creates an API client with cached credentials if available.
-func createAPIClient() (*api.Client, error) {
-	// Load configuration
-	cfg, err := config.Load(ConfigFile)
+func createAPIClient(ctx context.Context) (*api.Client, error) {
+	// Get CLI config from context.
+	cliCfg := ConfigFromContext(ctx)
+	configFile := ""
+	if cliCfg != nil {
+		configFile = cliCfg.ConfigFile
+	}
+
+	// Load configuration.
+	cfg, err := config.Load(configFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
@@ -79,7 +86,7 @@ type VehicleInfo struct {
 // setupVehicleClient is a shared helper that creates the API client and retrieves vehicle info.
 // It returns the authenticated client and full vehicle info, deferring cache save to the caller.
 func setupVehicleClient(ctx context.Context) (*api.Client, VehicleInfo, error) {
-	client, err := createAPIClient()
+	client, err := createAPIClient(ctx)
 	if err != nil {
 		return nil, VehicleInfo{}, err
 	}

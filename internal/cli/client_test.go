@@ -13,16 +13,15 @@ import (
 )
 
 // mockAPIClientSetup is a helper that sets up environment for API client creation tests.
-func mockAPIClientSetup(t *testing.T) string {
+func mockAPIClientSetup(t *testing.T) (string, context.Context) {
 	t.Helper()
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
 	t.Setenv("MCS_EMAIL", "test@example.com")
 	t.Setenv("MCS_PASSWORD", "test-password")
 	t.Setenv("MCS_REGION", "MNAO")
-	ConfigFile = ""
 
-	return tmpDir
+	return tmpDir, testContextWithConfig("")
 }
 
 // TestSetupVehicleClient_Success tests successful vehicle client setup.
@@ -32,9 +31,7 @@ func TestSetupVehicleClient_Success(t *testing.T) {
 	// Skip if we don't have valid credentials
 	t.Skip("Requires real API credentials - integration test")
 
-	mockAPIClientSetup(t)
-
-	ctx := context.Background()
+	_, ctx := mockAPIClientSetup(t)
 	client, vehicleInfo, err := setupVehicleClient(ctx)
 
 	require.NoError(t, err, "Expected successful setup, got error: %v")
@@ -54,9 +51,8 @@ func TestSetupVehicleClient_ConfigError(t *testing.T) {
 	t.Setenv("MCS_EMAIL", "test@example.com")
 	t.Setenv("MCS_PASSWORD", "test-password")
 	t.Setenv("MCS_REGION", "INVALID_REGION")
-	ConfigFile = ""
 
-	ctx := context.Background()
+	ctx := testContextWithConfig("")
 	_, _, err := setupVehicleClient(ctx)
 
 	require.Error(t, err, "Expected error with invalid config, got nil")
@@ -73,23 +69,23 @@ func TestSetupVehicleClient_MissingConfig(t *testing.T) {
 	t.Setenv("MCS_REGION", "")
 
 	// Point to non-existent config file
-	ConfigFile = filepath.Join(tmpDir, "nonexistent.toml")
-
-	ctx := context.Background()
+	ctx := testContextWithConfig(filepath.Join(tmpDir, "nonexistent.toml"))
 	_, _, err := setupVehicleClient(ctx)
 
 	require.Error(t, err, "Expected error with missing config, got nil")
 }
 
-// TestSetupVehicleClient_ContextCancellation tests context cancellation handling
+// TestSetupVehicleClient_ContextCancellation tests context cancellation handling.
 //
-//nolint:paralleltest // mockAPIClientSetup calls t.Setenv
+//nolint:paralleltest // mockAPIClientSetup uses t.Setenv which is incompatible with t.Parallel
 func TestSetupVehicleClient_ContextCancellation(t *testing.T) {
-	mockAPIClientSetup(t)
+	_, baseCtx := mockAPIClientSetup(t)
 
-	// Create a cancelled context
+	// Create a cancelled context with our config
+	cfg := ConfigFromContext(baseCtx)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
+	ctx = ContextWithConfig(ctx, cfg)
 
 	_, _, err := setupVehicleClient(ctx)
 
@@ -102,8 +98,7 @@ func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
-	mockAPIClientSetup(t)
-	ctx := context.Background()
+	_, ctx := mockAPIClientSetup(t)
 
 	callbackExecuted := false
 	var receivedClient *api.Client
@@ -131,8 +126,7 @@ func TestWithVehicleClient_CallbackError(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
-	mockAPIClientSetup(t)
-	ctx := context.Background()
+	_, ctx := mockAPIClientSetup(t)
 
 	expectedErr := errors.New("callback error")
 
@@ -150,9 +144,8 @@ func TestWithVehicleClient_SetupError(t *testing.T) {
 	t.Setenv("MCS_EMAIL", "")
 	t.Setenv("MCS_PASSWORD", "")
 	t.Setenv("MCS_REGION", "")
-	ConfigFile = ""
 
-	ctx := context.Background()
+	ctx := testContextWithConfig("")
 
 	callbackExecuted := false
 
@@ -172,8 +165,7 @@ func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
-	mockAPIClientSetup(t)
-	ctx := context.Background()
+	_, ctx := mockAPIClientSetup(t)
 
 	callbackExecuted := false
 	var receivedClient *api.Client
@@ -202,8 +194,7 @@ func TestWithVehicleClientEx_CallbackError(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
-	mockAPIClientSetup(t)
-	ctx := context.Background()
+	_, ctx := mockAPIClientSetup(t)
 
 	expectedErr := errors.New("extended callback error")
 
@@ -221,9 +212,8 @@ func TestWithVehicleClientEx_SetupError(t *testing.T) {
 	t.Setenv("MCS_EMAIL", "")
 	t.Setenv("MCS_PASSWORD", "")
 	t.Setenv("MCS_REGION", "")
-	ConfigFile = ""
 
-	ctx := context.Background()
+	ctx := testContextWithConfig("")
 
 	callbackExecuted := false
 
@@ -289,10 +279,9 @@ region = "MNAO"
 	t.Setenv("MCS_PASSWORD", "")
 	t.Setenv("MCS_REGION", "")
 
-	ConfigFile = configPath
+	ctx := testContextWithConfig(configPath)
 
 	// This would fail without real API, but should at least get past config loading
-	ctx := context.Background()
 	_, _, err = setupVehicleClient(ctx)
 
 	// We expect an API error, not a config error
