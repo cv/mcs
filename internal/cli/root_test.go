@@ -141,8 +141,10 @@ func TestExecute_WithRealSignal(t *testing.T) {
 	}
 }
 
+// TestCheckSkillVersionMismatch_SkipsSkillCommands tests that skill commands are skipped.
+//
+//nolint:paralleltest // This test modifies os.Stderr which is a global variable.
 func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) {
-	t.Parallel()
 	// Create a skill command with context containing config
 	skillCmd := &cobra.Command{Use: "skill"}
 	cfg := testCLIConfig()
@@ -166,8 +168,10 @@ func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) {
 	assert.Empty(t, errBuf.String())
 }
 
+// TestCheckSkillVersionMismatch_SkipsSkillSubcommands tests that skill subcommands are skipped.
+//
+//nolint:paralleltest // This test modifies os.Stderr which is a global variable.
 func TestCheckSkillVersionMismatch_SkipsSkillSubcommands(t *testing.T) {
-	t.Parallel()
 	// Create a skill subcommand (e.g., skill install)
 	skillCmd := &cobra.Command{Use: "skill"}
 	installCmd := &cobra.Command{Use: "install"}
