@@ -125,13 +125,14 @@ func runRawEV(cmd *cobra.Command) error {
 
 // runRawVehicle executes the raw vehicle command.
 func runRawVehicle(cmd *cobra.Command) error {
-	client, err := createAPIClient(cmd.Context())
+	ctx := cmd.Context()
+	client, err := createAPIClient(ctx)
 	if err != nil {
 		return err
 	}
-	defer saveClientCache(client)
+	defer saveClientCache(ctx, client)
 
-	vecBaseInfos, err := client.GetVecBaseInfos(cmd.Context())
+	vecBaseInfos, err := client.GetVecBaseInfos(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get vehicle info: %w", err)
 	}

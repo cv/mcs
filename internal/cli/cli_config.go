@@ -13,6 +13,11 @@ type CLIConfig struct {
 
 	// NoColor disables colored output, set via --no-color flag.
 	NoColor bool
+
+	// CacheFile is the path to the token cache file.
+	// If empty, uses the default location (~/.cache/mcs/token.json).
+	// This is primarily used for testing to avoid setting HOME.
+	CacheFile string
 }
 
 // cliConfigKey is the context key for CLIConfig.

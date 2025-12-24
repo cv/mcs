@@ -12,16 +12,84 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockAPIClientSetup is a helper that sets up environment for API client creation tests.
-func mockAPIClientSetup(t *testing.T) (string, context.Context) {
+// testContextWithConfig creates a context with CLIConfig for testing.
+// Uses explicit file paths to avoid needing HOME env var.
+func testContextWithConfig(t *testing.T, configFile string) context.Context {
 	t.Helper()
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
-	t.Setenv("MCS_EMAIL", "test@example.com")
-	t.Setenv("MCS_PASSWORD", "test-password")
-	t.Setenv("MCS_REGION", "MNAO")
+	cacheFile := filepath.Join(tmpDir, "cache", "token.json")
+	cfg := &CLIConfig{
+		ConfigFile: configFile,
+		CacheFile:  cacheFile,
+	}
 
-	return tmpDir, testContextWithConfig("")
+	return ContextWithConfig(context.Background(), cfg)
+}
+
+// testContextWithValidConfig creates a context with a valid config file for testing.
+// This allows tests to run in parallel without setting env vars.
+func testContextWithValidConfig(t *testing.T) context.Context {
+	t.Helper()
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "config.toml")
+	cacheFile := filepath.Join(tmpDir, "cache", "token.json")
+
+	configContent := `
+email = "test@example.com"
+password = "test-password"
+region = "MNAO"
+`
+	err := os.WriteFile(configFile, []byte(configContent), 0600)
+	require.NoError(t, err)
+
+	cfg := &CLIConfig{
+		ConfigFile: configFile,
+		CacheFile:  cacheFile,
+	}
+
+	return ContextWithConfig(context.Background(), cfg)
+}
+
+// testContextWithInvalidRegion creates a context with invalid region for error testing.
+func testContextWithInvalidRegion(t *testing.T) context.Context {
+	t.Helper()
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "config.toml")
+	cacheFile := filepath.Join(tmpDir, "cache", "token.json")
+
+	configContent := `
+email = "test@example.com"
+password = "test-password"
+region = "INVALID_REGION"
+`
+	err := os.WriteFile(configFile, []byte(configContent), 0600)
+	require.NoError(t, err)
+
+	cfg := &CLIConfig{
+		ConfigFile: configFile,
+		CacheFile:  cacheFile,
+	}
+
+	return ContextWithConfig(context.Background(), cfg)
+}
+
+// testContextWithEmptyConfig creates a context with empty credentials for error testing.
+func testContextWithEmptyConfig(t *testing.T) context.Context {
+	t.Helper()
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "config.toml")
+	cacheFile := filepath.Join(tmpDir, "cache", "token.json")
+
+	// Create empty config file (missing all required fields)
+	err := os.WriteFile(configFile, []byte(""), 0600)
+	require.NoError(t, err)
+
+	cfg := &CLIConfig{
+		ConfigFile: configFile,
+		CacheFile:  cacheFile,
+	}
+
+	return ContextWithConfig(context.Background(), cfg)
 }
 
 // TestSetupVehicleClient_Success tests successful vehicle client setup.
@@ -31,7 +99,7 @@ func TestSetupVehicleClient_Success(t *testing.T) {
 	// Skip if we don't have valid credentials
 	t.Skip("Requires real API credentials - integration test")
 
-	_, ctx := mockAPIClientSetup(t)
+	ctx := testContextWithValidConfig(t)
 	client, vehicleInfo, err := setupVehicleClient(ctx)
 
 	require.NoError(t, err, "Expected successful setup, got error: %v")
@@ -44,15 +112,8 @@ func TestSetupVehicleClient_Success(t *testing.T) {
 
 // TestSetupVehicleClient_ConfigError tests error handling when config is invalid.
 func TestSetupVehicleClient_ConfigError(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
-
-	// Set invalid region
-	t.Setenv("MCS_EMAIL", "test@example.com")
-	t.Setenv("MCS_PASSWORD", "test-password")
-	t.Setenv("MCS_REGION", "INVALID_REGION")
-
-	ctx := testContextWithConfig("")
+	t.Parallel()
+	ctx := testContextWithInvalidRegion(t)
 	_, _, err := setupVehicleClient(ctx)
 
 	require.Error(t, err, "Expected error with invalid config, got nil")
@@ -60,26 +121,19 @@ func TestSetupVehicleClient_ConfigError(t *testing.T) {
 
 // TestSetupVehicleClient_MissingConfig tests error when config file doesn't exist.
 func TestSetupVehicleClient_MissingConfig(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
-
-	// Clear env vars
-	t.Setenv("MCS_EMAIL", "")
-	t.Setenv("MCS_PASSWORD", "")
-	t.Setenv("MCS_REGION", "")
-
 	// Point to non-existent config file
-	ctx := testContextWithConfig(filepath.Join(tmpDir, "nonexistent.toml"))
+	ctx := testContextWithConfig(t, filepath.Join(tmpDir, "nonexistent.toml"))
 	_, _, err := setupVehicleClient(ctx)
 
 	require.Error(t, err, "Expected error with missing config, got nil")
 }
 
 // TestSetupVehicleClient_ContextCancellation tests context cancellation handling.
-//
-//nolint:paralleltest // mockAPIClientSetup uses t.Setenv which is incompatible with t.Parallel
 func TestSetupVehicleClient_ContextCancellation(t *testing.T) {
-	_, baseCtx := mockAPIClientSetup(t)
+	t.Parallel()
+	baseCtx := testContextWithValidConfig(t)
 
 	// Create a cancelled context with our config
 	cfg := ConfigFromContext(baseCtx)
@@ -98,7 +152,7 @@ func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
-	_, ctx := mockAPIClientSetup(t)
+	ctx := testContextWithValidConfig(t)
 
 	callbackExecuted := false
 	var receivedClient *api.Client
@@ -126,7 +180,7 @@ func TestWithVehicleClient_CallbackError(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
-	_, ctx := mockAPIClientSetup(t)
+	ctx := testContextWithValidConfig(t)
 
 	expectedErr := errors.New("callback error")
 
@@ -139,13 +193,8 @@ func TestWithVehicleClient_CallbackError(t *testing.T) {
 
 // TestWithVehicleClient_SetupError tests that setup errors are propagated.
 func TestWithVehicleClient_SetupError(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
-	t.Setenv("MCS_EMAIL", "")
-	t.Setenv("MCS_PASSWORD", "")
-	t.Setenv("MCS_REGION", "")
-
-	ctx := testContextWithConfig("")
+	t.Parallel()
+	ctx := testContextWithEmptyConfig(t)
 
 	callbackExecuted := false
 
@@ -165,7 +214,7 @@ func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
-	_, ctx := mockAPIClientSetup(t)
+	ctx := testContextWithValidConfig(t)
 
 	callbackExecuted := false
 	var receivedClient *api.Client
@@ -194,7 +243,7 @@ func TestWithVehicleClientEx_CallbackError(t *testing.T) {
 	t.Parallel()
 	t.Skip("Requires real API credentials - integration test")
 
-	_, ctx := mockAPIClientSetup(t)
+	ctx := testContextWithValidConfig(t)
 
 	expectedErr := errors.New("extended callback error")
 
@@ -207,13 +256,8 @@ func TestWithVehicleClientEx_CallbackError(t *testing.T) {
 
 // TestWithVehicleClientEx_SetupError tests setup error propagation.
 func TestWithVehicleClientEx_SetupError(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
-	t.Setenv("MCS_EMAIL", "")
-	t.Setenv("MCS_PASSWORD", "")
-	t.Setenv("MCS_REGION", "")
-
-	ctx := testContextWithConfig("")
+	t.Parallel()
+	ctx := testContextWithEmptyConfig(t)
 
 	callbackExecuted := false
 
@@ -261,9 +305,10 @@ func TestVehicleInfo_StructFields(t *testing.T) {
 
 // TestSetupVehicleClient_ConfigFromFile tests config loading from file.
 func TestSetupVehicleClient_ConfigFromFile(t *testing.T) {
+	t.Parallel()
 	tmpDir := t.TempDir()
-	t.Setenv("HOME", tmpDir)
 	configPath := filepath.Join(tmpDir, "test-config.toml")
+	cacheFile := filepath.Join(tmpDir, "cache", "token.json")
 
 	// Create config file
 	configContent := `
@@ -274,12 +319,11 @@ region = "MNAO"
 	err := os.WriteFile(configPath, []byte(configContent), 0600)
 	require.NoError(t, err, "Failed to create config file: %v")
 
-	// Clear env vars
-	t.Setenv("MCS_EMAIL", "")
-	t.Setenv("MCS_PASSWORD", "")
-	t.Setenv("MCS_REGION", "")
-
-	ctx := testContextWithConfig(configPath)
+	cfg := &CLIConfig{
+		ConfigFile: configPath,
+		CacheFile:  cacheFile,
+	}
+	ctx := ContextWithConfig(context.Background(), cfg)
 
 	// This would fail without real API, but should at least get past config loading
 	_, _, err = setupVehicleClient(ctx)

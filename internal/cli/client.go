@@ -15,8 +15,10 @@ func createAPIClient(ctx context.Context) (*api.Client, error) {
 	// Get CLI config from context.
 	cliCfg := ConfigFromContext(ctx)
 	configFile := ""
+	cacheFile := ""
 	if cliCfg != nil {
 		configFile = cliCfg.ConfigFile
+		cacheFile = cliCfg.CacheFile
 	}
 
 	// Load configuration.
@@ -29,16 +31,21 @@ func createAPIClient(ctx context.Context) (*api.Client, error) {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
-	// Create API client
+	// Create API client.
 	client, err := api.NewClient(cfg.Email, cfg.Password, cfg.Region)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}
 
-	// Try to load cached credentials (ignore errors - client will authenticate normally)
-	cachedCreds, _ := cache.Load()
+	// Try to load cached credentials (ignore errors - client will authenticate normally).
+	var cachedCreds *cache.TokenCache
+	if cacheFile != "" {
+		cachedCreds, _ = cache.LoadFrom(cacheFile)
+	} else {
+		cachedCreds, _ = cache.Load()
+	}
 
-	// If we have valid cached credentials, use them
+	// If we have valid cached credentials, use them.
 	if cachedCreds != nil && cachedCreds.IsValid() {
 		client.SetCachedCredentials(
 			cachedCreds.AccessToken,
@@ -52,10 +59,10 @@ func createAPIClient(ctx context.Context) (*api.Client, error) {
 }
 
 // saveClientCache saves the client's current credentials to cache.
-func saveClientCache(client *api.Client) {
+func saveClientCache(ctx context.Context, client *api.Client) {
 	accessToken, expirationTs, encKey, signKey := client.GetCredentials()
 
-	// Only save if we have valid credentials
+	// Only save if we have valid credentials.
 	if accessToken == "" || expirationTs == 0 || encKey == "" || signKey == "" {
 		return
 	}
@@ -67,9 +74,23 @@ func saveClientCache(client *api.Client) {
 		SignKey:                 signKey,
 	}
 
-	if err := cache.Save(tokenCache); err != nil {
-		// Log the error but don't fail the command
-		// Cache save failures shouldn't break the CLI
+	// Get cache file from context.
+	cliCfg := ConfigFromContext(ctx)
+	cacheFile := ""
+	if cliCfg != nil {
+		cacheFile = cliCfg.CacheFile
+	}
+
+	var err error
+	if cacheFile != "" {
+		err = cache.SaveTo(tokenCache, cacheFile)
+	} else {
+		err = cache.Save(tokenCache)
+	}
+
+	if err != nil {
+		// Log the error but don't fail the command.
+		// Cache save failures shouldn't break the CLI.
 		log.Printf("Warning: failed to save token cache: %v", err)
 	}
 }
@@ -121,7 +142,7 @@ func withVehicleClient(ctx context.Context, fn func(context.Context, *api.Client
 	if err != nil {
 		return err
 	}
-	defer saveClientCache(client)
+	defer saveClientCache(ctx, client)
 
 	return fn(ctx, client, vehicleInfo.InternalVIN)
 }
@@ -133,7 +154,7 @@ func withVehicleClientEx(ctx context.Context, fn func(context.Context, *api.Clie
 	if err != nil {
 		return err
 	}
-	defer saveClientCache(client)
+	defer saveClientCache(ctx, client)
 
 	return fn(ctx, client, vehicleInfo)
 }

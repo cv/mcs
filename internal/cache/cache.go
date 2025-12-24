@@ -37,13 +37,18 @@ func (tc *TokenCache) IsValid() bool {
 	return IsTokenValid(tc.AccessToken, tc.AccessTokenExpirationTs)
 }
 
-// Load reads the token cache from disk.
+// Load reads the token cache from the default location.
 func Load() (*TokenCache, error) {
 	path, err := getCachePath()
 	if err != nil {
 		return nil, err
 	}
 
+	return LoadFrom(path)
+}
+
+// LoadFrom reads the token cache from the specified file path.
+func LoadFrom(path string) (*TokenCache, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -61,14 +66,19 @@ func Load() (*TokenCache, error) {
 	return &cache, nil
 }
 
-// Save writes the token cache to disk.
+// Save writes the token cache to the default location.
 func Save(cache *TokenCache) error {
 	path, err := getCachePath()
 	if err != nil {
 		return err
 	}
 
-	// Create cache directory if it doesn't exist
+	return SaveTo(cache, path)
+}
+
+// SaveTo writes the token cache to the specified file path.
+func SaveTo(cache *TokenCache, path string) error {
+	// Create cache directory if it doesn't exist.
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
@@ -79,7 +89,7 @@ func Save(cache *TokenCache) error {
 		return fmt.Errorf("failed to marshal cache: %w", err)
 	}
 
-	// Write with restricted permissions (owner read/write only)
+	// Write with restricted permissions (owner read/write only).
 	if err := os.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("failed to write cache file: %w", err)
 	}
