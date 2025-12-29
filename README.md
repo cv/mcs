@@ -25,13 +25,9 @@ Or use environment variables: `MCS_EMAIL`, `MCS_PASSWORD`, `MCS_REGION`
 
 ```bash
 # Status
-mcs status              # Full summary
-mcs status battery      # Battery/charging only
-mcs status fuel         # Fuel level
-mcs status location     # GPS + Google Maps link
-mcs status tires        # Tire pressures
-mcs status doors        # Lock status
+mcs status              # Full vehicle status
 mcs status --json       # JSON output
+mcs status --refresh    # Request fresh status from vehicle
 
 # Control
 mcs lock                # Lock doors

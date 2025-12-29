@@ -29,15 +29,6 @@ mcs status -r           # Short form of --refresh
 - `-r, --refresh` - Request fresh status from vehicle (PHEV/EV only)
 - `--refresh-wait <seconds>` - Max wait for vehicle response (default: 90)
 
-### Status Subcommands
-```bash
-mcs status battery      # Battery status only
-mcs status fuel         # Fuel status only
-mcs status location     # Vehicle location
-mcs status doors        # Door lock status
-mcs status tires        # Tire pressure
-```
-
 ## Climate Commands
 
 ### `mcs climate on`
