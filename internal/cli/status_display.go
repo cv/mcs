@@ -65,6 +65,7 @@ func displayAllStatusText(vehicleStatus *api.VehicleStatusResponse, evStatus *ap
 	fuelInfo, _ := vehicleStatus.GetFuelInfo()
 	doorStatus, _ := vehicleStatus.GetDoorsInfo()
 	tireInfo, _ := vehicleStatus.GetTiresInfo()
+	locationInfo, _ := vehicleStatus.GetLocationInfo()
 
 	// Build vehicle header
 	output := formatVehicleHeader(vehicleInfo) + "\n"
@@ -97,6 +98,12 @@ func displayAllStatusText(vehicleStatus *api.VehicleStatusResponse, evStatus *ap
 
 	if err := appendFormattedSection(&output, func() (string, error) {
 		return formatTiresStatus(tireInfo, false)
+	}); err != nil {
+		return "", err
+	}
+
+	if err := appendFormattedSection(&output, func() (string, error) {
+		return formatLocationStatus(locationInfo, false)
 	}); err != nil {
 		return "", err
 	}
