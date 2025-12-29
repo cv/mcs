@@ -65,24 +65,6 @@ func TestStatusCommand_NoSubcommand(t *testing.T) {
 
 }
 
-// TestStatusCommand_Subcommands tests all status subcommands using table-driven pattern.
-func TestStatusCommand_Subcommands(t *testing.T) {
-	t.Parallel()
-	subcommands := []string{"battery", "fuel", "location", "tires", "doors"}
-
-	for _, name := range subcommands {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			cmd := NewStatusCmd()
-			subCmd := findSubcommand(cmd, name)
-
-			require.NotNilf(t, subCmd, "Expected %s subcommand to exist", name)
-
-			assert.NotEmptyf(t, subCmd.Short, "Expected %s subcommand to have a description", name)
-		})
-	}
-}
-
 // TestStatusCommand_JSONFlag tests the JSON output flag.
 func TestStatusCommand_JSONFlag(t *testing.T) {
 	t.Parallel()
@@ -104,7 +86,7 @@ func TestStatusCommand_JSONFlag(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			cmd := NewStatusCmd()
-			flag := cmd.PersistentFlags().Lookup(tt.flagName)
+			flag := cmd.Flags().Lookup(tt.flagName)
 
 			if tt.shouldExist {
 				require.NotNil(t, flag)
@@ -1424,162 +1406,6 @@ func TestFormatWindowsStatus(t *testing.T) {
 				assertMapValue(t, data, "rear_right_position", float64(tt.windowsInfo.RearRightPosition))
 			} else if tt.expectedOutput != "" {
 				assert.Equal(t, tt.expectedOutput, result)
-			}
-		})
-	}
-}
-
-// TestDisplayStatusWithVehicle tests the displayStatusWithVehicle function.
-func TestDisplayStatusWithVehicle(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name           string
-		statusType     StatusType
-		vehicleStatus  *api.VehicleStatusResponse
-		evStatus       *api.EVVehicleStatusResponse
-		vehicleInfo    VehicleInfo
-		jsonOutput     bool
-		expectedOutput []string
-	}{
-		{
-			name:          "battery status",
-			statusType:    StatusBattery,
-			vehicleStatus: NewMockVehicleStatus().Build(),
-			evStatus:      NewMockEVVehicleStatus().Build(),
-			vehicleInfo: VehicleInfo{
-				VIN:       "JM3KKEHC1R0123456",
-				ModelName: "CX-90 PHEV",
-				ModelYear: "2024",
-			},
-			jsonOutput: false,
-			expectedOutput: []string{
-				"BATTERY:",
-				"80%",
-			},
-		},
-		{
-			name:       "fuel status",
-			statusType: StatusFuel,
-			vehicleStatus: &api.VehicleStatusResponse{
-				ResultCode: api.ResultCodeSuccess,
-				RemoteInfos: []api.RemoteInfo{
-					{
-						ResidualFuel: api.ResidualFuel{
-							FuelSegmentDActl:  92,
-							RemDrvDistDActlKm: 630.0,
-						},
-					},
-				},
-			},
-			evStatus: NewMockEVVehicleStatus().Build(),
-			vehicleInfo: VehicleInfo{
-				VIN: "JM3KKEHC1R0123456",
-			},
-			jsonOutput: false,
-			expectedOutput: []string{
-				"FUEL:",
-				"92%",
-			},
-		},
-		{
-			name:       "location status",
-			statusType: StatusLocation,
-			vehicleStatus: &api.VehicleStatusResponse{
-				ResultCode: api.ResultCodeSuccess,
-				AlertInfos: []api.AlertInfo{
-					{
-						PositionInfo: api.PositionInfo{
-							Latitude:  37.7749,
-							Longitude: -122.4194,
-						},
-					},
-				},
-			},
-			evStatus: NewMockEVVehicleStatus().Build(),
-			vehicleInfo: VehicleInfo{
-				VIN: "JM3KKEHC1R0123456",
-			},
-			jsonOutput: false,
-			expectedOutput: []string{
-				"LOCATION:",
-				"37.774900",
-				"-122.419400",
-			},
-		},
-		{
-			name:       "tires status",
-			statusType: StatusTires,
-			vehicleStatus: &api.VehicleStatusResponse{
-				ResultCode: api.ResultCodeSuccess,
-				RemoteInfos: []api.RemoteInfo{
-					{
-						TPMSInformation: api.TPMSInformation{
-							FLTPrsDispPsi: 32.0,
-							FRTPrsDispPsi: 32.0,
-							RLTPrsDispPsi: 31.0,
-							RRTPrsDispPsi: 31.0,
-						},
-					},
-				},
-			},
-			evStatus: NewMockEVVehicleStatus().Build(),
-			vehicleInfo: VehicleInfo{
-				VIN: "JM3KKEHC1R0123456",
-			},
-			jsonOutput: false,
-			expectedOutput: []string{
-				"TIRES:",
-				"FL:",
-				"FR:",
-				"RL:",
-				"RR:",
-				"PSI",
-			},
-		},
-		{
-			name:       "doors status",
-			statusType: StatusDoors,
-			vehicleStatus: NewMockVehicleStatus().WithDoorStatus(api.DoorStatus{
-				AllLocked:       true,
-				DriverOpen:      false,
-				PassengerOpen:   false,
-				RearLeftOpen:    false,
-				RearRightOpen:   false,
-				TrunkOpen:       false,
-				HoodOpen:        false,
-				FuelLidOpen:     false,
-				DriverLocked:    true,
-				PassengerLocked: true,
-				RearLeftLocked:  true,
-				RearRightLocked: true,
-			}).Build(),
-			evStatus: NewMockEVVehicleStatus().Build(),
-			vehicleInfo: VehicleInfo{
-				VIN: "JM3KKEHC1R0123456",
-			},
-			jsonOutput: false,
-			expectedOutput: []string{
-				"DOORS:",
-				"All locked",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			// Create a cobra command with a buffer for output
-			buf := new(bytes.Buffer)
-			cmd := NewStatusCmd()
-			cmd.SetOut(buf)
-			cmd.SetErr(buf)
-
-			err := displayStatusWithVehicle(cmd, tt.statusType, tt.vehicleStatus, tt.evStatus, tt.vehicleInfo, tt.jsonOutput)
-			require.NoError(t, err, "Unexpected error: %v")
-
-			output := buf.String()
-			for _, expected := range tt.expectedOutput {
-				assert.Contains(t, output, expected)
 			}
 		})
 	}
