@@ -114,6 +114,8 @@ func TestSkillInstallCommand(t *testing.T) {
 
 // TestSkillInstallCommand_Execute tests executing the install command.
 func TestSkillInstallCommand_Execute(t *testing.T) {
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
@@ -155,6 +157,8 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 
 // TestSkillInstallCommand_ReinstallRemovesOld tests that reinstalling removes old files.
 func TestSkillInstallCommand_ReinstallRemovesOld(t *testing.T) {
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
@@ -195,6 +199,8 @@ func TestSkillUninstallCommand(t *testing.T) {
 
 // TestSkillUninstallCommand_Execute tests executing the uninstall command.
 func TestSkillUninstallCommand_Execute(t *testing.T) {
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	tests := []struct {
 		name           string
 		setupFunc      func(t *testing.T, tempDir string)
@@ -263,6 +269,8 @@ func TestSkillPathCommand(t *testing.T) {
 
 // TestSkillPathCommand_Execute tests executing the path command.
 func TestSkillPathCommand_Execute(t *testing.T) {
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
@@ -283,6 +291,8 @@ func TestSkillPathCommand_Execute(t *testing.T) {
 
 // TestSkillPathCommand_OutputFormat tests that path output is just the path.
 func TestSkillPathCommand_OutputFormat(t *testing.T) {
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
@@ -309,6 +319,8 @@ func TestSkillPathCommand_OutputFormat(t *testing.T) {
 
 // TestSkillInstallCommand_WritesVersionFile tests that install creates a version file.
 func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)

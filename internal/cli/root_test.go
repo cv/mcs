@@ -20,6 +20,8 @@ func testCLIConfig() *CLIConfig {
 
 func TestRootCmd_Version(t *testing.T) {
 	t.Parallel()
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	cfg := testCLIConfig()
 	rootCmd := NewRootCmd(cfg)
 	rootCmd.SetArgs([]string{"--version"})
@@ -36,6 +38,8 @@ func TestRootCmd_Version(t *testing.T) {
 
 func TestRootCmd_Help(t *testing.T) {
 	t.Parallel()
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	cfg := testCLIConfig()
 	rootCmd := NewRootCmd(cfg)
 	rootCmd.SetArgs([]string{"--help"})
@@ -54,6 +58,8 @@ func TestRootCmd_Help(t *testing.T) {
 
 func TestRootCmd_NoArgs(t *testing.T) {
 	t.Parallel()
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	cfg := testCLIConfig()
 	rootCmd := NewRootCmd(cfg)
 	rootCmd.SetArgs([]string{})
@@ -70,6 +76,8 @@ func TestRootCmd_NoArgs(t *testing.T) {
 
 func TestExecute_SignalHandling(t *testing.T) {
 	t.Parallel()
+	colorTestMutex.Lock() // PersistentPreRun may change global color state
+	defer colorTestMutex.Unlock()
 	cfg := testCLIConfig()
 	// Create a command that blocks until context is cancelled
 	rootCmd := NewRootCmd(cfg)

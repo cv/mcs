@@ -34,6 +34,16 @@ func boolToInt(b bool) int {
 // controlEndpoint sends a control command to the vehicle with optional additional parameters.
 // This is the generic method that all control endpoints use internally.
 func (c *Client) controlEndpoint(ctx context.Context, endpoint, actionDesc, internalVIN string, additionalParams map[string]any) error {
+	resultCode, err := c.controlResult(ctx, endpoint, actionDesc, internalVIN, additionalParams)
+	if err != nil {
+		return err
+	}
+
+	return checkResultCode(resultCode, actionDesc)
+}
+
+// controlResult sends a control request and returns its result code unchecked.
+func (c *Client) controlResult(ctx context.Context, endpoint, actionDesc, internalVIN string, additionalParams map[string]any) (string, error) {
 	bodyParams := map[string]any{
 		internalUserIDField: InternalUserID,
 		"internalvin":       internalVIN,
@@ -44,15 +54,15 @@ func (c *Client) controlEndpoint(ctx context.Context, endpoint, actionDesc, inte
 
 	response, err := c.APIRequest(ctx, "POST", endpoint, nil, bodyParams, true, true)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	resultCode, ok := getString(response, "resultCode")
 	if !ok {
-		return fmt.Errorf("failed to %s: missing result code", actionDesc)
+		return "", fmt.Errorf("failed to %s: missing result code", actionDesc)
 	}
 
-	return checkResultCode(resultCode, actionDesc)
+	return resultCode, nil
 }
 
 // executeControl sends a simple control command to the vehicle (no additional parameters).
@@ -111,9 +121,24 @@ func (c *Client) HVACOff(ctx context.Context, internalVIN string) error {
 }
 
 // RefreshVehicleStatus requests the vehicle to refresh its status (PHEV/EV only).
+// The current API answers a refresh with ResultCodeRefreshAccepted (the request
+// was passed to the vehicle; its report follows ~20-30 s later), the legacy one
+// with ResultCodeSuccess. Both mean the request went through.
 func (c *Client) RefreshVehicleStatus(ctx context.Context, internalVIN string) error {
-	return c.executeControl(ctx, EndpointRefreshVehicleStatus, "refresh vehicle status", internalVIN)
+	const desc = "refresh vehicle status"
+	resultCode, err := c.controlResult(ctx, EndpointRefreshVehicleStatus, desc, internalVIN, nil)
+	if err != nil {
+		return err
+	}
+	if resultCode == ResultCodeRefreshAccepted {
+		return nil
+	}
+
+	return checkResultCode(resultCode, desc)
 }
+
+// ResultCodeRefreshAccepted is the current API's answer to a status refresh.
+const ResultCodeRefreshAccepted = "MSG200001"
 
 // SetHVACSetting sets HVAC temperature and defroster settings.
 func (c *Client) SetHVACSetting(ctx context.Context, internalVIN string, temperature float64, tempUnit TemperatureUnit, frontDefroster, rearDefroster bool) error {
