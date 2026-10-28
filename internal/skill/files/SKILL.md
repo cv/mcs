@@ -48,7 +48,7 @@ Translates natural language vehicle control requests into `mcs` CLI commands.
 
 ## Execution Guidelines
 
-1. **Run the command** using the Bash tool
+1. **Run the command** in a shell
 2. **Show the output** to the user in a friendly format
 3. **For control commands**, the CLI will confirm the action completed
 4. **For status queries**, highlight the relevant information

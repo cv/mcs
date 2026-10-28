@@ -76,25 +76,25 @@ Note: Tire pressures are color-coded based on deviation from target (36 PSI):
 - **Yellow**: 4-6 PSI deviation
 - **Red**: >6 PSI deviation (potential safety issue)
 
-## Claude Code Integration
+## Agent Integration
 
-mcs includes a Claude Code skill for natural language vehicle control. Install it once:
+mcs ships an [Agent Skills](https://agentskills.io) skill (`SKILL.md`) for natural language vehicle control from any coding agent that supports skills. Install it once:
 
 ```bash
 mcs skill install
 ```
 
-Then in Claude Code, just tell Claude what you want:
+Then just tell your agent what you want:
 
 ```
 You: "warm up the car"
-Claude: runs `mcs climate on`
+Agent: runs `mcs climate on`
 
 You: "what's my battery level?"
-Claude: runs `mcs status` and shows battery info
+Agent: runs `mcs status` and shows battery info
 
 You: "lock the doors"
-Claude: runs `mcs lock`
+Agent: runs `mcs lock`
 ```
 
 **Supported phrases:**
@@ -106,9 +106,15 @@ Claude: runs `mcs lock`
 
 **Skill management:**
 ```bash
-mcs skill install    # Install to ~/.claude/skills/mcs-control/
+mcs skill install    # Install to ~/.agents/skills/mcs-control/
 mcs skill uninstall  # Remove the skill
 mcs skill path       # Show installation path
+```
+
+The skill installs to `~/.agents/skills/` by default. If your agent reads skills from a different directory, set `MCS_SKILLS_DIR`:
+
+```bash
+MCS_SKILLS_DIR=/path/to/agent/skills mcs skill install
 ```
 
 ## Notes
@@ -133,4 +139,4 @@ mcs skill path       # Show installation path
   query values and bodies. Raw status/JSON still contains VIN and location: keep it private.
 - Remote start limited to 2 consecutive starts without driving
 
-For developer documentation, see [CLAUDE.md](CLAUDE.md)
+For developer documentation, see [AGENTS.md](AGENTS.md)

@@ -14,14 +14,22 @@ import (
 // skillVersionFile is the name of the file that stores the mcs version used to install the skill.
 const skillVersionFile = ".mcs-version"
 
-// getSkillPath returns the path where the skill should be installed.
+// skillsDirEnv names the environment variable that overrides the skills directory.
+const skillsDirEnv = "MCS_SKILLS_DIR"
+
+// getSkillPath returns the path where the skill should be installed:
+// $MCS_SKILLS_DIR/mcs-control if set, otherwise ~/.agents/skills/mcs-control.
 func getSkillPath() (string, error) {
+	if dir := os.Getenv(skillsDirEnv); dir != "" {
+		return filepath.Join(dir, skill.SkillName), nil
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	return filepath.Join(home, ".claude", "skills", skill.SkillName), nil
+	return filepath.Join(home, ".agents", "skills", skill.SkillName), nil
 }
 
 // uninstallSkill removes the skill directory if it exists.
@@ -47,10 +55,17 @@ func uninstallSkill() error {
 func NewSkillCmd(cfg *CLIConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   skillCommandName,
-		Short: "Manage Claude Code skill",
-		Long:  `Install, uninstall, or show the path of the Claude Code skill for natural language vehicle control.`,
-		Example: `  # Install the skill to ~/.claude/skills/mcs-control/
+		Short: "Manage the mcs agent skill",
+		Long: `Install, uninstall, or show the path of the mcs agent skill for natural language vehicle control.
+
+The skill uses the Agent Skills format (SKILL.md) and is installed to
+~/.agents/skills/mcs-control/ by default. Set MCS_SKILLS_DIR to install it
+into another agent's skills directory instead.`,
+		Example: `  # Install the skill to ~/.agents/skills/mcs-control/
   mcs skill install
+
+  # Install into a different skills directory
+  MCS_SKILLS_DIR=/path/to/skills mcs skill install
 
   # Uninstall the skill
   mcs skill uninstall
@@ -110,15 +125,17 @@ func installSkillFiles(skillPath string) error {
 func NewSkillInstallCmd(cfg *CLIConfig) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install",
-		Short: "Install the Claude Code skill",
-		Long: `Install the Claude Code skill to ~/.claude/skills/mcs-control/.
+		Short: "Install the mcs agent skill",
+		Long: `Install the mcs agent skill to ~/.agents/skills/mcs-control/
+(or $MCS_SKILLS_DIR/mcs-control/ when MCS_SKILLS_DIR is set).
 
-This enables natural language control of your vehicle through Claude Code.
-For example, you can say "warm up the car" and Claude will run "mcs climate on".`,
+This enables natural language control of your vehicle through any coding agent
+that supports Agent Skills. For example, you can say "warm up the car" and the
+agent will run "mcs climate on".`,
 		Example: `  # Install the skill
   mcs skill install
 
-  # After installation, in Claude Code you can say:
+  # After installation, you can ask your agent:
   # "warm up the car" -> mcs climate on
   # "lock the doors" -> mcs lock
   # "what's my battery level?" -> mcs status`,
@@ -206,8 +223,8 @@ func CheckSkillVersion(currentVersion string) (SkillVersionStatus, string) {
 func NewSkillUninstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "uninstall",
-		Short:   "Uninstall the Claude Code skill",
-		Long:    `Remove the Claude Code skill from ~/.claude/skills/mcs-control/.`,
+		Short:   "Uninstall the mcs agent skill",
+		Long:    `Remove the mcs agent skill from ~/.agents/skills/mcs-control/ (or $MCS_SKILLS_DIR/mcs-control/).`,
 		Example: `  mcs skill uninstall`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			skillPath, err := getSkillPath()
@@ -241,7 +258,7 @@ func NewSkillPathCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "path",
 		Short:   "Show skill installation path",
-		Long:    `Print the path where the Claude Code skill is installed.`,
+		Long:    `Print the path where the mcs agent skill is installed.`,
 		Example: `  mcs skill path`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			skillPath, err := getSkillPath()

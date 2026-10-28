@@ -13,20 +13,27 @@ import (
 
 const testVersion = "1.2.3"
 
-// TestGetSkillPath tests that getSkillPath returns the correct path.
+// TestGetSkillPath tests that getSkillPath defaults to ~/.agents/skills.
 func TestGetSkillPath(t *testing.T) {
-	t.Parallel()
+	t.Setenv(skillsDirEnv, "")
 	path, err := getSkillPath()
-	require.NoError(t, err, "Expected getSkillPath to succeed, got error: %v")
+	require.NoError(t, err)
 
 	home, err := os.UserHomeDir()
-	require.NoError(t, err, "Expected UserHomeDir to succeed, got error: %v")
+	require.NoError(t, err)
 
-	expected := filepath.Join(home, ".claude", "skills", skill.SkillName)
+	expected := filepath.Join(home, ".agents", "skills", skill.SkillName)
 	assert.Equal(t, expected, path)
+}
 
-	// Verify it ends with the skill name
-	assert.Equal(t, skill.SkillName, filepath.Base(path))
+// TestGetSkillPath_EnvOverride tests that MCS_SKILLS_DIR overrides the skills directory.
+func TestGetSkillPath_EnvOverride(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv(skillsDirEnv, dir)
+
+	path, err := getSkillPath()
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(dir, skill.SkillName), path)
 }
 
 // TestUninstallSkill tests the uninstallSkill function.
@@ -41,7 +48,7 @@ func TestUninstallSkill(t *testing.T) {
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
 				// Create the directory structure
-				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create test directory: %v")
 
@@ -70,6 +77,7 @@ func TestUninstallSkill(t *testing.T) {
 
 			// Override the home directory (t.Setenv auto-restores)
 			t.Setenv("HOME", tempDir)
+			t.Setenv(skillsDirEnv, "")
 
 			// Run uninstall
 			err := uninstallSkill()
@@ -81,7 +89,7 @@ func TestUninstallSkill(t *testing.T) {
 			}
 
 			// Verify directory is removed
-			skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+			skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 			assert.NoDirExists(t, skillPath)
 		})
 	}
@@ -119,6 +127,7 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
+	t.Setenv(skillsDirEnv, "")
 
 	// Execute install command
 	cfg := &CLIConfig{Version: testVersion}
@@ -131,7 +140,7 @@ func TestSkillInstallCommand_Execute(t *testing.T) {
 
 	// Verify output message
 	output := outBuf.String()
-	skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+	skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 	expectedOutput := "Skill installed to " + skillPath + "\n"
 	assert.Equal(t, expectedOutput, output)
 
@@ -162,8 +171,9 @@ func TestSkillInstallCommand_ReinstallRemovesOld(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
+	t.Setenv(skillsDirEnv, "")
 
-	skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+	skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 
 	// Create old installation with extra file
 	err := os.MkdirAll(skillPath, 0755)
@@ -210,7 +220,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 			name: "removes existing installation",
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
-				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
 
@@ -236,6 +246,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 			tempDir := t.TempDir()
 			tt.setupFunc(t, tempDir)
 			t.Setenv("HOME", tempDir)
+			t.Setenv(skillsDirEnv, "")
 
 			// Execute uninstall command
 			cmd := NewSkillUninstallCmd()
@@ -253,7 +264,7 @@ func TestSkillUninstallCommand_Execute(t *testing.T) {
 			}
 
 			// Verify directory is removed
-			skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+			skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 			assert.NoDirExists(t, skillPath)
 		})
 	}
@@ -274,6 +285,7 @@ func TestSkillPathCommand_Execute(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
+	t.Setenv(skillsDirEnv, "")
 
 	// Execute path command
 	cmd := NewSkillPathCmd()
@@ -285,7 +297,7 @@ func TestSkillPathCommand_Execute(t *testing.T) {
 
 	// Verify output is the correct path
 	output := outBuf.String()
-	expectedPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName) + "\n"
+	expectedPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName) + "\n"
 	assert.Equal(t, expectedPath, output)
 }
 
@@ -296,6 +308,7 @@ func TestSkillPathCommand_OutputFormat(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
+	t.Setenv(skillsDirEnv, "")
 
 	// Execute path command
 	cmd := NewSkillPathCmd()
@@ -324,6 +337,7 @@ func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
 	// Create temp directory for test
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
+	t.Setenv(skillsDirEnv, "")
 
 	// Execute install command
 	cfg := &CLIConfig{Version: testVersion}
@@ -334,7 +348,7 @@ func TestSkillInstallCommand_WritesVersionFile(t *testing.T) {
 	require.NoError(t, err, "Expected install to succeed, got error: %v")
 
 	// Verify version file was created
-	skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+	skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 	versionPath := filepath.Join(skillPath, ".mcs-version")
 
 	content, err := os.ReadFile(versionPath)
@@ -368,7 +382,7 @@ func TestCheckSkillVersion(t *testing.T) {
 			currentVersion: testVersion,
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
-				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
 
@@ -385,7 +399,7 @@ func TestCheckSkillVersion(t *testing.T) {
 			currentVersion: testVersion,
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
-				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
 
@@ -401,7 +415,7 @@ func TestCheckSkillVersion(t *testing.T) {
 			currentVersion: testVersion,
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
-				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
 
@@ -417,7 +431,7 @@ func TestCheckSkillVersion(t *testing.T) {
 			currentVersion: testVersion,
 			setupFunc: func(t *testing.T, tempDir string) {
 				t.Helper()
-				skillPath := filepath.Join(tempDir, ".claude", "skills", skill.SkillName)
+				skillPath := filepath.Join(tempDir, ".agents", "skills", skill.SkillName)
 				err := os.MkdirAll(skillPath, 0755)
 				require.NoError(t, err, "Failed to create skill directory: %v")
 
@@ -437,6 +451,7 @@ func TestCheckSkillVersion(t *testing.T) {
 			tempDir := t.TempDir()
 			tt.setupFunc(t, tempDir)
 			t.Setenv("HOME", tempDir)
+			t.Setenv(skillsDirEnv, "")
 
 			status, version := CheckSkillVersion(tt.currentVersion)
 

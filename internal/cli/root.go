@@ -26,10 +26,10 @@ func checkSkillVersionMismatch(cmd *cobra.Command) {
 	status, installedVersion := CheckSkillVersion(cfg.Version)
 	switch status {
 	case SkillVersionMismatch:
-		_, _ = fmt.Fprintf(os.Stderr, "Warning: Claude Code skill was installed with mcs %s (current: %s)\n", installedVersion, cfg.Version)
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: mcs agent skill was installed with mcs %s (current: %s)\n", installedVersion, cfg.Version)
 		_, _ = fmt.Fprintf(os.Stderr, "Run 'mcs skill install' to update the skill.\n\n")
 	case SkillVersionUnknown:
-		_, _ = fmt.Fprintf(os.Stderr, "Warning: Claude Code skill may be outdated (no version info)\n")
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: mcs agent skill may be outdated (no version info)\n")
 		_, _ = fmt.Fprintf(os.Stderr, "Run 'mcs skill install' to update the skill.\n\n")
 	case SkillNotInstalled, SkillVersionMatch:
 		// No warning needed.

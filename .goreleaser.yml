@@ -53,7 +53,7 @@ brews:
     install: |
       bin.install "mcs"
     caveats: |
-      To enable Claude Code integration, run:
+      To install the mcs agent skill, run:
         mcs skill install
     test: |
       system "#{bin}/mcs", "--version"
