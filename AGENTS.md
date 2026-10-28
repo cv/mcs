@@ -12,6 +12,17 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Modern Go
+
+Follow [JetBrains Modern Go Guidelines](https://github.com/JetBrains/go-modern-guidelines) via the `use-modern-go` skill (`.agents/skills/use-modern-go`, mirrored in `.claude/skills/`). Before editing Go code, run:
+
+```bash
+sh .agents/skills/use-modern-go/scripts/run-tool.sh list --file-path <file.go>
+sh .agents/skills/use-modern-go/scripts/run-tool.sh explain <guideline_id>
+```
+
+Read the full `list` output; it is scoped to the `go` version in `go.mod`. Update with `npx skills update use-modern-go -p -y` (tracked in `skills-lock.json`).
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.

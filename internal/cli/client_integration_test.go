@@ -46,7 +46,7 @@ region = "MNAO"
 	return &testConfig{
 		configFile: configFile,
 		cacheFile:  cacheFile,
-		ctx:        ContextWithConfig(context.Background(), cfg),
+		ctx:        ContextWithConfig(t.Context(), cfg),
 	}
 }
 
@@ -76,7 +76,7 @@ region = "INVALID"
 	require.NoError(t, err, "Failed to create config file")
 
 	cfg := &CLIConfig{ConfigFile: configFile}
-	ctx := ContextWithConfig(context.Background(), cfg)
+	ctx := ContextWithConfig(t.Context(), cfg)
 
 	_, err = createAPIClient(ctx)
 	require.Error(t, err, "Expected error with invalid region, got nil")
@@ -234,7 +234,7 @@ region = "MME"
 	t.Setenv("MCS_REGION", "MNAO")
 
 	cfg := &CLIConfig{ConfigFile: configPath}
-	ctx := ContextWithConfig(context.Background(), cfg)
+	ctx := ContextWithConfig(t.Context(), cfg)
 	client, err := createAPIClient(ctx)
 	require.NoError(t, err, "Failed to create API client")
 	assert.NotNil(t, client)
@@ -252,7 +252,7 @@ func TestCreateAPIClient_MissingCredentials(t *testing.T) {
 	t.Setenv("MCS_REGION", "")
 
 	cfg := &CLIConfig{}
-	ctx := ContextWithConfig(context.Background(), cfg)
+	ctx := ContextWithConfig(t.Context(), cfg)
 	_, err := createAPIClient(ctx)
 	require.Error(t, err, "Expected error with missing credentials, got nil")
 }

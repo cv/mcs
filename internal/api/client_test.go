@@ -85,7 +85,7 @@ func TestAPIRequest_Success(t *testing.T) {
 	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request
-	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
+	result, err := client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
@@ -101,7 +101,7 @@ func TestAPIRequest_EncryptionError(t *testing.T) {
 	client := setupTestClient(t)
 	client.baseURL = server.URL + "/"
 
-	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	_, err := client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error, got nil")
 
 	// APIRequest retries on EncryptionError by fetching new keys
@@ -118,7 +118,7 @@ func TestAPIRequest_TokenExpired(t *testing.T) {
 	client := setupTestClient(t)
 	client.baseURL = server.URL + "/"
 
-	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	_, err := client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error, got nil")
 
 	// APIRequest retries on TokenExpiredError by re-logging in
@@ -135,7 +135,7 @@ func TestAPIRequest_RequestInProgress(t *testing.T) {
 	client := setupTestClient(t)
 	client.baseURL = server.URL + "/"
 
-	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	_, err := client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected error, got nil")
 
 	// Verify it's a RequestInProgressError
@@ -236,7 +236,7 @@ func TestAPIRequest_MissingKeys(t *testing.T) {
 
 	// Don't set encryption keys, but request needsKeys=true
 	// APIRequest should attempt to get keys and fail
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
+	_, err = client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
 	require.Error(t, err, "Expected error when keys are missing, got nil")
 }
 
@@ -277,7 +277,7 @@ func TestAPIRequest_POST_WithBody(t *testing.T) {
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
-	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	result, err := client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
 	assert.True(t, requestReceived)
@@ -322,7 +322,7 @@ func TestAPIRequest_GET_WithQuery(t *testing.T) {
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
-	result, err := client.APIRequest(context.Background(), "GET", "test/endpoint", map[string]string{"key": "value"}, nil, false, false)
+	result, err := client.APIRequest(t.Context(), "GET", "test/endpoint", map[string]string{"key": "value"}, nil, false, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
 	assert.True(t, requestReceived)
@@ -358,7 +358,7 @@ func TestCalculateBackoff(t *testing.T) {
 // TestSleepWithContext_Completes tests that sleep completes normally.
 func TestSleepWithContext_Completes(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	start := time.Now()
 	duration := 100 * time.Millisecond
 
@@ -376,7 +376,7 @@ func TestSleepWithContext_Completes(t *testing.T) {
 // TestSleepWithContext_Cancelled tests that sleep returns early on context cancellation.
 func TestSleepWithContext_Cancelled(t *testing.T) {
 	t.Parallel()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	start := time.Now()
 	duration := 5 * time.Second // Long sleep
 
@@ -400,7 +400,7 @@ func TestSleepWithContext_Cancelled(t *testing.T) {
 // TestSleepWithContext_ZeroDuration tests that zero duration returns immediately.
 func TestSleepWithContext_ZeroDuration(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	start := time.Now()
 
 	err := sleepWithContext(ctx, 0)
@@ -460,7 +460,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	// Cancel context after 500ms
 	go func() {

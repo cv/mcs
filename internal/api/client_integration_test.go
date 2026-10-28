@@ -74,7 +74,7 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 	client.sleepFunc = func(ctx context.Context, d time.Duration) error { return nil }
 
 	// Make API request - should retry after encryption error
-	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
+	result, err := client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
@@ -129,7 +129,7 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 	client.sleepFunc = func(ctx context.Context, d time.Duration) error { return nil }
 
 	// Make API request - should fail after max retries
-	_, err = client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
+	_, err = client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
 	require.Error(t, err, "Expected error due to max retries, got nil")
 
 	assert.EqualError(t, err, "Request exceeded max number of retries")
@@ -144,7 +144,7 @@ func TestAPIRequest_EngineStartLimitError(t *testing.T) {
 	client := setupTestClient(t)
 	client.baseURL = server.URL + "/"
 
-	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
+	_, err := client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, true, false)
 	require.Error(t, err, "Expected engine start limit error, got nil")
 
 	assert.ErrorAs(t, err, new(*EngineStartLimitError))
@@ -181,7 +181,7 @@ func TestAPIRequest_WithQueryParams(t *testing.T) {
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
 
-	result, err := client.APIRequest(context.Background(), "GET", "test/endpoint", map[string]string{"foo": "bar", "baz": "qux"}, nil, true, false)
+	result, err := client.APIRequest(t.Context(), "GET", "test/endpoint", map[string]string{"foo": "bar", "baz": "qux"}, nil, true, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
 	assert.EqualValuesf(t, ResultCodeSuccess, result["resultCode"], "Expected resultCode 200S00, got %v", result["resultCode"])
@@ -260,7 +260,7 @@ func TestAPIRequest_ContextCancellation(t *testing.T) {
 	client.Keys.SignKey = "testsignkey12345"
 
 	// Create cancelled context
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel() // Cancel immediately
 
 	// Make API request with cancelled context
@@ -306,7 +306,7 @@ func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request
-	result, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	result, err := client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.NoError(t, err, "APIRequest failed: %v")
 
 	// Verify all data types were parsed correctly
@@ -320,11 +320,11 @@ func TestAPIRequest_ComplexDataTypes(t *testing.T) {
 	assert.Nilf(t, result["nullValue"], "Expected nullValue nil, got %v", result["nullValue"])
 
 	arrayValue, ok := getSlice(result, "arrayValue")
-	assert.Truef(t, ok, "Expected arrayValue to be []interface{}, got %T", result["arrayValue"])
+	assert.Truef(t, ok, "Expected arrayValue to be []any, got %T", result["arrayValue"])
 	assert.Len(t, arrayValue, 3, "Expected arrayValue length 3")
 
 	nestedObj, ok := getMap(result, "nestedObject")
-	assert.Truef(t, ok, "Expected nestedObject to be map[string]interface{}, got %T", result["nestedObject"])
+	assert.Truef(t, ok, "Expected nestedObject to be map[string]any, got %T", result["nestedObject"])
 	assert.EqualValues(t, "value", nestedObj["key"], "Expected nestedObject.key 'value'")
 }
 
@@ -338,7 +338,7 @@ func TestAPIRequest_RequestInProgressRetry(t *testing.T) {
 	client.baseURL = server.URL + "/"
 
 	// Make API request - should fail immediately without retry
-	_, err := client.APIRequest(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	_, err := client.APIRequest(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.Error(t, err, "Expected RequestInProgressError, got nil")
 
 	assert.ErrorAs(t, err, new(*RequestInProgressError))
@@ -373,7 +373,7 @@ func TestAPIRequestJSON_FullFlow(t *testing.T) {
 	client.Keys.SignKey = "testsignkey12345"
 
 	// Make API request using APIRequestJSON
-	rawJSON, err := client.APIRequestJSON(context.Background(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
+	rawJSON, err := client.APIRequestJSON(t.Context(), "POST", "test/endpoint", nil, map[string]any{"test": "data"}, false, false)
 	require.NoError(t, err, "APIRequestJSON failed: %v")
 
 	// Verify we got raw JSON bytes

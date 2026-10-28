@@ -318,7 +318,7 @@ func TestRawHandlers_ErrorContext(t *testing.T) {
 			t.Parallel()
 			// Create a command with a canceled context to trigger an error
 			cmd := &cobra.Command{}
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(t.Context())
 			cancel() // Cancel immediately to cause an error
 			cmd.SetContext(ctx)
 

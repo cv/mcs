@@ -56,7 +56,7 @@ See b2c.go/session.go; all automated tests use local mock servers.
 ### Request Methods
 
 Two methods for API requests:
-- `APIRequest()` → Returns `map[string]interface{}` for dynamic access
+- `APIRequest()` → Returns `map[string]any` for dynamic access
 - `APIRequestJSON()` → Returns raw bytes for direct unmarshaling to typed structs (preferred)
 
 ### Request Signing
@@ -149,17 +149,17 @@ WindowClosed, WindowFullyOpen = 0, 100
 
 ### Type-Safe Map Helpers
 
-For working with `map[string]interface{}` responses safely (in `maphelpers.go`):
+For working with `map[string]any` responses safely (in `maphelpers.go`):
 
 ```go
 getString(m, "key")       // (string, bool)
 getInt(m, "key")          // (int, bool) - handles float64 from JSON
 getFloat64(m, "key")      // (float64, bool)
 getBool(m, "key")         // (bool, bool)
-getMap(m, "key")          // (map[string]interface{}, bool)
-getSlice(m, "key")        // ([]interface{}, bool)
-getMapSlice(m, "key")     // ([]map[string]interface{}, bool)
-getMapFromSlice(s, idx)   // (map[string]interface{}, bool)
+getMap(m, "key")          // (map[string]any, bool)
+getSlice(m, "key")        // ([]any, bool)
+getMapSlice(m, "key")     // ([]map[string]any, bool)
+getMapFromSlice(s, idx)   // (map[string]any, bool)
 ```
 
 These prevent runtime panics from unsafe type assertions.
@@ -216,6 +216,10 @@ go test -cover ./...       # With coverage
 ```
 
 Integration tests cover config→client→cache flows. See `*_integration_test.go` files.
+
+### Modern Go
+
+Code follows the [Modern Go Guidelines](https://github.com/JetBrains/go-modern-guidelines) (`use-modern-go` skill, see AGENTS.md). Use `t.Context()` instead of `context.Background()` in tests, `any` instead of `interface{}`, and stdlib `slices`/`maps`/`cmp` helpers. The `modernize` linter enforces most of this.
 
 ### Assertion Guidelines
 

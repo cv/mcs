@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,7 +33,7 @@ func TestGetVecBaseInfos(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetVecBaseInfos(context.Background())
+	result, err := client.GetVecBaseInfos(t.Context())
 	require.NoError(t, err, "GetVecBaseInfos failed: %v")
 
 	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
@@ -78,7 +77,7 @@ func TestGetVehicleStatus(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
+	result, err := client.GetVehicleStatus(t.Context(), "INTERNAL123")
 	require.NoError(t, err, "GetVehicleStatus failed: %v")
 
 	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
@@ -96,7 +95,7 @@ func TestGetVehicleStatus_Error(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	_, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
+	_, err := client.GetVehicleStatus(t.Context(), "INTERNAL123")
 	require.Error(t, err, "Expected error, got nil")
 
 	expectedError := "failed to get vehicle status: result code 500E00"
@@ -134,7 +133,7 @@ func TestGetEVVehicleStatus(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
+	result, err := client.GetEVVehicleStatus(t.Context(), "INTERNAL123")
 	require.NoError(t, err, "GetEVVehicleStatus failed: %v")
 
 	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
@@ -157,7 +156,7 @@ func TestGetEVVehicleStatus_Error(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	_, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
+	_, err := client.GetEVVehicleStatus(t.Context(), "INTERNAL123")
 	require.Error(t, err, "Expected error, got nil")
 
 	expectedError := "failed to get EV vehicle status: result code 500E00"

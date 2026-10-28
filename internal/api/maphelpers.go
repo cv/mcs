@@ -1,6 +1,6 @@
 package api
 
-// Type-safe helper functions for extracting values from map[string]interface{}
+// Type-safe helper functions for extracting values from map[string]any
 // These helpers prevent runtime panics from unsafe type assertions.
 
 // getString safely extracts a string value from a map.
@@ -103,13 +103,13 @@ func getMapSlice(m map[string]any, key string) ([]map[string]any, bool) {
 		return nil, false
 	}
 
-	// First check if it's a []interface{}
+	// First check if it's a []any
 	slice, ok := val.([]any)
 	if !ok {
 		return nil, false
 	}
 
-	// Convert each element to map[string]interface{}
+	// Convert each element to map[string]any
 	result := make([]map[string]any, 0, len(slice))
 	for _, item := range slice {
 		if mapItem, ok := item.(map[string]any); ok {

@@ -199,7 +199,7 @@ func TestWaitForCondition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
+			ctx := t.Context()
 			var buf bytes.Buffer
 
 			calls := 0
@@ -329,7 +329,7 @@ func TestPollUntilCondition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
+			ctx := t.Context()
 			var buf bytes.Buffer
 
 			result := pollUntilCondition(ctx, &buf, tt.checkFunc, tt.timeout, tt.pollInterval, "Test")
@@ -363,7 +363,7 @@ type testDoorStatusSequence struct {
 // runDoorStatusTest runs a door status test with the given wait function.
 func runDoorStatusTest(t *testing.T, tt testDoorStatusSequence, waitFunc func(context.Context, io.Writer, vehicleStatusGetter, api.InternalVIN, time.Duration, time.Duration) confirmationResult, successMsg string) {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	var buf bytes.Buffer
 
 	// Create mock client that returns the door status sequence
@@ -499,7 +499,7 @@ func runBoolStatusTest(
 	successMsg string,
 ) {
 	t.Helper()
-	ctx := context.Background()
+	ctx := t.Context()
 	var buf bytes.Buffer
 
 	// Create mock client that returns the status sequence
@@ -844,7 +844,7 @@ func TestWaitForHvacOn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
+			ctx := t.Context()
 			var buf bytes.Buffer
 
 			calls := 0
@@ -966,7 +966,7 @@ func TestWaitForHvacSettings(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
+			ctx := t.Context()
 			var buf bytes.Buffer
 
 			// Create mock client that returns the HVAC settings sequence
@@ -1153,7 +1153,7 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
+			ctx := t.Context()
 			var buf bytes.Buffer
 
 			err := executeConfirmableCommand(
@@ -1184,7 +1184,7 @@ func TestExecuteConfirmableCommand(t *testing.T) {
 // before starting to poll. This ensures we get fresh data from the vehicle, not stale cached data.
 func TestWaitForConditionRefreshesStatus(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	var buf bytes.Buffer
 
 	mockClient := &mockClientForConfirm{
@@ -1320,7 +1320,7 @@ func TestWaitForDoorsUnlocked(t *testing.T) {
 // TestClientAdapter tests the clientAdapter wrapper that converts InternalVIN types.
 func TestClientAdapter(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 	testVIN := api.InternalVIN("123456789")
 
 	t.Run("GetVehicleStatus", func(t *testing.T) {

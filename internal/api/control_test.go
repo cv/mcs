@@ -83,7 +83,7 @@ func TestControlEndpoints(t *testing.T) {
 
 			client := createTestClient(t, server.URL)
 
-			err := tt.method(context.Background(), client, "INTERNAL123")
+			err := tt.method(t.Context(), client, "INTERNAL123")
 			require.NoErrorf(t, err, "%s failed: %v", tt.name, err)
 		})
 	}
@@ -97,7 +97,7 @@ func TestSetHVACSetting(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 22.0, Celsius, true, false)
+	err := client.SetHVACSetting(t.Context(), "INTERNAL123", 22.0, Celsius, true, false)
 	require.NoError(t, err, "SetHVACSetting failed: %v")
 }
 
@@ -109,7 +109,7 @@ func TestSetHVACSetting_Fahrenheit(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.SetHVACSetting(context.Background(), "INTERNAL123", 72.0, Fahrenheit, false, true)
+	err := client.SetHVACSetting(t.Context(), "INTERNAL123", 72.0, Fahrenheit, false, true)
 	require.NoError(t, err, "SetHVACSetting failed: %v")
 }
 
@@ -121,7 +121,7 @@ func TestControlError(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	err := client.DoorLock(context.Background(), "INTERNAL123")
+	err := client.DoorLock(t.Context(), "INTERNAL123")
 	require.Error(t, err, "Expected error, got nil")
 
 	expectedError := "failed to lock doors: result code 500E00"

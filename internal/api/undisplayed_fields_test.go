@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -87,7 +86,7 @@ func TestUndisplayedFieldsInVehicleStatus(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
+	result, err := client.GetVehicleStatus(t.Context(), "INTERNAL123")
 	require.NoError(t, err, "GetVehicleStatus failed: %v")
 
 	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
@@ -236,7 +235,7 @@ func TestUndisplayedFieldsInEVVehicleStatus(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
+	result, err := client.GetEVVehicleStatus(t.Context(), "INTERNAL123")
 	require.NoError(t, err, "GetEVVehicleStatus failed: %v")
 
 	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
@@ -408,7 +407,7 @@ func TestVehicleStatusWithVariedValues(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetVehicleStatus(context.Background(), "INTERNAL123")
+	result, err := client.GetVehicleStatus(t.Context(), "INTERNAL123")
 	require.NoError(t, err, "GetVehicleStatus failed: %v")
 
 	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)
@@ -494,7 +493,7 @@ func TestEVVehicleStatusWithVariedValues(t *testing.T) {
 
 	client := createTestClient(t, server.URL)
 
-	result, err := client.GetEVVehicleStatus(context.Background(), "INTERNAL123")
+	result, err := client.GetEVVehicleStatus(t.Context(), "INTERNAL123")
 	require.NoError(t, err, "GetEVVehicleStatus failed: %v")
 
 	assert.Equalf(t, ResultCodeSuccess, result.ResultCode, "Expected resultCode 200S00, got %v", result.ResultCode)

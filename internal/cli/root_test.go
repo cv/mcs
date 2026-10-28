@@ -97,7 +97,7 @@ func TestExecute_SignalHandling(t *testing.T) {
 	rootCmd.SetArgs([]string{"test-signal"})
 
 	// Create a cancellable context to simulate signal handling
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 
 	// Run command in goroutine
 	errCh := make(chan error, 1)
@@ -125,7 +125,7 @@ func TestExecute_WithRealSignal(t *testing.T) {
 	// This test verifies that signal.NotifyContext properly captures signals
 	// We'll test the signal mechanism without actually running a full command
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	// Create a signal channel
@@ -156,7 +156,7 @@ func TestCheckSkillVersionMismatch_SkipsSkillCommands(t *testing.T) {
 	// Create a skill command with context containing config
 	skillCmd := &cobra.Command{Use: "skill"}
 	cfg := testCLIConfig()
-	ctx := ContextWithConfig(context.Background(), cfg)
+	ctx := ContextWithConfig(t.Context(), cfg)
 	skillCmd.SetContext(ctx)
 
 	// Capture stderr by redirecting it
@@ -185,7 +185,7 @@ func TestCheckSkillVersionMismatch_SkipsSkillSubcommands(t *testing.T) {
 	installCmd := &cobra.Command{Use: "install"}
 	skillCmd.AddCommand(installCmd)
 	cfg := testCLIConfig()
-	ctx := ContextWithConfig(context.Background(), cfg)
+	ctx := ContextWithConfig(t.Context(), cfg)
 	installCmd.SetContext(ctx)
 
 	// Capture stderr by redirecting it

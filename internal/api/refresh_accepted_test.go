@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"testing"
 )
 
@@ -12,7 +11,7 @@ func TestRefreshVehicleStatusAccepted(t *testing.T) {
 		server := createTestServer(t, map[string]any{"resultCode": code, "message": "ok"},
 			WithPath("/"+EndpointRefreshVehicleStatus), WithMethod("POST"), WithBodyValidation())
 		client := createTestClient(t, server.URL)
-		if err := client.RefreshVehicleStatus(context.Background(), "vin"); err != nil {
+		if err := client.RefreshVehicleStatus(t.Context(), "vin"); err != nil {
 			t.Fatalf("%s: unexpected error %v", code, err)
 		}
 		server.Close()
@@ -26,7 +25,7 @@ func TestDoorLockStillRequiresSuccess(t *testing.T) {
 		WithPath("/"+EndpointDoorLock), WithMethod("POST"), WithBodyValidation())
 	defer server.Close()
 	client := createTestClient(t, server.URL)
-	if err := client.DoorLock(context.Background(), "vin"); err == nil {
+	if err := client.DoorLock(t.Context(), "vin"); err == nil {
 		t.Fatal("expected an error for a non-success result code")
 	}
 }

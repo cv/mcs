@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -61,7 +60,7 @@ func TestClient_GetEncryptionKeys(t *testing.T) {
 	client.baseAPIDeviceID = GenerateUUIDFromSeed(client.email)
 	client.usherAPIDeviceID = GenerateUsherDeviceID(client.email)
 
-	err := client.GetEncryptionKeys(context.Background())
+	err := client.GetEncryptionKeys(t.Context())
 	require.NoError(t, err, "GetEncryptionKeys() error = %v")
 
 	assert.Equalf(t, "test-enc-key-123", client.Keys.EncKey, "Expected encKey='test-enc-key-123', got '%s'", client.Keys.EncKey)
@@ -96,7 +95,7 @@ func TestClient_GetUsherEncryptionKey(t *testing.T) {
 	}
 	client.usherAPIDeviceID = GenerateUsherDeviceID(client.email)
 
-	pubKey, versionPrefix, err := client.GetUsherEncryptionKey(context.Background())
+	pubKey, versionPrefix, err := client.GetUsherEncryptionKey(t.Context())
 	require.NoError(t, err, "GetUsherEncryptionKey() error = %v")
 
 	assert.Equalf(t, "test-public-key", pubKey, "Expected publicKey='test-public-key', got %s", pubKey)

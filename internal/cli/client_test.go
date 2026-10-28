@@ -23,7 +23,7 @@ func testContextWithConfig(t *testing.T, configFile string) context.Context {
 		CacheFile:  cacheFile,
 	}
 
-	return ContextWithConfig(context.Background(), cfg)
+	return ContextWithConfig(t.Context(), cfg)
 }
 
 // testContextWithValidConfig creates a context with a valid config file for testing.
@@ -47,7 +47,7 @@ region = "MNAO"
 		CacheFile:  cacheFile,
 	}
 
-	return ContextWithConfig(context.Background(), cfg)
+	return ContextWithConfig(t.Context(), cfg)
 }
 
 // testContextWithInvalidRegion creates a context with invalid region for error testing.
@@ -70,7 +70,7 @@ region = "INVALID_REGION"
 		CacheFile:  cacheFile,
 	}
 
-	return ContextWithConfig(context.Background(), cfg)
+	return ContextWithConfig(t.Context(), cfg)
 }
 
 // testContextWithEmptyConfig creates a context with empty credentials for error testing.
@@ -89,7 +89,7 @@ func testContextWithEmptyConfig(t *testing.T) context.Context {
 		CacheFile:  cacheFile,
 	}
 
-	return ContextWithConfig(context.Background(), cfg)
+	return ContextWithConfig(t.Context(), cfg)
 }
 
 // TestSetupVehicleClient_Success tests successful vehicle client setup.
@@ -137,7 +137,7 @@ func TestSetupVehicleClient_ContextCancellation(t *testing.T) {
 
 	// Create a cancelled context with our config
 	cfg := ConfigFromContext(baseCtx)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel() // Cancel immediately
 	ctx = ContextWithConfig(ctx, cfg)
 
@@ -327,7 +327,7 @@ region = "MNAO"
 		ConfigFile: configPath,
 		CacheFile:  cacheFile,
 	}
-	ctx := ContextWithConfig(context.Background(), cfg)
+	ctx := ContextWithConfig(t.Context(), cfg)
 
 	// This would fail without real API, but should at least get past config loading
 	_, _, err = setupVehicleClient(ctx)

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -117,7 +116,7 @@ func TestB2CSession(t *testing.T) {
 			c.httpClient = server.Client()
 			c.b2c.Host = strings.TrimPrefix(server.URL, "https://")
 			c.baseURL = server.URL + "/"
-			err = c.Login(context.Background())
+			err = c.Login(t.Context())
 			if mode == "state mismatch" || mode == "no session" {
 				require.Error(t, err)
 				assert.NotContains(t, err.Error(), "do-not-log-this")
@@ -136,7 +135,7 @@ func TestB2CSession(t *testing.T) {
 			c2.b2c.Host = c.b2c.Host
 			c2.baseURL = c.baseURL
 			c2.RestoreSession(saved)
-			err = c2.ensureTokenValid(context.Background())
+			err = c2.ensureTokenValid(t.Context())
 			if mode == "refresh denied" {
 				require.Error(t, err)
 				assert.NotContains(t, err.Error(), "do-not-log-this")
