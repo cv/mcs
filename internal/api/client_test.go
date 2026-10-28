@@ -21,6 +21,7 @@ func setupTestClient(t *testing.T) *Client {
 	require.NoError(t, err, "Failed to create client: %v")
 	client.Keys.EncKey = "testenckey123456"
 	client.Keys.SignKey = "testsignkey12345"
+	client.b2c.Host = "" // unit tests must never sign into the real service
 
 	return client
 }
@@ -426,7 +427,7 @@ func TestAPIRequest_RetryWithContextCancellation(t *testing.T) {
 			}
 			responseJSON, _ := json.Marshal(testResponse)
 			// Use the app code derived key for encryption (same as decryption uses)
-			tempClient := &Client{appCode: "202007270941270111799"}
+			tempClient := &Client{appCode: "498345786246797888995", signature: SignatureSHA256}
 			key := tempClient.getDecryptionKeyFromAppCode()
 			encrypted, _ := EncryptAES128CBC(responseJSON, key, IV)
 			response := map[string]any{

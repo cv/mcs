@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/cv/mcs/internal/api"
 	"github.com/cv/mcs/internal/cache"
@@ -36,6 +37,10 @@ func createAPIClient(ctx context.Context) (*api.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}
+	client.SetCountry(cfg.Country)
+	if os.Getenv("MCS_DEBUG") != "" {
+		client.SetDebug(true)
+	}
 
 	// Try to load cached credentials (ignore errors - client will authenticate normally).
 	var cachedCreds *cache.TokenCache
@@ -46,13 +51,8 @@ func createAPIClient(ctx context.Context) (*api.Client, error) {
 	}
 
 	// If we have valid cached credentials, use them.
-	if cachedCreds != nil && cachedCreds.IsValid() {
-		client.SetCachedCredentials(
-			cachedCreds.AccessToken,
-			cachedCreds.AccessTokenExpirationTs,
-			cachedCreds.EncKey,
-			cachedCreds.SignKey,
-		)
+	if cachedCreds != nil {
+		client.RestoreSession(cachedCreds)
 	}
 
 	return client, nil
@@ -67,12 +67,7 @@ func saveClientCache(ctx context.Context, client *api.Client) {
 		return
 	}
 
-	tokenCache := &cache.TokenCache{
-		AccessToken:             accessToken,
-		AccessTokenExpirationTs: expirationTs,
-		EncKey:                  encKey,
-		SignKey:                 signKey,
-	}
+	tokenCache := client.CachedSession()
 
 	// Get cache file from context.
 	cliCfg := ConfigFromContext(ctx)
@@ -112,6 +107,7 @@ func setupVehicleClient(ctx context.Context) (*api.Client, VehicleInfo, error) {
 		return nil, VehicleInfo{}, err
 	}
 
+	defer saveClientCache(ctx, client) // preserve rotated tokens even if a later request fails
 	vecBaseInfos, err := client.GetVecBaseInfos(ctx)
 	if err != nil {
 		return nil, VehicleInfo{}, fmt.Errorf("failed to get vehicle info: %w", err)

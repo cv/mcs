@@ -20,19 +20,30 @@ func appendFormattedSection(output *string, formatter func() (string, error)) er
 }
 
 // displayAllStatusJSON formats all status as JSON.
+//
+
 func displayAllStatusJSON(vehicleStatus *api.VehicleStatusResponse, evStatus *api.EVVehicleStatusResponse, vehicleInfo VehicleInfo) (string, error) {
 	hazardsOn, _ := vehicleStatus.GetHazardInfo()
+	evDate, _ := evStatus.GetOccurrenceDate()
+	var doorsDate, vehicleDate string
+	if len(vehicleStatus.AlertInfos) > 0 {
+		doorsDate = vehicleStatus.AlertInfos[0].OccurrenceDate
+	}
+	if len(vehicleStatus.RemoteInfos) > 0 {
+		vehicleDate = vehicleStatus.RemoteInfos[0].OccurrenceDate
+	}
 	data := map[string]any{
-		"vehicle":  extractVehicleInfoData(vehicleInfo),
-		"battery":  extractBatteryData(evStatus),
-		"fuel":     extractFuelData(vehicleStatus),
-		"location": extractLocationData(vehicleStatus),
-		"tires":    extractTiresData(vehicleStatus),
-		"doors":    extractDoorsData(vehicleStatus),
-		"windows":  extractWindowsData(vehicleStatus),
-		"hazards":  hazardsOn,
-		"climate":  extractHvacData(evStatus),
-		"odometer": extractOdometerData(vehicleStatus),
+		"reported_at": map[string]string{"ev": evDate, "doors": doorsDate, vehicleField: vehicleDate},
+		vehicleField:  extractVehicleInfoData(vehicleInfo),
+		"battery":     extractBatteryData(evStatus),
+		"fuel":        extractFuelData(vehicleStatus),
+		"location":    extractLocationData(vehicleStatus),
+		"tires":       extractTiresData(vehicleStatus),
+		"doors":       extractDoorsData(vehicleStatus),
+		"windows":     extractWindowsData(vehicleStatus),
+		"hazards":     hazardsOn,
+		"climate":     extractHvacData(evStatus),
+		"odometer":    extractOdometerData(vehicleStatus),
 	}
 	jsonBytes, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {

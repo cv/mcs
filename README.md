@@ -17,9 +17,10 @@ Create `~/.config/mcs/config.toml`:
 email = "your@email.com"
 password = "yourpassword"
 region = "MNAO"  # MNAO=North America, MME=Europe, MJO=Japan
+country = "CA"   # Account country; defaults: US, GB, JP respectively
 ```
 
-Or use environment variables: `MCS_EMAIL`, `MCS_PASSWORD`, `MCS_REGION`
+Or use environment variables: `MCS_EMAIL`, `MCS_PASSWORD`, `MCS_REGION`, `MCS_COUNTRY`
 
 ## Usage
 
@@ -113,7 +114,20 @@ mcs skill path       # Show installation path
 ## Notes
 
 - Uses vehicle manufacturer's API (reverse-engineered from mobile app)
-- Tokens cached in `~/.cache/mcs/token.json`
+- MyMazda 9.5 authentication: Azure AD B2C + the regional MC API. Tested with a
+  Canadian CX-90 PHEV; Europe/Japan settings come from the app but are not live-tested.
+- A new sign-in/session attachment can sign the phone app out. Access tokens,
+  refresh tokens and the device session are reused from `~/.cache/mcs/token.json`
+  (atomic writes, mode 0600). Expired access tokens use refresh, not password login.
+  A refused refresh does **not** fall back to another login. If the phone takes over,
+  do not run a login loop; choose which client should hold the session. To deliberately
+  sign in again, remove the cache and rerun the command.
+- Plain `status` reads Mazda's cached reports; it does not request a wake-up/refresh.
+  `status --json` includes `reported_at.ev`, `reported_at.doors` and
+  `reported_at.vehicle` (Mazda's UTC `yyyyMMddHHmmss`). These reports can have very
+  different ages. A successful cloud poll does **not** make an old door report current.
+- `MCS_DEBUG=1` logs request metadata but redacts tokens, sessions, sensor-data,
+  query values and bodies. Raw status/JSON still contains VIN and location: keep it private.
 - Remote start limited to 2 consecutive starts without driving
 
 For developer documentation, see [CLAUDE.md](CLAUDE.md)

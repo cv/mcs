@@ -437,7 +437,7 @@ type ConfirmableCommandConfig struct {
 	WaitingMsg    string // Message to show while waiting (e.g., "Lock command sent, waiting for confirmation...")
 	ActionName    string // Name for error messages (e.g., "lock doors")
 	ConfirmName   string // Name for confirmation error (e.g., "lock status")
-	TimeoutSuffix string // Suffix for timeout message (e.g., "confirmation timeout")
+	TimeoutSuffix string // Suffix for timeout message (e.g., confirmationTimeoutSuffix)
 }
 
 // buildTimeoutMessage constructs the timeout message from waiting message and suffix.

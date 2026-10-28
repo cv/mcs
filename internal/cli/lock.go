@@ -39,7 +39,7 @@ func NewLockCmd() *cobra.Command {
 			WaitingMsg:    "Lock command sent, waiting for confirmation...",
 			ActionName:    "lock doors",
 			ConfirmName:   "lock status",
-			TimeoutSuffix: "confirmation timeout",
+			TimeoutSuffix: confirmationTimeoutSuffix,
 		},
 	})
 }
@@ -74,7 +74,7 @@ func NewUnlockCmd() *cobra.Command {
 			WaitingMsg:    "Unlock command sent, waiting for confirmation...",
 			ActionName:    "unlock doors",
 			ConfirmName:   "unlock status",
-			TimeoutSuffix: "confirmation timeout",
+			TimeoutSuffix: confirmationTimeoutSuffix,
 		},
 	})
 }

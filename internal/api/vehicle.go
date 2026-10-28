@@ -16,7 +16,7 @@ const (
 // GetVecBaseInfos retrieves the base information for all vehicles associated with the account.
 func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, error) {
 	bodyParams := map[string]any{
-		"internaluserid": InternalUserID,
+		internalUserIDField: InternalUserID,
 	}
 
 	responseBytes, err := c.APIRequestJSON(ctx, "POST", EndpointGetVecBaseInfos, nil, bodyParams, true, true)
@@ -35,11 +35,11 @@ func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, er
 // buildVehicleStatusParams creates the standard body parameters for vehicle status requests.
 func buildVehicleStatusParams(internalVIN string) map[string]any {
 	return map[string]any{
-		"internaluserid": InternalUserID,
-		"internalvin":    internalVIN,
-		"limit":          1,
-		"offset":         0,
-		"vecinfotype":    "0",
+		internalUserIDField: InternalUserID,
+		"internalvin":       internalVIN,
+		"limit":             1,
+		"offset":            0,
+		"vecinfotype":       "0",
 	}
 }
 

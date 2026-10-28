@@ -111,6 +111,7 @@ type VehicleStatusResponse struct {
 
 // RemoteInfo contains remote vehicle information.
 type RemoteInfo struct {
+	OccurrenceDate   string           `json:"OccurrenceDate"`
 	ResidualFuel     ResidualFuel     `json:"ResidualFuel"`
 	DriveInformation DriveInformation `json:"DriveInformation"`
 	TPMSInformation  TPMSInformation  `json:"TPMSInformation"`
@@ -137,10 +138,11 @@ type TPMSInformation struct {
 
 // AlertInfo contains alert and position information.
 type AlertInfo struct {
-	PositionInfo PositionInfo `json:"PositionInfo"`
-	Door         DoorInfo     `json:"Door"`
-	Pw           WindowInfo   `json:"Pw"`
-	HazardLamp   HazardLamp   `json:"HazardLamp"`
+	OccurrenceDate string       `json:"OccurrenceDate"`
+	PositionInfo   PositionInfo `json:"PositionInfo"`
+	Door           DoorInfo     `json:"Door"`
+	Pw             WindowInfo   `json:"Pw"`
+	HazardLamp     HazardLamp   `json:"HazardLamp"`
 }
 
 // PositionInfo contains GPS location information.

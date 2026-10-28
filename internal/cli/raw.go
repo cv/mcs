@@ -69,7 +69,7 @@ func NewRawCmd() *cobra.Command {
 	})
 
 	rawCmd.AddCommand(&cobra.Command{
-		Use:   "vehicle",
+		Use:   vehicleField,
 		Short: "Get raw vehicle info",
 		Long:  `Get the raw vehicle base info JSON from the API.`,
 		Example: `  # Get raw vehicle base info

@@ -1,9 +1,7 @@
 package api
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,11 +26,15 @@ const (
 	// SignatureMD5 is used for key derivation.
 	SignatureMD5 = "C383D8C4D279B78130AD52DC71D95CAA"
 
+	// SignatureSHA256 is the app's signing-certificate SHA-256, used for key
+	// derivation on Mazda's newer "MC" host.
+	SignatureSHA256 = "C022C9EE778CF903838F8B9C4B9FF0036A5C516CEFAAD6DC710B717CF97DCFCA"
+
 	// AppPackageID identifies the mobile app package.
 	AppPackageID = "com.interrait.mymazda"
 
 	// UserAgentBaseAPI is the User-Agent for base API requests.
-	UserAgentBaseAPI = "MyMazda-Android/9.0.5"
+	UserAgentBaseAPI = "MyMazda-Android/9.5.0"
 
 	// UserAgentUsherAPI is the User-Agent for Usher API requests.
 	UserAgentUsherAPI = "MyMazda/9.0.5 (Google Pixel 3a; Android 11)"
@@ -41,13 +43,14 @@ const (
 	AppOS = "Android"
 
 	// AppVersion is the mobile app version.
-	AppVersion = "9.0.5"
+	AppVersion = "9.5.0"
 
 	// UsherSDKVersion is the Usher SDK version.
 	UsherSDKVersion = "11.3.0700.001"
 
 	// InternalUserID is a placeholder used in API requests.
-	InternalUserID = "__INTERNAL_ID__"
+	InternalUserID      = "__INTERNAL_ID__"
+	internalUserIDField = "internaluserid"
 )
 
 // Authentication endpoint constants.
@@ -95,25 +98,32 @@ func ParseRegion(s string) (Region, error) {
 type RegionConfig struct {
 	AppCode  string
 	BaseURL  string
-	UsherURL string
+	UsherURL string // the old sign-in (gone in 2026; kept for reference)
+	B2C      B2CConfig
 }
 
 // RegionConfigs maps region codes to their configurations.
 var RegionConfigs = map[string]RegionConfig{
 	"MNAO": {
-		AppCode:  "202007270941270111799",
-		BaseURL:  "https://0cxo7m58.mazda.com/prod/",
+		AppCode:  "498345786246797888995",
+		BaseURL:  "https://hgs2ivna.mazda.com/",
 		UsherURL: "https://ptznwbh8.mazda.com/appapi/v1/",
+		B2C: B2CConfig{Host: "na.id.mazda.com", Tenant: "pduspb2c01", ClientID: "2daf581c-65c1-4fdb-b46a-efa98c6ba5b7",
+			Scope: "https://pduspb2c01.onmicrosoft.com/0728deea-be48-4382-9ef1-d4ff6d679ffa/cv", Country: "US"},
 	},
 	"MME": {
-		AppCode:  "202008100250281064816",
-		BaseURL:  "https://e9stj7g7.mazda.com/prod/",
+		AppCode:  "365747628595648782737",
+		BaseURL:  "https://hgs2iveu.mazda.com/",
 		UsherURL: "https://rz97suam.mazda.com/appapi/v1/",
+		B2C: B2CConfig{Host: "eu.id.mazda.com", Tenant: "pdeupb2c01", ClientID: "cbfe43e1-6949-42fe-996e-1a56f41a891d",
+			Scope: "https://pdeupb2c01.onmicrosoft.com/dcd35c5a-b32f-4add-ac6c-ba6e8bbfa11b/cv", Country: "GB"},
 	},
 	"MJO": {
-		AppCode:  "202009170613074283422",
-		BaseURL:  "https://wcs9p6wj.mazda.com/prod/",
+		AppCode:  "438849393836584965983",
+		BaseURL:  "https://hgs2ivap.mazda.com/",
 		UsherURL: "https://c5ulfwxr.mazda.com/appapi/v1/",
+		B2C: B2CConfig{Host: "ap.id.mazda.com", Tenant: "pdjppb2c01", ClientID: "455191ae-e98e-4748-8bc6-57a5a570f1c2",
+			Scope: "https://pdjppb2c01.onmicrosoft.com/1c6d5f69-fea6-4019-93df-899ae820b0f4/cv", Country: "JP"},
 	},
 }
 
@@ -130,6 +140,9 @@ type Client struct {
 	baseAPIDeviceID  string
 	usherAPIDeviceID string
 
+	b2c     B2CConfig
+	country string // the account's country for sign-in (e.g. US, CA); empty: the region's default
+
 	Keys                    Keys
 	accessToken             string
 	accessTokenExpirationTs int64
@@ -138,6 +151,9 @@ type Client struct {
 	debug             bool
 	sensorDataBuilder *sensordata.SensorDataBuilder
 	sleepFunc         func(context.Context, time.Duration) error
+	refreshToken      string
+	deviceSessionID   string
+	signature         string // certificate hash for key derivation (empty: MD5)
 }
 
 // NewClient creates a new API client.
@@ -155,13 +171,21 @@ func NewClient(email, password string, region Region) (*Client, error) {
 		baseURL:           config.BaseURL,
 		usherURL:          config.UsherURL,
 		appCode:           config.AppCode,
+		signature:         SignatureSHA256,
 		baseAPIDeviceID:   GenerateUUIDFromSeed(email),
 		usherAPIDeviceID:  GenerateUsherDeviceID(email),
+		b2c:               config.B2C,
 		httpClient:        &http.Client{Timeout: 30 * time.Second},
 		debug:             false,
 		sensorDataBuilder: sensordata.NewSensorDataBuilder(),
 		sleepFunc:         sleepWithContext,
 	}, nil
+}
+
+// SetCountry sets the account's country for sign-in (two letters, e.g. "CA"); Mazda
+// refuses a sign-in for a country the account isn't registered in.
+func (c *Client) SetCountry(country string) {
+	c.country = strings.ToUpper(strings.TrimSpace(country))
 }
 
 // SetDebug enables or disables debug logging.
@@ -229,7 +253,7 @@ func (c *Client) GetEncryptionKeys(ctx context.Context) error {
 	}
 
 	if response.State != "S" {
-		return fmt.Errorf("request failed with state: %v", response.State)
+		return fmt.Errorf("encryption key request refused (code %v)", response.ErrorCode)
 	}
 
 	if response.Payload == "" {
@@ -289,87 +313,33 @@ func (c *Client) GetUsherEncryptionKey(ctx context.Context) (string, string, err
 	return response.Data.PublicKey, response.Data.VersionPrefix, nil
 }
 
-// validateLoginResponse checks the login response status and returns an error if invalid.
-func validateLoginResponse(response *LoginResponse) error {
-	switch response.Status {
-	case "INVALID_CREDENTIAL":
-		return errors.New("invalid email or password")
-	case "USER_LOCKED":
-		return errors.New("account is locked")
-	case "OK":
-		if response.Data.AccessToken == "" {
-			return errors.New("access token not found in response")
-		}
-
-		return nil
-	default:
-		return fmt.Errorf("login failed with status: %s", response.Status)
-	}
-}
-
 // Login authenticates with the API and retrieves an access token.
 func (c *Client) Login(ctx context.Context) error {
-	// Ensure we have a timeout for the request
-	ctx, cancel := context.WithTimeout(ctx, AuthRequestTimeout)
+	ctx, cancel := context.WithTimeout(ctx, 3*AuthRequestTimeout)
 	defer cancel()
-	// Get RSA public key for password encryption
-	publicKey, versionPrefix, err := c.GetUsherEncryptionKey(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get encryption key: %w", err)
+
+	var tok *b2cToken
+	var err error
+	if c.refreshToken != "" {
+		tok, err = c.b2cRefresh(ctx)
+		// Never silently replace the phone's session after a failed refresh.
+		if err != nil {
+			return fmt.Errorf("refresh failed; explicit sign-in required: %w", err)
+		}
+	} else {
+		tok, err = c.b2cLogin(ctx)
+		if err != nil {
+			return fmt.Errorf("login failed: %w", err)
+		}
 	}
-
-	// Encrypt password
-	encryptedPassword, err := c.encryptPasswordWithPublicKey(c.password, publicKey)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt password: %w", err)
+	c.accessToken = tok.AccessToken
+	c.accessTokenExpirationTs = time.Now().Unix() + tok.ExpiresIn - 60
+	if tok.RefreshToken != "" {
+		c.refreshToken = tok.RefreshToken
 	}
-
-	// Prepare login request
-	loginData := map[string]any{
-		"appId":      "MazdaApp",
-		"deviceId":   c.usherAPIDeviceID,
-		"locale":     "en-US",
-		"password":   versionPrefix + encryptedPassword,
-		"sdkVersion": UsherSDKVersion,
-		"userId":     c.email,
-		"userIdType": "email",
+	if c.deviceSessionID == "" {
+		return c.attachSession(ctx)
 	}
-
-	jsonData, err := json.Marshal(loginData)
-	if err != nil {
-		return fmt.Errorf("failed to marshal login data: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.usherURL+EndpointLogin, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("User-Agent", UserAgentUsherAPI)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response: %w", err)
-	}
-
-	var response LoginResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		return fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	if err := validateLoginResponse(&response); err != nil {
-		return err
-	}
-
-	c.accessToken = response.Data.AccessToken
-	c.accessTokenExpirationTs = response.Data.AccessTokenExpirationTs
 
 	return nil
 }
@@ -380,6 +350,16 @@ func (c *Client) IsTokenValid() bool {
 }
 
 // Helper functions
+
+// certSignature is the app certificate hash used in key derivation: MD5 on the
+// legacy host, SHA-256 on the MC host.
+func (c *Client) certSignature() string {
+	if c.signature != "" {
+		return c.signature
+	}
+
+	return SignatureMD5
+}
 
 func getTimestampStrMs() string {
 	return strconv.FormatInt(time.Now().UnixMilli(), 10)
@@ -398,14 +378,14 @@ func (c *Client) getSignFromTimestamp(timestamp string) string {
 
 func (c *Client) getTemporarySignKeyFromAppCode() string {
 	val1 := SignWithMD5(c.appCode + AppPackageID)
-	val2 := strings.ToLower(SignWithMD5(val1 + SignatureMD5))
+	val2 := strings.ToLower(SignWithMD5(val1 + c.certSignature()))
 
 	return val2[20:32] + val2[0:10] + val2[4:6]
 }
 
 func (c *Client) getDecryptionKeyFromAppCode() string {
 	val1 := SignWithMD5(c.appCode + AppPackageID)
-	val2 := strings.ToLower(SignWithMD5(val1 + SignatureMD5))
+	val2 := strings.ToLower(SignWithMD5(val1 + c.certSignature()))
 
 	return val2[4:20]
 }
@@ -424,16 +404,4 @@ func (c *Client) decryptCheckVersionPayload(payload string) (*CheckVersionRespon
 	}
 
 	return &result, nil
-}
-
-func (c *Client) encryptPasswordWithPublicKey(password, publicKey string) (string, error) {
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	data := password + ":" + timestamp
-
-	encrypted, err := EncryptRSA(data, publicKey)
-	if err != nil {
-		return "", err
-	}
-
-	return base64.StdEncoding.EncodeToString(encrypted), nil
 }

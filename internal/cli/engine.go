@@ -36,7 +36,7 @@ func NewStartCmd() *cobra.Command {
 			WaitingMsg:    "Start command sent, waiting for confirmation...",
 			ActionName:    "start engine",
 			ConfirmName:   "engine status",
-			TimeoutSuffix: "confirmation timeout",
+			TimeoutSuffix: confirmationTimeoutSuffix,
 		},
 	})
 }
@@ -70,7 +70,7 @@ func NewStopCmd() *cobra.Command {
 			WaitingMsg:    "Stop command sent, waiting for confirmation...",
 			ActionName:    "stop engine",
 			ConfirmName:   "engine status",
-			TimeoutSuffix: "confirmation timeout",
+			TimeoutSuffix: confirmationTimeoutSuffix,
 		},
 	})
 }

@@ -63,7 +63,7 @@ func newClimateOnCmd() *cobra.Command {
 			WaitingMsg:    "Climate on command sent, waiting for confirmation...",
 			ActionName:    "turn HVAC on",
 			ConfirmName:   "HVAC status",
-			TimeoutSuffix: "confirmation timeout",
+			TimeoutSuffix: confirmationTimeoutSuffix,
 		},
 	})
 }
@@ -98,7 +98,7 @@ func newClimateOffCmd() *cobra.Command {
 			WaitingMsg:    "Climate off command sent, waiting for confirmation...",
 			ActionName:    "turn HVAC off",
 			ConfirmName:   "HVAC status",
-			TimeoutSuffix: "confirmation timeout",
+			TimeoutSuffix: confirmationTimeoutSuffix,
 		},
 	})
 }
@@ -174,7 +174,7 @@ func newClimateSetCmd() *cobra.Command {
 					WaitingMsg:    "Climate set command sent, waiting for confirmation...",
 					ActionName:    "set HVAC settings",
 					ConfirmName:   "HVAC settings",
-					TimeoutSuffix: "confirmation timeout",
+					TimeoutSuffix: confirmationTimeoutSuffix,
 				}
 
 				return executeConfirmableCommand(ctx, cmd.OutOrStdout(), client, internalVIN, config, confirm, confirmWait)

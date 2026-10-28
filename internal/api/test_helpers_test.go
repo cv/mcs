@@ -26,6 +26,7 @@ func createTestClient(t *testing.T, serverURL string) *Client {
 	client.Keys.EncKey = testEncKey
 	client.Keys.SignKey = testSignKey
 	client.accessToken = "test-token"
+	client.deviceSessionID = "test-session"
 	client.accessTokenExpirationTs = 9999999999
 
 	return client

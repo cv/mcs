@@ -10,6 +10,10 @@ import (
 
 // TokenCache represents cached authentication credentials.
 type TokenCache struct {
+	Protocol                string `json:"protocol,omitempty"`
+	Account                 string `json:"account,omitempty"`
+	RefreshToken            string `json:"refresh_token,omitempty"`
+	DeviceSessionID         string `json:"device_session_id,omitempty"`
 	AccessToken             string `json:"access_token"`
 	AccessTokenExpirationTs int64  `json:"access_token_expiration_ts"`
 	EncKey                  string `json:"enc_key"`
@@ -84,14 +88,28 @@ func SaveTo(cache *TokenCache, path string) error {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
+	// #nosec G117 -- intentional local credential cache, atomically written mode 0600.
 	data, err := json.MarshalIndent(cache, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal cache: %w", err)
 	}
 
 	// Write with restricted permissions (owner read/write only).
-	if err := os.WriteFile(path, data, 0600); err != nil {
-		return fmt.Errorf("failed to write cache file: %w", err)
+	f, err := os.CreateTemp(dir, ".token-*")
+	if err != nil {
+		return fmt.Errorf("failed to create cache file: %w", err)
+	}
+	defer func() { _ = os.Remove(f.Name()) }()
+	if _, err = f.Write(data); err != nil {
+		_ = f.Close()
+
+		return err
+	}
+	if err = f.Close(); err != nil {
+		return err
+	}
+	if err = os.Rename(f.Name(), path); err != nil {
+		return fmt.Errorf("failed to replace cache: %w", err)
 	}
 
 	return nil

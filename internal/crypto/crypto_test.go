@@ -107,6 +107,7 @@ func TestEncryptDecryptAES128CBC(t *testing.T) {
 	iv := []byte("abcdef0123456789")  // 16 bytes
 	plaintext := []byte("Hello, World! This is a test message.")
 
+	// #nosec G407 -- protocol known-answer test uses the mandated fixed IV.
 	encrypted, err := EncryptAES128CBC(plaintext, key, iv)
 	require.NoError(t, err, "EncryptAES128CBC() error = %v")
 
@@ -122,6 +123,7 @@ func TestEncryptAES128CBC_InvalidKey(t *testing.T) {
 	iv := []byte("abcdef0123456789")
 	plaintext := []byte("test")
 
+	// #nosec G407 -- protocol known-answer test uses the mandated fixed IV.
 	_, err := EncryptAES128CBC(plaintext, key, iv)
 	require.Error(t, err, "EncryptAES128CBC() expected error for invalid key length")
 }

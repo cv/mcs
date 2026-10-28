@@ -99,6 +99,9 @@ func TestCreateAPIClient_WithCachedCredentials(t *testing.T) {
 
 	// Create valid cached credentials.
 	cachedToken := &cache.TokenCache{
+		Protocol:     "mc-b2c-v1",
+		Account:      api.GenerateUUIDFromSeed("test@example.com|MNAO|US"),
+		RefreshToken: "refresh", DeviceSessionID: "session",
 		AccessToken:             "cached-token-12345",
 		AccessTokenExpirationTs: time.Now().Unix() + 3600,
 		EncKey:                  "cached-enc-key",

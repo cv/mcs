@@ -46,7 +46,7 @@ func uninstallSkill() error {
 // NewSkillCmd creates the skill command.
 func NewSkillCmd(cfg *CLIConfig) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "skill",
+		Use:   skillCommandName,
 		Short: "Manage Claude Code skill",
 		Long:  `Install, uninstall, or show the path of the Claude Code skill for natural language vehicle control.`,
 		Example: `  # Install the skill to ~/.claude/skills/mcs-control/

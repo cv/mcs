@@ -35,8 +35,8 @@ func boolToInt(b bool) int {
 // This is the generic method that all control endpoints use internally.
 func (c *Client) controlEndpoint(ctx context.Context, endpoint, actionDesc, internalVIN string, additionalParams map[string]any) error {
 	bodyParams := map[string]any{
-		"internaluserid": InternalUserID,
-		"internalvin":    internalVIN,
+		internalUserIDField: InternalUserID,
+		"internalvin":       internalVIN,
 	}
 
 	// Merge additional parameters if provided

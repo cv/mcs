@@ -103,56 +103,6 @@ func TestClient_GetUsherEncryptionKey(t *testing.T) {
 	assert.Equalf(t, "v1:", versionPrefix, "Expected versionPrefix='v1:', got %s", versionPrefix)
 }
 
-func TestClient_Login(t *testing.T) {
-	t.Parallel()
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/appapi/v1/" + EndpointEncryptionKey:
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"data": map[string]any{
-					"publicKey":     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlVKZRa1pkk88B1ydifsFNEv/pOf854egpFu1HHf1wr3YKqmLSG1p39YhNqGLQzIDit1jTLz3MYAOeWiFQSz7h5hvMNccq76zh3Hsg93LurcKA9EmYoj9VsqUetk0evXoqOSGKXPgZosbGT0t8AW2CC7s8FeSPz2tH9T7zjvKQvdyS0BFrVFo1EUBa1UEdMfYW0jLsvLOCYP911X1zTlewV/sTQnAtiTHCrd3jfH2of8PYtTOsmfqCDdL476yGMgeHJ+ZXA/IX2beSrHXU0gCNc/agD+ScCZgpRjfptSbRtBHqtmU4IyF0eqQXCCcrcutjzSHg+3ppmB9x/YvhJvmGQIDAQAB",
-					"versionPrefix": "v1:",
-				},
-			})
-
-		case "/appapi/v1/" + EndpointLogin:
-			// Parse request body
-			var loginReq map[string]any
-			_ = json.NewDecoder(r.Body).Decode(&loginReq)
-
-			// Verify request structure
-			assert.EqualValuesf(t, "MazdaApp", loginReq["appId"], "Expected appId=MazdaApp, got %s", loginReq["appId"])
-			assert.EqualValuesf(t, "test@example.com", loginReq["userId"], "Expected userId=test@example.com, got %s", loginReq["userId"])
-
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"status": "OK",
-				"data": map[string]any{
-					"accessToken":             "test-access-token-12345",
-					"accessTokenExpirationTs": time.Now().Unix() + 3600,
-				},
-			})
-		}
-	}))
-	defer server.Close()
-
-	client := &Client{
-		email:      "test@example.com",
-		password:   "password123",
-		region:     RegionMNAO,
-		usherURL:   server.URL + "/appapi/v1/",
-		httpClient: server.Client(),
-	}
-	client.usherAPIDeviceID = GenerateUsherDeviceID(client.email)
-
-	err := client.Login(context.Background())
-	require.NoError(t, err, "Login() error = %v")
-
-	assert.NotEmpty(t, client.accessToken, "Expected accessToken to be set")
-	assert.NotEqual(t, 0, client.accessTokenExpirationTs, "Expected accessTokenExpirationTs to be set")
-}
-
 func TestClient_IsTokenValid(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

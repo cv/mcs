@@ -158,7 +158,8 @@ func TestWithVehicleClient_CallbackExecuted(t *testing.T) {
 	var receivedClient *api.Client
 	var receivedVIN api.InternalVIN
 
-	err := withVehicleClient(ctx, func(ctx context.Context, client *api.Client, vin api.InternalVIN) error {
+	//nolint:unparam // Test callback must conform to the production callback signature.
+	err := withVehicleClient(ctx, func(_ context.Context, client *api.Client, vin api.InternalVIN) error {
 		callbackExecuted = true
 		receivedClient = client
 		receivedVIN = vin
@@ -184,7 +185,8 @@ func TestWithVehicleClient_CallbackError(t *testing.T) {
 
 	expectedErr := errors.New("callback error")
 
-	err := withVehicleClient(ctx, func(ctx context.Context, client *api.Client, vin api.InternalVIN) error {
+	//nolint:unparam // Test callback must conform to the production callback signature.
+	err := withVehicleClient(ctx, func(_ context.Context, client *api.Client, vin api.InternalVIN) error {
 		return expectedErr
 	})
 
@@ -198,7 +200,7 @@ func TestWithVehicleClient_SetupError(t *testing.T) {
 
 	callbackExecuted := false
 
-	err := withVehicleClient(ctx, func(ctx context.Context, client *api.Client, vin api.InternalVIN) error {
+	err := withVehicleClient(ctx, func(_ context.Context, client *api.Client, vin api.InternalVIN) error {
 		callbackExecuted = true
 
 		return nil
@@ -220,7 +222,8 @@ func TestWithVehicleClientEx_CallbackExecuted(t *testing.T) {
 	var receivedClient *api.Client
 	var receivedInfo VehicleInfo
 
-	err := withVehicleClientEx(ctx, func(ctx context.Context, client *api.Client, info VehicleInfo) error {
+	//nolint:unparam // Test callback must conform to the production callback signature.
+	err := withVehicleClientEx(ctx, func(_ context.Context, client *api.Client, info VehicleInfo) error {
 		callbackExecuted = true
 		receivedClient = client
 		receivedInfo = info
@@ -247,7 +250,8 @@ func TestWithVehicleClientEx_CallbackError(t *testing.T) {
 
 	expectedErr := errors.New("extended callback error")
 
-	err := withVehicleClientEx(ctx, func(ctx context.Context, client *api.Client, info VehicleInfo) error {
+	//nolint:unparam // Test callback must conform to the production callback signature.
+	err := withVehicleClientEx(ctx, func(_ context.Context, client *api.Client, info VehicleInfo) error {
 		return expectedErr
 	})
 
@@ -261,7 +265,7 @@ func TestWithVehicleClientEx_SetupError(t *testing.T) {
 
 	callbackExecuted := false
 
-	err := withVehicleClientEx(ctx, func(ctx context.Context, client *api.Client, info VehicleInfo) error {
+	err := withVehicleClientEx(ctx, func(_ context.Context, client *api.Client, info VehicleInfo) error {
 		callbackExecuted = true
 
 		return nil

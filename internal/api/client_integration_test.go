@@ -36,7 +36,7 @@ func TestAPIRequest_RetryOnEncryptionError(t *testing.T) {
 			}
 			responseJSON, _ := json.Marshal(testResponse)
 			// Use the app code derived key for encryption
-			client := &Client{appCode: "202007270941270111799"}
+			client := &Client{appCode: "498345786246797888995", signature: SignatureSHA256}
 			key := client.getDecryptionKeyFromAppCode()
 			encrypted, _ := EncryptAES128CBC(responseJSON, key, IV)
 
@@ -104,7 +104,7 @@ func TestAPIRequest_MaxRetries(t *testing.T) {
 				"signKey": "newtestsignkey12",
 			}
 			responseJSON, _ := json.Marshal(testResponse)
-			client := &Client{appCode: "202007270941270111799"}
+			client := &Client{appCode: "498345786246797888995", signature: SignatureSHA256}
 			key := client.getDecryptionKeyFromAppCode()
 			encrypted, _ := EncryptAES128CBC(responseJSON, key, IV)
 

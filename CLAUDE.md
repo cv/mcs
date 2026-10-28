@@ -42,12 +42,16 @@ internal/
 
 ### Authentication Flow
 
-1. `service/checkVersion` (baseURL) → Get `encKey` and `signKey` (AES keys)
-2. `system/encryptionKey` (usherURL) → Get RSA public key
-3. `user/login` (usherURL) → Encrypt password with RSA, get `accessToken`
-4. All subsequent requests use `accessToken` + encrypted payloads
+1. Azure AD B2C authorization code + PKCE (account country required) → access and refresh tokens.
+2. Regional MC host `service/checkVersion` → AES/signing keys. Derivation uses the Android
+   signing certificate's SHA-256 digest, rather than the legacy MD5 digest.
+3. `remoteServices/attach/v4` → `data.userinfo.sessionId`; persist it.
+4. Vehicle requests carry access-token, Authorization Bearer and X-device-session-id.
+   Refresh access tokens without reattaching; do not fight a phone takeover by signing in again.
 
-Note: The API uses two base URLs - `baseURL` for vehicle operations and `usherURL` for authentication.
+North America now uses hgs2ivna.mazda.com, without /prod/. The legacy 0cxo7m58 host
+returns generic failures. Legacy Usher helpers remain for compatibility tests, not login.
+See b2c.go/session.go; all automated tests use local mock servers.
 
 ### Request Methods
 
@@ -65,7 +69,7 @@ Every request needs:
 ### Key Constants (internal/api/auth.go)
 
 ```go
-AppVersion = "9.0.5"           // Must match mobile app version
+AppVersion = "9.5.0"           // Must match mobile app version
 IV = "0102030405060708"        // AES initialization vector
 SignatureMD5 = "C383D8C4..."   // For key derivation
 ```
@@ -197,8 +201,9 @@ The `internalVin` field comes as either `string` or `float64` from JSON. This is
 
 ### Token Caching
 Credentials are cached in `~/.cache/mcs/token.json` (see `cache/cache.go`). The cache stores:
-- `accessToken` + expiration timestamp
+- `accessToken` + expiration, refresh token and device session ID
 - `encKey` and `signKey`
+- protocol version and account/country scope (legacy and other-account caches rejected)
 
 Without caching, each command takes ~4.5s (full auth). With caching: ~2.7s.
 

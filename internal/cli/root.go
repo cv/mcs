@@ -14,7 +14,7 @@ import (
 // mcs version and prints a warning to stderr if so.
 func checkSkillVersionMismatch(cmd *cobra.Command) {
 	// Skip the check for skill commands themselves to avoid confusing output.
-	if cmd.Name() == "skill" || (cmd.Parent() != nil && cmd.Parent().Name() == "skill") {
+	if cmd.Name() == skillCommandName || (cmd.Parent() != nil && cmd.Parent().Name() == skillCommandName) {
 		return
 	}
 

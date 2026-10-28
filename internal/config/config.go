@@ -15,6 +15,8 @@ type Config struct {
 	Email    string
 	Password string
 	Region   api.Region
+	// Country is the account's country for sign-in (e.g. US, CA); empty: the region's default.
+	Country string
 }
 
 // Load loads configuration from file and environment variables
@@ -66,6 +68,7 @@ func Load(configPath string) (*Config, error) {
 		Email:    v.GetString("email"),
 		Password: v.GetString("password"),
 		Region:   region,
+		Country:  v.GetString("country"),
 	}
 
 	return cfg, nil

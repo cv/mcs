@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -307,6 +308,7 @@ func (c *Client) buildHTTPRequest(ctx context.Context, method, uri, timestamp st
 		"sign":              c.calculateSignature(method, uri, params.originalQueryStr, params.originalBodyStr, timestamp),
 	}
 
+	c.addSessionHeaders(headers, accessToken, needsAuth)
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
@@ -314,6 +316,27 @@ func (c *Client) buildHTTPRequest(ctx context.Context, method, uri, timestamp st
 	c.logRequest(method, requestURL, headers, params.originalBodyStr)
 
 	return req, nil
+}
+
+func (c *Client) addSessionHeaders(headers map[string]string, accessToken string, needsAuth bool) {
+	if accessToken != "" {
+		headers["Authorization"] = "Bearer " + accessToken
+	}
+	// Locale settings sent by MyMazda 9.5.
+	country := c.country
+	if country == "" {
+		country = c.b2c.Country
+	}
+	if country != "" {
+		headers["Accept"] = "*/*"
+		headers["language"] = "en"
+		headers["region"] = strings.ToLower(country)
+		headers["locale"] = "en-" + country
+	}
+
+	if needsAuth && c.deviceSessionID != "" {
+		headers["X-device-session-id"] = c.deviceSessionID
+	}
 }
 
 // executeAPIRequest handles the common logic for making API requests.
@@ -388,6 +411,9 @@ func (c *Client) ensureTokenValid(ctx context.Context) error {
 	if !c.IsTokenValid() {
 		return c.Login(ctx)
 	}
+	if c.b2c.Host != "" && c.deviceSessionID == "" {
+		return c.attachSession(ctx)
+	}
 
 	return nil
 }
@@ -459,17 +485,17 @@ func (c *Client) logRequest(method, url string, headers map[string]string, body 
 		return
 	}
 
-	fmt.Fprintf(os.Stderr, "DEBUG: %s %s\n", method, url)
+	fmt.Fprintf(os.Stderr, "DEBUG: %s %s\n", method, strings.SplitN(url, "?", 2)[0])
 	fmt.Fprintf(os.Stderr, "DEBUG: Headers:\n")
 	for k, v := range headers {
-		if k == "access-token" && v != "" {
+		if strings.EqualFold(k, "access-token") || strings.EqualFold(k, "Authorization") || strings.EqualFold(k, "X-device-session-id") || strings.EqualFold(k, "X-acf-sensor-data") {
 			fmt.Fprintf(os.Stderr, "  %s: [REDACTED]\n", k)
 		} else {
 			fmt.Fprintf(os.Stderr, "  %s: %s\n", k, v)
 		}
 	}
 	if body != "" {
-		fmt.Fprintf(os.Stderr, "DEBUG: Original body: %s\n", body)
+		fmt.Fprintf(os.Stderr, "DEBUG: Request body: %d bytes (not logged)\n", len(body))
 	}
 }
 
@@ -480,5 +506,5 @@ func (c *Client) logResponse(statusCode int, body []byte) {
 	}
 
 	fmt.Fprintf(os.Stderr, "DEBUG: Response status: %d\n", statusCode)
-	fmt.Fprintf(os.Stderr, "DEBUG: Response body: %s\n", string(body))
+	fmt.Fprintf(os.Stderr, "DEBUG: Response: %d bytes (not logged)\n", len(body))
 }

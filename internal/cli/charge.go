@@ -58,7 +58,7 @@ func NewChargeStartCmd() *cobra.Command {
 			WaitingMsg:    "Charge start command sent, waiting for confirmation...",
 			ActionName:    "start charging",
 			ConfirmName:   "charging status",
-			TimeoutSuffix: "confirmation timeout",
+			TimeoutSuffix: confirmationTimeoutSuffix,
 		},
 	})
 }
@@ -93,7 +93,7 @@ func NewChargeStopCmd() *cobra.Command {
 			WaitingMsg:    "Charge stop command sent, waiting for confirmation...",
 			ActionName:    "stop charging",
 			ConfirmName:   "charging status",
-			TimeoutSuffix: "confirmation timeout",
+			TimeoutSuffix: confirmationTimeoutSuffix,
 		},
 	})
 }
