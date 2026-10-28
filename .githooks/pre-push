@@ -4,12 +4,6 @@
 
 set -e
 
-# Skip checks for beads-sync branch (bd sync pushes)
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
-if [ "$CURRENT_BRANCH" = "beads-sync" ]; then
-    exit 0
-fi
-
 echo "Running pre-push checks..."
 
 # Run full test suite (not just -short)
@@ -24,18 +18,6 @@ echo "  Building..."
 if ! go build ./... 2>&1; then
     echo "ERROR: Build failed"
     exit 1
-fi
-
-# Sync beads if configured with sync-branch
-if command -v bd >/dev/null 2>&1 && [ -d .beads ]; then
-    SYNC_BRANCH="${BEADS_SYNC_BRANCH:-}"
-    if [ -z "$SYNC_BRANCH" ] && [ -f .beads/config.yaml ]; then
-        SYNC_BRANCH=$(grep -E '^sync-branch:' .beads/config.yaml 2>/dev/null | head -1 | sed 's/^sync-branch:[[:space:]]*//' | sed 's/^["'"'"']//' | sed 's/["'"'"']$//')
-    fi
-    if [ -n "$SYNC_BRANCH" ]; then
-        echo "  Syncing beads to $SYNC_BRANCH..."
-        bd sync --no-pull 2>&1 || echo "Warning: bd sync failed"
-    fi
 fi
 
 echo "All pre-push checks passed!"

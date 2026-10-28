@@ -68,10 +68,7 @@ func handleRetryableError[T any](
 	err error,
 	retryCount int,
 ) (shouldRetry bool, retryErr error) {
-	var encErr *EncryptionError
-	var tokenErr *TokenExpiredError
-
-	if errors.As(err, &encErr) {
+	if _, ok := errors.AsType[*EncryptionError](err); ok {
 		// Retrieve new encryption keys and retry
 		if err := c.GetEncryptionKeys(ctx); err != nil {
 			return false, fmt.Errorf("failed to retrieve encryption keys: %w", err)
@@ -85,7 +82,7 @@ func handleRetryableError[T any](
 		return true, nil
 	}
 
-	if errors.As(err, &tokenErr) {
+	if _, ok := errors.AsType[*TokenExpiredError](err); ok {
 		// Login again and retry
 		if err := c.Login(ctx); err != nil {
 			return false, fmt.Errorf("failed to login: %w", err)

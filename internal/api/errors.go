@@ -89,7 +89,7 @@ type ResultCodeError struct {
 // NewResultCodeError creates a new result code error.
 func NewResultCodeError(resultCode, operation string) *ResultCodeError {
 	return &ResultCodeError{
-		APIError:   APIError{Message: fmt.Sprintf("failed to %s: result code %s", operation, resultCode)},
+		Message:    fmt.Sprintf("failed to %s: result code %s", operation, resultCode),
 		ResultCode: resultCode,
 		Operation:  operation,
 	}

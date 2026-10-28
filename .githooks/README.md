@@ -18,13 +18,11 @@ Runs on every commit:
 - **go vet** - Static analysis
 - **golangci-lint** - Comprehensive linting (if installed)
 - **go test -short** - Quick tests
-- **bd sync** - Flush beads changes (if applicable)
 
 ### pre-push
 Runs before pushing:
 - **go test -race** - Full test suite with race detection
 - **go build** - Ensure everything compiles
-- **bd sync** - Sync beads to remote (if sync-branch configured)
 
 ### commit-msg
 Validates commit messages:
@@ -41,5 +39,5 @@ git push --no-verify
 
 ## Requirements
 
-- Go 1.21+
+- Go 1.27+
 - golangci-lint (optional but recommended): `brew install golangci-lint`

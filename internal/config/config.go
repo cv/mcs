@@ -47,8 +47,7 @@ func Load(configPath string) (*Config, error) {
 
 	// Try to read config file (don't fail if it doesn't exist)
 	if err := v.ReadInConfig(); err != nil {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if !errors.As(err, &configFileNotFoundError) {
+		if _, ok := errors.AsType[viper.ConfigFileNotFoundError](err); !ok {
 			return nil, fmt.Errorf("failed to read config file: %w", err)
 		}
 	}

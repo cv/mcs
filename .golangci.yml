@@ -73,6 +73,11 @@ linters:
 
   exclusions:
     rules:
+      # RSA PKCS #1 v1.5 encryption is required by the API protocol (deprecated in Go 1.26)
+      - path: internal/(api/crypto|sensordata/sensor_data)\.go
+        linters:
+          - staticcheck
+        text: "SA1019: crypto/rsa.EncryptPKCS1v15"
       # Sensor data uses append to build new slices intentionally
       - path: internal/sensordata/
         linters:

@@ -17,8 +17,7 @@
       "Bash(git tag:*)",
       "Bash(git check-ignore:*)",
       "Bash(gh run:*)",
-      "Bash(gh release view:*)",
-      "Bash(bd:*)"
+      "Bash(gh release view:*)"
     ]
   }
 }

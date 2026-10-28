@@ -247,17 +247,6 @@ assert.NotNil(t, client)
 assert.Equal(t, 0600, perm, "cache file permissions")
 ```
 
-## Ticket Tracking
-
-Uses `bd` (bead) for issue tracking. Database in `.beads/`.
-
-```bash
-bd list              # List issues
-bd create "title"    # Create issue
-bd close mcs-XX      # Close issue
-bd ready             # Show unblocked work
-```
-
 ## Reference Implementation
 
 Ported from a reference Python implementation. The core API behavior follows the manufacturer's mobile app protocol. The anti-bot fingerprinting uses a 16-round Feistel cipher (documented in `sensordata/sensor_data.go`).
