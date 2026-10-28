@@ -94,8 +94,10 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 	if err != nil {
 		return nil, fmt.Errorf("failed to get occurrence date: %w", err)
 	}
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Current status from: %s\n", formatTimestamp(initialTimestamp))
-	_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Requesting fresh status from vehicle...")
+	// Progress goes to stderr so --json output stays parseable.
+	progress := cmd.ErrOrStderr()
+	_, _ = fmt.Fprintf(progress, "Current status from: %s\n", formatTimestamp(initialTimestamp))
+	_, _ = fmt.Fprintln(progress, "Requesting fresh status from vehicle...")
 
 	if err := client.RefreshVehicleStatus(ctx, string(internalVIN)); err != nil {
 		return nil, fmt.Errorf("failed to refresh vehicle status: %w", err)
@@ -117,7 +119,7 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 		select {
 		case <-ticker.C:
 			elapsed := time.Since(startTime)
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Waiting for vehicle response... (%ds/%ds)\n", int(elapsed.Seconds()), refreshWait)
+			_, _ = fmt.Fprintf(progress, "Waiting for vehicle response... (%ds/%ds)\n", int(elapsed.Seconds()), refreshWait)
 
 			// Fetch new EV status
 			newEvStatus, err := client.GetEVVehicleStatus(timeoutCtx, string(internalVIN))
@@ -130,14 +132,14 @@ func refreshAndWaitForStatus(ctx context.Context, cmd *cobra.Command, client *ap
 				continue // Keep trying on error
 			}
 			if newTimestamp != initialTimestamp {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Got fresh status from: %s\n", formatTimestamp(newTimestamp))
+				_, _ = fmt.Fprintf(progress, "Got fresh status from: %s\n", formatTimestamp(newTimestamp))
 
 				return newEvStatus, nil
 			}
 
 		case <-timeoutCtx.Done():
 			if timeoutCtx.Err() == context.DeadlineExceeded {
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Warning: status did not update within timeout period")
+				_, _ = fmt.Fprintln(progress, "Warning: status did not update within timeout period")
 
 				return evStatus, nil
 			}
