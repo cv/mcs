@@ -153,6 +153,7 @@ type Client struct {
 	sleepFunc         func(context.Context, time.Duration) error
 	refreshToken      string
 	deviceSessionID   string
+	refreshOnly       bool
 	signature         string // certificate hash for key derivation (empty: MD5)
 }
 
@@ -187,6 +188,9 @@ func NewClient(email, password string, region Region) (*Client, error) {
 func (c *Client) SetCountry(country string) {
 	c.country = strings.ToUpper(strings.TrimSpace(country))
 }
+
+// SetRefreshOnly prevents unattended clients from replacing another device's session.
+func (c *Client) SetRefreshOnly(enabled bool) { c.refreshOnly = enabled }
 
 // SetDebug enables or disables debug logging.
 func (c *Client) SetDebug(debug bool) {
@@ -327,6 +331,9 @@ func (c *Client) Login(ctx context.Context) error {
 			return fmt.Errorf("refresh failed; explicit sign-in required: %w", err)
 		}
 	} else {
+		if c.refreshOnly {
+			return errors.New("explicit sign-in required; password login disabled")
+		}
 		tok, err = c.b2cLogin(ctx)
 		if err != nil {
 			return fmt.Errorf("login failed: %w", err)

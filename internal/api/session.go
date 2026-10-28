@@ -13,6 +13,9 @@ const sessionProtocol = "mc-b2c-v1"
 // attachSession establishes the CV session following B2C sign-in. This may sign
 // the phone out: never call it in a retry loop after another device took over.
 func (c *Client) attachSession(ctx context.Context) error {
+	if c.refreshOnly {
+		return errors.New("explicit sign-in required; session attachment disabled")
+	}
 	if err := c.ensureKeysPresent(ctx); err != nil {
 		return err
 	}

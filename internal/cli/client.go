@@ -38,6 +38,7 @@ func createAPIClient(ctx context.Context) (*api.Client, error) {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}
 	client.SetCountry(cfg.Country)
+	client.SetRefreshOnly(os.Getenv("MCS_REFRESH_ONLY") == "1")
 	if os.Getenv("MCS_DEBUG") != "" {
 		client.SetDebug(true)
 	}

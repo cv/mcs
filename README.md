@@ -122,6 +122,9 @@ mcs skill path       # Show installation path
   A refused refresh does **not** fall back to another login. If the phone takes over,
   do not run a login loop; choose which client should hold the session. To deliberately
   sign in again, remove the cache and rerun the command.
+- For unattended monitoring set `MCS_REFRESH_ONLY=1`: cached sessions can refresh
+  access tokens, but no password login or session attachment is allowed. Provision
+  a cache interactively first; the service does not need the account password.
 - Plain `status` reads Mazda's cached reports; it does not request a wake-up/refresh.
   `status --json` includes `reported_at.ev`, `reported_at.doors` and
   `reported_at.vehicle` (Mazda's UTC `yyyyMMddHHmmss`). These reports can have very
