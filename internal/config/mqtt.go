@@ -20,6 +20,7 @@ type MQTT struct {
 	Poll, Health, Stale                                time.Duration
 	CommandInterval, EngineInterval, RefreshInterval   time.Duration
 	Controls                                           []string
+	WaitOnAuthLoss                                     bool
 }
 
 // LoadMQTT reads the [mqtt] section from the config file (the --config one, or
@@ -35,8 +36,8 @@ func LoadMQTT(configPath string) (*MQTT, error) {
 		Broker: get("broker"), Username: get("username"), Password: os.Getenv("MCS_MQTT_PASSWORD"),
 		PasswordFile: get("password_file"), ClientID: get("client_id"), Prefix: get("prefix"),
 		Discovery: get("discovery"), DeviceName: get("device_name"), Home: get("home"), StateDir: get("state_dir"),
-		HomeRadiusM: v.GetFloat64("mqtt.home_radius_m"),
-		Controls:    mqttControls(v),
+		HomeRadiusM: v.GetFloat64("mqtt.home_radius_m"), WaitOnAuthLoss: v.GetBool("mqtt.wait_on_auth_loss"),
+		Controls: mqttControls(v),
 	}
 	for _, d := range []struct {
 		key string
@@ -83,7 +84,7 @@ func readMQTTConfig(configPath string) (*viper.Viper, error) {
 	v.AutomaticEnv()
 	keys := []string{"broker", "username", "password", "password_file", "client_id", "prefix", "discovery", "device_name",
 		"home", "home_radius_m", "state_dir", "poll", "health", "stale", "command_interval", "engine_interval",
-		"refresh_interval", "controls"}
+		"refresh_interval", "controls", "wait_on_auth_loss"}
 	for _, k := range keys {
 		_ = v.BindEnv("mqtt." + k)
 	}

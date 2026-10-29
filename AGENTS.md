@@ -45,13 +45,26 @@ internal/
     lock.go, engine.go       Control commands
     charge.go, climate.go    EV/HVAC commands
     raw.go                   Debug raw JSON output
+    mqtt_cmd.go              mcs mqtt: flags, config, the Vehicle over the API client
   config/
     config.go                Config loading (TOML + env vars)
+    mqtt.go                  The [mqtt] section (MCS_MQTT_* env)
   crypto/
     crypto.go                Low-level AES-128-CBC and PKCS7 primitives
+  mqttd/                     mcs mqtt: snapshot, discovery, commands, poll loop, brokers
   sensordata/
     sensor_data.go           Anti-bot fingerprinting (16-round Feistel cipher, see line 255)
 ```
+
+## mcs mqtt (internal/mqttd)
+
+The daemon is pure apart from two interfaces, `Vehicle` (implemented in
+`internal/cli/mqtt_cmd.go` with the API client) and `Broker` (paho, or the
+printing one for `--dry-run`), so `daemon_test.go` drives it with fakes. Keep
+the published snapshot an allowlist (`snapshot.go`): never VIN, coordinates,
+nickname or ids; log result codes, never raw errors. Discovery unique ids are
+`mcs_<last prefix level>_<key>`: changing them makes new HA entities. Disabled
+controls get empty retained configs, so their entities disappear.
 
 ## How the API Works
 

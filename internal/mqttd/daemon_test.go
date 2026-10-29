@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -190,6 +192,24 @@ func TestAuthLossStops(t *testing.T) {
 	d, b := newTest(t, car)
 	d.cfg.Once = false
 	require.ErrorIs(t, d.Run(t.Context()), ErrAuthLost)
+	assert.Equal(t, "offline", b.get("mazda/cx90/status"))
+	assert.Equal(t, "authentication required; polling paused", b.get("mazda/cx90/error"))
+}
+
+func TestNetworkTroubleIsNotAuthLoss(t *testing.T) {
+	t.Parallel()
+	assert.True(t, AuthLostText(errors.New("refresh failed; explicit sign-in required: invalid_grant")))
+	netErr := &url.Error{Op: "Post", URL: "https://example.invalid", Err: errors.New("dial tcp: no route to host")}
+	assert.False(t, AuthLostText(fmt.Errorf("refresh failed; explicit sign-in required: %w", netErr)))
+	assert.False(t, AuthLostText(nil))
+}
+
+func TestHoldPublishesOffline(t *testing.T) {
+	t.Parallel()
+	d, b := newTest(t, &fakeCar{status: statusJSON})
+	ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
+	defer cancel()
+	require.NoError(t, d.Hold(ctx))
 	assert.Equal(t, "offline", b.get("mazda/cx90/status"))
 	assert.Equal(t, "authentication required; polling paused", b.get("mazda/cx90/error"))
 }

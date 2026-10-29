@@ -59,8 +59,11 @@ type Config struct {
 	Controls []string // groups; empty: read-only
 	Home     *Home
 	StateDir string
-	Once     bool
-	DryRun   bool
+	// WaitOnAuthLoss: on a lost session stay up, offline, instead of exiting
+	// (for supervisors that restart whatever the exit status, like Docker).
+	WaitOnAuthLoss bool
+	Once           bool
+	DryRun         bool
 }
 
 // Defaults returns a Config with every optional setting filled in. Prefix and

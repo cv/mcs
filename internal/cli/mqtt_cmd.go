@@ -38,7 +38,7 @@ type mqttFlags struct {
 	homeRadius                                                                                         float64
 	poll, health, stale, commandInterval, engineInterval, refreshInterval                              time.Duration
 	controls                                                                                           []string
-	once, dryRun                                                                                       bool
+	once, dryRun, waitOnAuthLoss                                                                       bool
 }
 
 // NewMQTTCmd creates the mqtt command.
@@ -91,6 +91,7 @@ session is lost (renew it with mcs status on a computer; do not restart).`,
 	fl.BoolVar(&f.once, "once", false, "one poll, then exit")
 	fl.BoolVar(&f.dryRun, "dry-run", false, "print what would be published; no broker, no commands")
 	fl.StringVar(&f.logFormat, "log-format", "text", "text or json")
+	fl.BoolVar(&f.waitOnAuthLoss, "wait-on-auth-loss", false, "on a lost session stay up, offline, instead of exiting 3 (for Docker)")
 
 	return cmd
 }
@@ -125,6 +126,10 @@ func mqttConfig(cmd *cobra.Command, f *mqttFlags) (*mqttd.Config, error) {
 		}
 	}
 	c.Once, c.DryRun = f.once, f.dryRun
+	c.WaitOnAuthLoss = m.WaitOnAuthLoss
+	if changed("wait-on-auth-loss") {
+		c.WaitOnAuthLoss = f.waitOnAuthLoss
+	}
 	if c.DryRun {
 		c.Controls = nil // a dry run never moves the car
 		c.Once = true
@@ -219,24 +224,52 @@ func runMQTT(cmd *cobra.Command, f *mqttFlags) error {
 	defer stop()
 	// Never a password login nor a new session: either could sign the phone out.
 	_ = os.Setenv("MCS_REFRESH_ONLY", "1")
-	car, err := newMQTTVehicle(ctx)
-	if err != nil {
-		if mqttd.AuthLostText(err) {
-			return &exitError{3, fmt.Errorf("%w: %w", mqttd.ErrAuthLost, err)}
-		}
-
-		return err
-	}
 	var broker mqttd.Broker = mqttd.NewPahoBroker(cfg)
 	if cfg.DryRun {
 		broker = mqttd.PrintBroker{Out: cmd.OutOrStdout()}
 	}
-	err = mqttd.New(cfg, car, broker, log).Run(ctx)
-	if errors.Is(err, mqttd.ErrAuthLost) {
-		return &exitError{3, err}
+	car, err := connectVehicle(ctx, cfg, log)
+	if err == nil && car != nil {
+		err = mqttd.New(cfg, car, broker, log).Run(ctx)
+	}
+	if !errors.Is(err, mqttd.ErrAuthLost) {
+		return err
+	}
+	if cfg.WaitOnAuthLoss && !cfg.Once {
+		if car == nil {
+			return mqttd.New(cfg, nil, broker, log).Hold(ctx)
+		}
+		<-ctx.Done() // Run already published offline and the error
+
+		return nil
 	}
 
-	return err
+	return &exitError{3, err}
+}
+
+// connectVehicle finds the vehicle, retrying network trouble (30 s, doubling up
+// to 5 min) so a daemon started before the network comes up does not exit. It
+// returns (nil, nil) when ctx ends first.
+func connectVehicle(ctx context.Context, cfg *mqttd.Config, log *slog.Logger) (*mqttVehicle, error) {
+	wait := 30 * time.Second
+	for {
+		car, err := newMQTTVehicle(ctx)
+		switch {
+		case err == nil:
+			return car, nil
+		case mqttd.AuthLostText(err):
+			return nil, fmt.Errorf("%w: %w", mqttd.ErrAuthLost, err)
+		case cfg.Once:
+			return nil, err
+		}
+		log.Warn("vehicle not reachable yet; retrying", "in", wait.String())
+		select {
+		case <-ctx.Done():
+			return nil, nil
+		case <-time.After(wait):
+		}
+		wait = min(2*wait, 5*time.Minute)
+	}
 }
 
 // mqttVehicle is the car through the API client; the session cache is saved

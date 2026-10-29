@@ -59,6 +59,56 @@ mcs raw hvac            # Raw remote climate setting
 mcs completion bash     # Also: zsh, fish, powershell
 ```
 
+## MQTT and Home Assistant
+
+`mcs mqtt` runs until stopped: it polls the car every 5 minutes, publishes an
+allowlisted snapshot (no VIN, coordinates or ids) to `<prefix>/state`, announces
+every reading to Home Assistant through MQTT discovery and, only for the groups
+given in `--controls`, carries out commands. It never signs in with a password
+nor attaches a new session (as with `MCS_REFRESH_ONLY=1`), so the phone stays
+signed in.
+
+```bash
+mcs mqtt --prefix mazda/cx90 --once --dry-run      # one poll, printed, nothing sent
+mcs mqtt --broker tcp://127.0.0.1:1883 --username mazda \
+         --password-file /etc/mcs/mqtt.pw --prefix mazda/cx90   # read-only
+mcs mqtt --prefix mazda/cx90 --broker tcp://127.0.0.1:1883 \
+         --controls all --home 45.50,-73.57        # everything, with presence
+```
+
+The prefix and the broker have no default. Settings can also live in the config
+file (or `MCS_MQTT_<KEY>` variables; the password only in `MCS_MQTT_PASSWORD` or
+`password_file`):
+
+```toml
+[mqtt]
+broker = "tcp://127.0.0.1:1883"
+username = "mazda"
+password_file = "/etc/mcs/mqtt.pw"
+prefix = "mazda/cx90"
+controls = ["lock", "unlock", "climate", "refresh"]   # also engine, charge, lights; "all"
+home = "45.50,-73.57"      # home / not_home; coordinates are never published
+# discovery = "homeassistant" (or "off"), device_name, client_id, home_radius_m = 200,
+# poll = "5m", health = "30m", stale = "30m", command_interval = "1m",
+# engine_interval = "10m", refresh_interval = "30m", state_dir, wait_on_auth_loss
+```
+
+- Topics: `<prefix>/state` (JSON), `status` (`online`/`offline`, also the will),
+  `error`, `command_status`, `refresh_status`; commands on `<prefix>/cmd/<name>/set`
+  (`PRESS` for buttons; `climate_temperature` 16..28 °C; `front_defroster` /
+  `rear_defroster` `ON`/`OFF`) and `<prefix>/refresh/set` (a fresh EV report).
+  Retained command messages never run.
+- Locks, doors, windows and the climate state turn unavailable in Home Assistant
+  once their report is older than `stale`; battery, fuel, tires and the health
+  report keep their last value with its time as `reported_at`.
+- Each command goes out at most once per `command_interval` (engine start: per
+  `engine_interval`; fresh report: per `refresh_interval`), across restarts.
+- Exit status: 0 stopped, 1 error, 2 bad configuration, 3 the Mazda session is
+  lost (renew it with `mcs status` on a computer and copy the cache; do not
+  restart in a loop). Under Docker, which restarts whatever the status, set
+  `wait_on_auth_loss` to stay up offline instead. Network trouble never exits.
+- About 15 MB of memory; 3 API calls per poll, 5 every 30 minutes.
+
 ## Example
 
 ```

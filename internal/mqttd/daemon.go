@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log/slog"
 	"maps"
+	"net"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -102,6 +104,24 @@ func (d *Daemon) Run(ctx context.Context) error {
 		}
 		timer.Reset(d.cfg.Poll)
 	}
+}
+
+// Hold publishes the daemon offline with the lost-session error and waits until
+// ctx ends (WaitOnAuthLoss, when the session is already gone at start).
+func (d *Daemon) Hold(ctx context.Context) error {
+	if err := d.broker.Start(func() { signal(d.connected) }, d.onMessage); err != nil {
+		return err
+	}
+	defer d.broker.Stop()
+	select {
+	case <-ctx.Done():
+		return nil
+	case <-d.connected:
+	}
+	_ = d.authLost()
+	<-ctx.Done()
+
+	return nil
 }
 
 func (d *Daemon) topic(sub string) string { return d.cfg.Prefix + "/" + sub }
@@ -223,6 +243,13 @@ func (d *Daemon) publishState() {
 // AuthLostText reports whether an API error means the session is gone.
 func AuthLostText(err error) bool {
 	if err == nil {
+		return false
+	}
+	// A refresh that failed for want of a network is not a lost session.
+	if _, ok := errors.AsType[*url.Error](err); ok {
+		return false
+	}
+	if _, ok := errors.AsType[net.Error](err); ok {
 		return false
 	}
 	s := strings.ToLower(err.Error())
