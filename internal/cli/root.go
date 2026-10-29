@@ -137,6 +137,7 @@ func Execute(version string) error {
 	rootCmd.AddCommand(NewChargeCmd())
 	rootCmd.AddCommand(NewClimateCmd())
 	rootCmd.AddCommand(NewLightsCmd())
+	rootCmd.AddCommand(NewMQTTCmd())
 	rootCmd.AddCommand(NewRawCmd())
 	rootCmd.AddCommand(NewSkillCmd(cfg))
 
