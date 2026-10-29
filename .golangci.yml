@@ -83,6 +83,11 @@ linters:
         linters:
           - gocritic
         text: appendAssign
+      # JSON keys and Home Assistant values are data: the entity specs and the
+      # snapshot allowlist read best as literal tables, not as constants.
+      - path: internal/mqttd/(snapshot|discovery)\.go
+        linters:
+          - goconst
       # Test files can have repeated strings and controlled type assertions
       - path: _test\.go
         linters:

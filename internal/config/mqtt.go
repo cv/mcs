@@ -26,6 +26,41 @@ type MQTT struct {
 // ~/.config/mcs/config.toml) and the environment. The password comes from
 // MCS_MQTT_PASSWORD or password_file, never from the config itself.
 func LoadMQTT(configPath string) (*MQTT, error) {
+	v, err := readMQTTConfig(configPath)
+	if err != nil {
+		return nil, err
+	}
+	get := func(k string) string { return v.GetString("mqtt." + k) }
+	m := &MQTT{
+		Broker: get("broker"), Username: get("username"), Password: os.Getenv("MCS_MQTT_PASSWORD"),
+		PasswordFile: get("password_file"), ClientID: get("client_id"), Prefix: get("prefix"),
+		Discovery: get("discovery"), DeviceName: get("device_name"), Home: get("home"), StateDir: get("state_dir"),
+		HomeRadiusM: v.GetFloat64("mqtt.home_radius_m"),
+		Controls:    mqttControls(v),
+	}
+	for _, d := range []struct {
+		key string
+		to  *time.Duration
+	}{{"poll", &m.Poll}, {"health", &m.Health}, {"stale", &m.Stale}, {"command_interval", &m.CommandInterval},
+		{"engine_interval", &m.EngineInterval}, {"refresh_interval", &m.RefreshInterval}} {
+		if *d.to, err = mqttDuration(v, d.key); err != nil {
+			return nil, err
+		}
+	}
+	if m.Password == "" && m.PasswordFile != "" {
+		b, err := os.ReadFile(m.PasswordFile)
+		if err != nil {
+			return nil, fmt.Errorf("mqtt.password_file: %w", err)
+		}
+		m.Password = strings.TrimRight(string(b), "\r\n")
+	}
+
+	return m, nil
+}
+
+// readMQTTConfig reads the config file (a missing one is fine) and binds the
+// MCS_MQTT_<KEY> variables.
+func readMQTTConfig(configPath string) (*viper.Viper, error) {
 	v := viper.New()
 	v.SetConfigType("toml")
 	if configPath != "" {
@@ -52,48 +87,34 @@ func LoadMQTT(configPath string) (*MQTT, error) {
 	for _, k := range keys {
 		_ = v.BindEnv("mqtt." + k)
 	}
-	get := func(k string) string { return v.GetString("mqtt." + k) }
-	dur := func(k string) (time.Duration, error) {
-		if get(k) == "" {
-			return 0, nil
-		}
-		d, err := time.ParseDuration(get(k))
-		if err != nil {
-			return 0, fmt.Errorf("mqtt.%s: %w", k, err)
-		}
 
-		return d, nil
+	return v, nil
+}
+
+// mqttControls reads mqtt.controls: a list, or a comma-separated string (as
+// the environment gives it); nil when unset.
+func mqttControls(v *viper.Viper) []string {
+	c := v.Get("mqtt.controls")
+	if c == nil {
+		return nil
 	}
-	m := &MQTT{
-		Broker: get("broker"), Username: get("username"), Password: os.Getenv("MCS_MQTT_PASSWORD"),
-		PasswordFile: get("password_file"), ClientID: get("client_id"), Prefix: get("prefix"),
-		Discovery: get("discovery"), DeviceName: get("device_name"), Home: get("home"), StateDir: get("state_dir"),
-		HomeRadiusM: v.GetFloat64("mqtt.home_radius_m"),
-	}
-	if c := v.Get("mqtt.controls"); c != nil {
-		if s, ok := c.(string); ok {
-			m.Controls = strings.Split(s, ",")
-		} else {
-			m.Controls = v.GetStringSlice("mqtt.controls")
-		}
-	}
-	for _, d := range []struct {
-		key string
-		to  *time.Duration
-	}{{"poll", &m.Poll}, {"health", &m.Health}, {"stale", &m.Stale}, {"command_interval", &m.CommandInterval},
-		{"engine_interval", &m.EngineInterval}, {"refresh_interval", &m.RefreshInterval}} {
-		var err error
-		if *d.to, err = dur(d.key); err != nil {
-			return nil, err
-		}
-	}
-	if m.Password == "" && m.PasswordFile != "" {
-		b, err := os.ReadFile(m.PasswordFile)
-		if err != nil {
-			return nil, fmt.Errorf("mqtt.password_file: %w", err)
-		}
-		m.Password = strings.TrimRight(string(b), "\r\n")
+	if s, ok := c.(string); ok {
+		return strings.Split(s, ",")
 	}
 
-	return m, nil
+	return v.GetStringSlice("mqtt.controls")
+}
+
+// mqttDuration reads mqtt.<k> as a duration (0 when unset).
+func mqttDuration(v *viper.Viper, k string) (time.Duration, error) {
+	s := v.GetString("mqtt." + k)
+	if s == "" {
+		return 0, nil
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return 0, fmt.Errorf("mqtt.%s: %w", k, err)
+	}
+
+	return d, nil
 }

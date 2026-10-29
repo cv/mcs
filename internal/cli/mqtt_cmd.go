@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -96,9 +97,8 @@ session is lost (renew it with mcs status on a computer; do not restart).`,
 
 // mqttConfig merges config file, environment and flags.
 func mqttConfig(cmd *cobra.Command, f *mqttFlags) (*mqttd.Config, error) {
-	cliCfg := ConfigFromContext(cmd.Context())
 	path := ""
-	if cliCfg != nil {
+	if cliCfg := ConfigFromContext(cmd.Context()); cliCfg != nil {
 		path = cliCfg.ConfigFile
 	}
 	m, err := config.LoadMQTT(path)
@@ -106,70 +106,18 @@ func mqttConfig(cmd *cobra.Command, f *mqttFlags) (*mqttd.Config, error) {
 		return nil, fmt.Errorf("%w: %w", mqttd.ErrConfig, err)
 	}
 	c := mqttd.Defaults()
-	set := func(dst *string, v string) {
-		if v != "" {
-			*dst = v
-		}
-	}
-	setD := func(dst *time.Duration, v time.Duration) {
-		if v != 0 {
-			*dst = v
-		}
-	}
 	changed := cmd.Flags().Changed
-	pick := func(flagName, flagVal, cfgVal string) string {
-		if changed(flagName) {
-			return flagVal
-		}
-
-		return cfgVal
+	applyMQTTStrings(&c, f, m, changed)
+	if c.Password, err = mqttPassword(f, m, changed); err != nil {
+		return nil, err
 	}
-	set(&c.Broker, pick("broker", f.broker, m.Broker))
-	set(&c.Username, pick("username", f.username, m.Username))
-	set(&c.ClientID, pick("client-id", f.clientID, m.ClientID))
-	set(&c.Prefix, pick("prefix", f.prefix, m.Prefix))
-	set(&c.Discovery, pick("discovery", f.discovery, m.Discovery))
-	set(&c.DeviceName, pick("device-name", f.deviceName, m.DeviceName))
-	set(&c.StateDir, pick("state-dir", f.stateDir, m.StateDir))
-	c.Password = m.Password
-	if changed("password-file") {
-		b, err := os.ReadFile(f.passwordFile)
-		if err != nil {
-			return nil, fmt.Errorf("%w: --password-file: %w", mqttd.ErrConfig, err)
-		}
-		c.Password = strings.TrimRight(string(b), "\r\n")
-	}
-	for _, d := range []struct {
-		flag     string
-		dst      *time.Duration
-		flagV, v time.Duration
-	}{{"poll", &c.Poll, f.poll, m.Poll}, {"health", &c.Health, f.health, m.Health}, {"stale", &c.Stale, f.stale, m.Stale},
-		{"command-interval", &c.CommandInterval, f.commandInterval, m.CommandInterval},
-		{"engine-interval", &c.EngineInterval, f.engineInterval, m.EngineInterval},
-		{"refresh-interval", &c.RefreshInterval, f.refreshInterval, m.RefreshInterval}} {
-		setD(d.dst, d.v)
-		if changed(d.flag) {
-			*d.dst = d.flagV
-		}
-	}
+	applyMQTTDurations(&c, f, m, changed)
 	c.Controls = m.Controls
 	if changed("controls") {
 		c.Controls = f.controls
 	}
-	home, radius := m.Home, m.HomeRadiusM
-	if changed("home") {
-		home = f.home
-	}
-	if changed("home-radius") {
-		radius = f.homeRadius
-	}
-	if radius == 0 {
-		radius = 200
-	}
-	if home != "" {
-		if c.Home, err = mqttd.ParseHome(home, radius); err != nil {
-			return nil, err
-		}
+	if c.Home, err = mqttHome(f, m, changed); err != nil {
+		return nil, err
 	}
 	if c.StateDir == "" {
 		if dir, err := os.UserHomeDir(); err == nil {
@@ -183,6 +131,78 @@ func mqttConfig(cmd *cobra.Command, f *mqttFlags) (*mqttd.Config, error) {
 	}
 
 	return &c, c.Validate()
+}
+
+// applyMQTTStrings sets each string setting from its flag if given, else from
+// the config; an empty value keeps the default.
+func applyMQTTStrings(c *mqttd.Config, f *mqttFlags, m *config.MQTT, changed func(string) bool) {
+	pick := func(flagName, flagVal, cfgVal string) string {
+		if changed(flagName) {
+			return flagVal
+		}
+
+		return cfgVal
+	}
+	c.Broker = cmp.Or(pick("broker", f.broker, m.Broker), c.Broker)
+	c.Username = cmp.Or(pick("username", f.username, m.Username), c.Username)
+	c.ClientID = cmp.Or(pick("client-id", f.clientID, m.ClientID), c.ClientID)
+	c.Prefix = cmp.Or(pick("prefix", f.prefix, m.Prefix), c.Prefix)
+	c.Discovery = cmp.Or(pick("discovery", f.discovery, m.Discovery), c.Discovery)
+	c.DeviceName = cmp.Or(pick("device-name", f.deviceName, m.DeviceName), c.DeviceName)
+	c.StateDir = cmp.Or(pick("state-dir", f.stateDir, m.StateDir), c.StateDir)
+}
+
+// mqttPassword is the --password-file's password if given, else the config's.
+func mqttPassword(f *mqttFlags, m *config.MQTT, changed func(string) bool) (string, error) {
+	if !changed("password-file") {
+		return m.Password, nil
+	}
+	b, err := os.ReadFile(f.passwordFile)
+	if err != nil {
+		return "", fmt.Errorf("%w: --password-file: %w", mqttd.ErrConfig, err)
+	}
+
+	return strings.TrimRight(string(b), "\r\n"), nil
+}
+
+// applyMQTTDurations sets each interval from its flag if given (even 0), else
+// from the config unless unset there.
+func applyMQTTDurations(c *mqttd.Config, f *mqttFlags, m *config.MQTT, changed func(string) bool) {
+	for _, d := range []struct {
+		flag     string
+		dst      *time.Duration
+		flagV, v time.Duration
+	}{{"poll", &c.Poll, f.poll, m.Poll}, {"health", &c.Health, f.health, m.Health}, {"stale", &c.Stale, f.stale, m.Stale},
+		{"command-interval", &c.CommandInterval, f.commandInterval, m.CommandInterval},
+		{"engine-interval", &c.EngineInterval, f.engineInterval, m.EngineInterval},
+		{"refresh-interval", &c.RefreshInterval, f.refreshInterval, m.RefreshInterval}} {
+		switch {
+		case changed(d.flag):
+			*d.dst = d.flagV
+		case d.v != 0:
+			*d.dst = d.v
+		}
+	}
+}
+
+// mqttHome is the home for presence (nil without one); the radius defaults to
+// 200 m.
+func mqttHome(f *mqttFlags, m *config.MQTT, changed func(string) bool) (*mqttd.Home, error) {
+	home, radius := m.Home, m.HomeRadiusM
+	if changed("home") {
+		home = f.home
+	}
+	if changed("home-radius") {
+		radius = f.homeRadius
+	}
+	if home == "" {
+		return nil, nil
+	}
+	if radius == 0 {
+		radius = 200
+	}
+
+	return mqttd.ParseHome(home, radius)
 }
 
 func runMQTT(cmd *cobra.Command, f *mqttFlags) error {
@@ -236,8 +256,6 @@ func newMQTTVehicle(ctx context.Context) (*mqttVehicle, error) {
 	return &mqttVehicle{ctx: ctx, client: client, info: info}, nil
 }
 
-func (v *mqttVehicle) vin() string { return string(v.info.InternalVIN) }
-
 // Model is the model's first word, e.g. CX-90.
 func (v *mqttVehicle) Model() string {
 	if f := strings.Fields(v.info.ModelName); len(f) > 0 {
@@ -247,6 +265,8 @@ func (v *mqttVehicle) Model() string {
 	return "vehicle"
 }
 
+// Status reads the EV and vehicle reports as mcs status --json does; with
+// refresh it first asks the car for a fresh EV report.
 func (v *mqttVehicle) Status(ctx context.Context, refresh bool) (map[string]any, bool, error) {
 	defer saveClientCache(v.ctx, v.client)
 	ev, err := v.client.GetEVVehicleStatus(ctx, v.vin())
@@ -255,21 +275,8 @@ func (v *mqttVehicle) Status(ctx context.Context, refresh bool) (map[string]any,
 	}
 	answered := false
 	if refresh {
-		before, _ := ev.GetOccurrenceDate()
-		if err := v.client.RefreshVehicleStatus(ctx, v.vin()); err != nil {
+		if ev, answered, err = v.refreshEV(ctx, ev); err != nil {
 			return nil, false, err
-		}
-		for deadline := time.Now().Add(2 * time.Minute); !answered && time.Now().Before(deadline); {
-			select {
-			case <-ctx.Done():
-				return nil, false, ctx.Err()
-			case <-time.After(20 * time.Second):
-			}
-			if next, err := v.client.GetEVVehicleStatus(ctx, v.vin()); err == nil {
-				if after, _ := next.GetOccurrenceDate(); after != before {
-					ev, answered = next, true
-				}
-			}
 		}
 	}
 	vs, err := v.client.GetVehicleStatus(ctx, v.vin())
@@ -300,34 +307,57 @@ func (v *mqttVehicle) HVAC(ctx context.Context) (map[string]any, error) {
 	return v.client.GetHVACSetting(ctx, v.vin())
 }
 
+// Do sends a button command, or the climate setting.
 func (v *mqttVehicle) Do(ctx context.Context, name string, s mqttd.Setting) error {
 	defer saveClientCache(v.ctx, v.client)
 	c, vin := v.client, v.vin()
-	switch name {
-	case "lock":
-		return c.DoorLock(ctx, vin)
-	case "unlock":
-		return c.DoorUnlock(ctx, vin)
-	case "engine_start":
-		return c.EngineStart(ctx, vin)
-	case "engine_stop":
-		return c.EngineStop(ctx, vin)
-	case "charge_start":
-		return c.ChargeStart(ctx, vin)
-	case "charge_stop":
-		return c.ChargeStop(ctx, vin)
-	case "climate_on":
-		return c.HVACOn(ctx, vin)
-	case "climate_off":
-		return c.HVACOff(ctx, vin)
-	case "lights_on":
-		return c.LightsOn(ctx, vin)
-	case "lights_off":
-		return c.LightsOff(ctx, vin)
+	if send, ok := buttonCalls(c)[name]; ok {
+		return send(ctx, vin)
 	}
 	if mqttd.IsSetting(name) {
 		return c.SetHVACSetting(ctx, vin, s.Temperature, api.Celsius, s.Front, s.Rear)
 	}
 
 	return fmt.Errorf("unknown command %q", name)
+}
+
+func (v *mqttVehicle) vin() string { return string(v.info.InternalVIN) }
+
+// refreshEV asks the car for a fresh EV report and waits up to 2 minutes for
+// it; it reports whether one arrived (else ev stays).
+func (v *mqttVehicle) refreshEV(ctx context.Context, ev *api.EVVehicleStatusResponse) (*api.EVVehicleStatusResponse, bool, error) {
+	before, _ := ev.GetOccurrenceDate()
+	if err := v.client.RefreshVehicleStatus(ctx, v.vin()); err != nil {
+		return nil, false, err
+	}
+	for deadline := time.Now().Add(2 * time.Minute); time.Now().Before(deadline); {
+		select {
+		case <-ctx.Done():
+			return nil, false, ctx.Err()
+		case <-time.After(20 * time.Second):
+		}
+		if next, err := v.client.GetEVVehicleStatus(ctx, v.vin()); err == nil {
+			if after, _ := next.GetOccurrenceDate(); after != before {
+				return next, true, nil
+			}
+		}
+	}
+
+	return ev, false, nil
+}
+
+// buttonCalls maps each button command to its API call.
+func buttonCalls(c *api.Client) map[string]func(context.Context, string) error {
+	return map[string]func(context.Context, string) error{
+		mqttd.CmdLock:        c.DoorLock,
+		mqttd.CmdUnlock:      c.DoorUnlock,
+		mqttd.CmdEngineStart: c.EngineStart,
+		mqttd.CmdEngineStop:  c.EngineStop,
+		mqttd.CmdChargeStart: c.ChargeStart,
+		mqttd.CmdChargeStop:  c.ChargeStop,
+		mqttd.CmdClimateOn:   c.HVACOn,
+		mqttd.CmdClimateOff:  c.HVACOff,
+		mqttd.CmdLightsOn:    c.LightsOn,
+		mqttd.CmdLightsOff:   c.LightsOff,
+	}
 }

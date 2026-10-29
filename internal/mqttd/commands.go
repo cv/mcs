@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -15,18 +16,41 @@ type Button struct {
 	Name, Group, Label, Icon string
 }
 
+// Button commands, as named in <prefix>/cmd/<name>/set.
+const (
+	CmdLock        = "lock"
+	CmdUnlock      = "unlock"
+	CmdEngineStart = "engine_start"
+	CmdEngineStop  = "engine_stop"
+	CmdChargeStart = "charge_start"
+	CmdChargeStop  = "charge_stop"
+	CmdClimateOn   = "climate_on"
+	CmdClimateOff  = "climate_off"
+	CmdLightsOn    = "lights_on"
+	CmdLightsOff   = "lights_off"
+)
+
+// Payloads a button press and a switch send.
+const (
+	payloadPress = "PRESS"
+	payloadOn    = "ON"
+	payloadOff   = "OFF"
+)
+
 // Buttons lists the commands HA gets a button for.
-var Buttons = []Button{
-	{"lock", GroupLock, "Lock", "mdi:car-door-lock"},
-	{"unlock", GroupUnlock, "Unlock", "mdi:car-door"},
-	{"engine_start", GroupEngine, "Start engine", "mdi:engine"},
-	{"engine_stop", GroupEngine, "Stop engine", "mdi:engine-off"},
-	{"charge_start", GroupCharge, "Start charging", "mdi:ev-station"},
-	{"charge_stop", GroupCharge, "Stop charging", "mdi:ev-plug-type1"},
-	{"climate_on", GroupClimate, "Climate on", "mdi:fan"},
-	{"climate_off", GroupClimate, "Climate off", "mdi:fan-off"},
-	{"lights_on", GroupLights, "Hazard lights on", "mdi:car-light-alert"},
-	{"lights_off", GroupLights, "Hazard lights off", "mdi:car-light-dimmed"},
+func Buttons() []Button {
+	return []Button{
+		{CmdLock, GroupLock, "Lock", "mdi:car-door-lock"},
+		{CmdUnlock, GroupUnlock, "Unlock", "mdi:car-door"},
+		{CmdEngineStart, GroupEngine, "Start engine", "mdi:engine"},
+		{CmdEngineStop, GroupEngine, "Stop engine", "mdi:engine-off"},
+		{CmdChargeStart, GroupCharge, "Start charging", "mdi:ev-station"},
+		{CmdChargeStop, GroupCharge, "Stop charging", "mdi:ev-plug-type1"},
+		{CmdClimateOn, GroupClimate, "Climate on", "mdi:fan"},
+		{CmdClimateOff, GroupClimate, "Climate off", "mdi:fan-off"},
+		{CmdLightsOn, GroupLights, "Hazard lights on", "mdi:car-light-alert"},
+		{CmdLightsOff, GroupLights, "Hazard lights off", "mdi:car-light-dimmed"},
+	}
 }
 
 // The climate setting: a temperature and two defrosters, always sent together.
@@ -57,23 +81,43 @@ type Command struct {
 // ParseCommand reads <prefix>/cmd/<name>/set; anything else, or a command that
 // is not enabled, gives false.
 func ParseCommand(c *Config, topic string, payload []byte) (Command, bool) {
-	name, ok := strings.CutPrefix(topic, c.Prefix+"/cmd/")
-	if !ok {
-		return Command{}, false
-	}
-	name, ok = strings.CutSuffix(name, "/set")
+	name, ok := commandName(c.Prefix, topic)
 	if !ok {
 		return Command{}, false
 	}
 	text := strings.TrimSpace(string(payload))
-	for _, b := range Buttons {
-		if b.Name == name {
-			return Command{Name: name}, c.Has(b.Group) && text == "PRESS"
-		}
+	if b, ok := findButton(name); ok {
+		return Command{Name: name}, c.Has(b.Group) && text == payloadPress
 	}
 	if !c.Has(GroupClimate) {
 		return Command{}, false
 	}
+
+	return parseSetting(name, text)
+}
+
+// commandName is <name> in <prefix>/cmd/<name>/set.
+func commandName(prefix, topic string) (string, bool) {
+	name, ok := strings.CutPrefix(topic, prefix+"/cmd/")
+	if !ok {
+		return "", false
+	}
+
+	return strings.CutSuffix(name, "/set")
+}
+
+func findButton(name string) (Button, bool) {
+	buttons := Buttons()
+	if i := slices.IndexFunc(buttons, func(b Button) bool { return b.Name == name }); i >= 0 {
+		return buttons[i], true
+	}
+
+	return Button{}, false
+}
+
+// parseSetting reads a climate setting command: a temperature (rounded to
+// 0.5 °C) or a defroster's ON / OFF.
+func parseSetting(name, text string) (Command, bool) {
 	switch name {
 	case SettingTemperature:
 		t, err := strconv.ParseFloat(text, 64)
@@ -83,11 +127,11 @@ func ParseCommand(c *Config, topic string, payload []byte) (Command, bool) {
 
 		return Command{Name: name, Value: math.Round(t*2) / 2}, true
 	case SettingFront, SettingRear:
-		if text != "ON" && text != "OFF" {
+		if text != payloadOn && text != payloadOff {
 			return Command{}, false
 		}
 
-		return Command{Name: name, Value: text == "ON"}, true
+		return Command{Name: name, Value: text == payloadOn}, true
 	}
 
 	return Command{}, false
@@ -143,7 +187,10 @@ func (l *Limits) Mark(key string, now time.Time) {
 	for k, v := range l.last {
 		raw[k] = float64(v.UnixNano()) / 1e9
 	}
-	b, _ := json.Marshal(raw)
+	b, err := json.Marshal(raw)
+	if err != nil {
+		return // kept in memory only, as when the file cannot be written
+	}
 	_ = os.MkdirAll(filepath.Dir(l.path), 0o700)
 	tmp := l.path + ".new"
 	if os.WriteFile(tmp, b, 0o600) == nil {

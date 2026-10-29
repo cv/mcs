@@ -20,12 +20,21 @@ func obj(v any) map[string]any {
 
 // num is a finite JSON number within [lo, hi], else nil.
 func num(v any, lo, hi float64) any {
-	f, ok := v.(float64)
-	if !ok || math.IsNaN(f) || math.IsInf(f, 0) || f < lo || f > hi {
-		return nil
+	if f, ok := number(v, lo, hi); ok {
+		return f
 	}
 
-	return f
+	return nil
+}
+
+// number is num's value as a float64, and whether there is one.
+func number(v any, lo, hi float64) (float64, bool) {
+	f, ok := v.(float64)
+	if !ok || math.IsNaN(f) || math.IsInf(f, 0) || f < lo || f > hi {
+		return 0, false
+	}
+
+	return f, true
 }
 
 func flag(v any) any {
@@ -60,7 +69,11 @@ func not(v any) any {
 	return nil
 }
 
-func isTrue(v any) bool { b, _ := v.(bool); return b }
+func isTrue(v any) bool {
+	b, _ := v.(bool)
+
+	return b
+}
 
 // reportTime turns the API's YYYYMMDDhhmmss (UTC) into an ISO time, else nil.
 func reportTime(v any) any {
@@ -81,13 +94,14 @@ func Presence(location map[string]any, home *Home) any {
 	if home == nil || location == nil {
 		return nil
 	}
-	lat, lon := num(location["latitude"], -90, 90), num(location["longitude"], -180, 180)
-	if lat == nil || lon == nil || (lat.(float64) == 0 && lon.(float64) == 0) {
+	lat, latOK := number(location["latitude"], -90, 90)
+	lon, lonOK := number(location["longitude"], -180, 180)
+	if !latOK || !lonOK || (lat == 0 && lon == 0) {
 		return nil
 	}
 	rad := math.Pi / 180
-	p1, p2 := lat.(float64)*rad, home.Lat*rad
-	a := math.Pow(math.Sin((p2-p1)/2), 2) + math.Cos(p1)*math.Cos(p2)*math.Pow(math.Sin((home.Lon-lon.(float64))*rad/2), 2)
+	p1, p2 := lat*rad, home.Lat*rad
+	a := math.Pow(math.Sin((p2-p1)/2), 2) + math.Cos(p1)*math.Cos(p2)*math.Pow(math.Sin((home.Lon-lon)*rad/2), 2)
 	if 6371000*2*math.Asin(math.Sqrt(a)) <= home.RadiusM {
 		return "home"
 	}
@@ -96,7 +110,7 @@ func Presence(location map[string]any, home *Home) any {
 }
 
 // Doors are the four doors, in the order the API names them.
-var Doors = []string{"driver", "passenger", "rear_left", "rear_right"}
+func Doors() []string { return []string{"driver", "passenger", "rear_left", "rear_right"} }
 
 // Snapshot turns mcs status --json data into the published state: an allowlist,
 // with no VIN, coordinates, nickname, device or account ids.
@@ -147,12 +161,12 @@ func Snapshot(data map[string]any, now time.Time, home *Home) map[string]any {
 		"presence": Presence(obj(data["location"]), home),
 	}
 	var windows []any
-	for _, d := range Doors {
+	for _, d := range Doors() {
 		s[d+"_door_open"] = flag(doors[d+"_open"])
 		s[d+"_door_unlocked"] = not(flag(doors[d+"_locked"]))
 		var w any
-		if p := num(win[d+"_position"], 0, 100); p != nil {
-			w = p.(float64) > 0
+		if p, ok := number(win[d+"_position"], 0, 100); ok {
+			w = p > 0
 		}
 		s[d+"_window_open"] = w
 		windows = append(windows, w)
@@ -179,11 +193,16 @@ func anyOf(vs []any) any {
 // notSet is the health report's "no value" (e.g. no maintenance interval set).
 const notSet = 65535
 
+// Lamp is a health report lamp warning and the name of the bulb.
+type Lamp struct{ Key, Name string }
+
 // Lamps maps the health report's lamp warnings to names.
-var Lamps = []struct{ Key, Name string }{
-	{"WngHeadLamp", "headlight"}, {"WngTailLamp", "tail light"}, {"WngBackLamp", "reversing light"},
-	{"WngBreakLamp", "brake light"}, {"WngTurnLamp", "turn signal"}, {"WngSmallLamp", "parking light"},
-	{"WngRearFogLamp", "rear fog light"},
+func Lamps() []Lamp {
+	return []Lamp{
+		{"WngHeadLamp", "headlight"}, {"WngTailLamp", "tail light"}, {"WngBackLamp", "reversing light"},
+		{"WngBreakLamp", "brake light"}, {"WngTurnLamp", "turn signal"}, {"WngSmallLamp", "parking light"},
+		{"WngRearFogLamp", "rear fog light"},
+	}
 }
 
 // Health turns the raw health report into oil life, maintenance and warnings.
@@ -193,51 +212,79 @@ func Health(raw map[string]any) map[string]any {
 		info = obj(infos[0])
 	}
 	oil, reg, tp := obj(info["OilMntInformation"]), obj(info["RegularMntInformation"]), obj(info["TPMSInformation"])
-	var maint any
-	if num(reg["MntSetDistKm"], 0, notSet-1) != nil {
-		maint = num(reg["RemRegDistKm"], 0, notSet-1)
-		if maint == nil {
-			if m := num(reg["RemRegDistMile"], 0, notSet-1); m != nil {
-				maint = math.Round(m.(float64) * 1.609344)
-			}
-		}
+	bulbOut, bulbs := bulbsOut(info)
+
+	return map[string]any{
+		"health_reported_at": reportTime(info["OccurrenceDate"]),
+		"oil_remaining_km":   num(oil["RemOilDistK"], 0, notSet-1), "maintenance_remaining_km": maintenanceKm(reg),
+		"oil_low": bit(info["WngOilShortage"]), "oil_overfilled": bit(info["WngOilAmountExceed"]),
+		"tire_pressure_low": tireLow(info, tp), "tpms_fault": tpmsFault(info, tp), "bulb_out": bulbOut, "bulbs_out": bulbs,
 	}
+}
+
+// maintenanceKm is the distance to the next maintenance (from miles if the
+// report has no km), or nil when no interval is set.
+func maintenanceKm(reg map[string]any) any {
+	if num(reg["MntSetDistKm"], 0, notSet-1) == nil {
+		return nil
+	}
+	if km := num(reg["RemRegDistKm"], 0, notSet-1); km != nil {
+		return km
+	}
+	if mi, ok := number(reg["RemRegDistMile"], 0, notSet-1); ok {
+		return math.Round(mi * 1.609344)
+	}
+
+	return nil
+}
+
+// bulbsOut is whether a bulb is out (nil when no lamp is reported) and the
+// names of those out ("none" when none is).
+func bulbsOut(info map[string]any) (any, string) {
 	var lamps []string
 	lampKnown := false
-	for _, l := range Lamps {
+	for _, l := range Lamps() {
 		b := bit(info[l.Key])
 		lampKnown = lampKnown || b != nil
 		if isTrue(b) {
 			lamps = append(lamps, l.Name)
 		}
 	}
-	var bulbOut any
+	var out any
 	if lampKnown {
-		bulbOut = len(lamps) > 0
+		out = len(lamps) > 0
 	}
-	bulbs := strings.Join(lamps, ", ")
-	if bulbs == "" {
-		bulbs = "none"
-	}
-	var tireLow any
-	if low := bit(info["WngTyrePressureLow"]); low != nil {
-		t := isTrue(low)
-		for _, k := range []string{"FLTyrePressWarn", "FRTyrePressWarn", "RLTyrePressWarn", "RRTyrePressWarn"} {
-			t = t || isTrue(bit(tp[k]))
-		}
-		tireLow = t
-	}
-	var tpms any
-	if a, b := bit(info["WngTpmsStatus"]), bit(tp["TPMSSystemFlt"]); a != nil || b != nil {
-		tpms = isTrue(a) || isTrue(b)
+	if len(lamps) == 0 {
+		return out, "none"
 	}
 
-	return map[string]any{
-		"health_reported_at": reportTime(info["OccurrenceDate"]),
-		"oil_remaining_km":   num(oil["RemOilDistK"], 0, notSet-1), "maintenance_remaining_km": maint,
-		"oil_low": bit(info["WngOilShortage"]), "oil_overfilled": bit(info["WngOilAmountExceed"]),
-		"tire_pressure_low": tireLow, "tpms_fault": tpms, "bulb_out": bulbOut, "bulbs_out": bulbs,
+	return out, strings.Join(lamps, ", ")
+}
+
+// tireLow is the low pressure warning or any tire's, or nil when the report
+// has no such warning.
+func tireLow(info, tp map[string]any) any {
+	low := bit(info["WngTyrePressureLow"])
+	if low == nil {
+		return nil
 	}
+	t := isTrue(low)
+	for _, k := range []string{"FLTyrePressWarn", "FRTyrePressWarn", "RLTyrePressWarn", "RRTyrePressWarn"} {
+		t = t || isTrue(bit(tp[k]))
+	}
+
+	return t
+}
+
+// tpmsFault is whether the tire pressure system reports a fault, or nil when
+// neither flag is reported.
+func tpmsFault(info, tp map[string]any) any {
+	a, b := bit(info["WngTpmsStatus"]), bit(tp["TPMSSystemFlt"])
+	if a == nil && b == nil {
+		return nil
+	}
+
+	return isTrue(a) || isTrue(b)
 }
 
 // HVACSetting reads the remote climate setting (temperature in °C, defrosters).

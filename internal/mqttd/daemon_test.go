@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -23,12 +24,6 @@ type fakeCar struct {
 	status   string
 	statusEr error
 	doErr    error
-}
-
-func (f *fakeCar) record(s string) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.calls = append(f.calls, s)
 }
 
 func (f *fakeCar) Status(_ context.Context, refresh bool) (map[string]any, bool, error) {
@@ -64,9 +59,15 @@ func (f *fakeCar) Do(_ context.Context, name string, s Setting) error {
 	return f.doErr
 }
 
-func jsonNum(v float64) string { b, _ := json.Marshal(v); return string(b) }
+func jsonNum(v float64) string { return strconv.FormatFloat(v, 'f', -1, 64) } // as JSON writes a temperature
 
 func (f *fakeCar) Model() string { return "CX-90" }
+
+func (f *fakeCar) record(s string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.calls = append(f.calls, s)
+}
 
 type fakeBroker struct {
 	mu  sync.Mutex
@@ -121,8 +122,8 @@ func TestPollPublishesState(t *testing.T) {
 	assert.Equal(t, "online", b.get("mazda/cx90/status"))
 	var state map[string]any
 	require.NoError(t, json.Unmarshal([]byte(b.get("mazda/cx90/state")), &state))
-	assert.Equal(t, 7000.0, state["oil_remaining_km"])
-	assert.Equal(t, 17.0, state["climate_temperature"])
+	assertFloat(t, 7000.0, state["oil_remaining_km"])
+	assertFloat(t, 17.0, state["climate_temperature"])
 	assert.NotContains(t, b.get("mazda/cx90/state"), "latitude")
 	assert.Empty(t, b.get("homeassistant/button/mcs_cx90/unlock/config"), "read-only clears the controls")
 	assert.NotEmpty(t, b.get("homeassistant/sensor/mcs_cx90/battery/config"))
@@ -171,7 +172,7 @@ func TestSettingUsesTheKnownSetting(t *testing.T) {
 	assert.Contains(t, car.calls, "climate_temperature:21")
 	var state map[string]any
 	require.NoError(t, json.Unmarshal([]byte(b.get("mazda/cx90/state")), &state))
-	assert.Equal(t, 17.0, state["climate_temperature"], "the setting read after the command wins")
+	assertFloat(t, 17.0, state["climate_temperature"], "the setting read after the command wins")
 }
 
 func TestFailureShowsOnlyTheCode(t *testing.T) {

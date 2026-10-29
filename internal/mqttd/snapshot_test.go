@@ -10,6 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// assertFloat asserts got is the float64 want (what assert.Equal checked).
+func assertFloat(t *testing.T, want float64, got any, msgAndArgs ...any) {
+	t.Helper()
+	if assert.IsType(t, want, got, msgAndArgs...) {
+		assert.InDelta(t, want, got, 0, msgAndArgs...)
+	}
+}
+
 const statusJSON = `{"reported_at": {"doors": "20260101000000", "ev": "20260201000000", "vehicle": "20260101120000"},
  "vehicle": {"vin": "private", "nickname": "private"},
  "location": {"latitude": 45.5, "longitude": -73.6, "maps_url": "private"},
@@ -55,7 +63,7 @@ func TestSnapshotAllowlist(t *testing.T) {
 	assert.Equal(t, true, d["rear_left_window_open"])
 	assert.Equal(t, true, d["windows_open"])
 	assert.Equal(t, []any{46.0, 14655.4, 290.0, 33.0}, []any{d["fuel"], d["odometer_km"], d["range_km"], d["tire_front_left"]})
-	assert.Equal(t, 16.5, d["cabin_temperature"])
+	assertFloat(t, 16.5, d["cabin_temperature"])
 	assert.Nil(t, d["charge_time_min"]) // only while charging
 	assert.Equal(t, "2026-02-01T00:00:00+00:00", d["ev_reported_at"])
 	assert.Equal(t, "2026-10-28T17:53:20.000000+00:00", d["polled_at"])
@@ -86,7 +94,7 @@ func TestMissingIsUnknown(t *testing.T) {
 func TestHealth(t *testing.T) {
 	t.Parallel()
 	h := Health(decode(t, healthJSON))
-	assert.Equal(t, 7000.0, h["oil_remaining_km"])
+	assertFloat(t, 7000.0, h["oil_remaining_km"])
 	assert.Nil(t, h["maintenance_remaining_km"]) // 65535: no interval set
 	for _, k := range []string{"oil_low", "oil_overfilled", "tire_pressure_low", "tpms_fault", "bulb_out"} {
 		assert.Equal(t, false, h[k], k)
@@ -101,7 +109,7 @@ func TestHealth(t *testing.T) {
 	assert.Equal(t, true, h["bulb_out"])
 	assert.Equal(t, "headlight, turn signal", h["bulbs_out"])
 	assert.Equal(t, true, h["tire_pressure_low"])
-	assert.Equal(t, 1234.0, h["maintenance_remaining_km"])
+	assertFloat(t, 1234.0, h["maintenance_remaining_km"])
 	empty := Health(nil)
 	assert.Nil(t, empty["oil_remaining_km"])
 	assert.Nil(t, empty["bulb_out"])
@@ -111,7 +119,7 @@ func TestHVACSetting(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, map[string]any{"climate_temperature": 17.0, "front_defroster": false, "rear_defroster": true},
 		HVACSetting(decode(t, `{"hvacSettings": {"Temperature": 17, "TemperatureType": 1, "FrontDefroster": 0, "RearDefogger": 1}}`)))
-	assert.Equal(t, 21.0, HVACSetting(decode(t, `{"hvacSettings": {"Temperature": 70, "TemperatureType": 2}}`))["climate_temperature"])
+	assertFloat(t, 21.0, HVACSetting(decode(t, `{"hvacSettings": {"Temperature": 70, "TemperatureType": 2}}`))["climate_temperature"])
 	assert.Nil(t, HVACSetting(nil)["climate_temperature"])
 }
 
@@ -142,7 +150,7 @@ func TestConfig(t *testing.T) {
 	require.ErrorContains(t, c.Validate(), "selfdestruct")
 	c.Controls = []string{"all"}
 	require.NoError(t, c.Validate())
-	assert.Equal(t, Groups, c.Controls)
+	assert.Equal(t, Groups(), c.Controls)
 	c.Poll = time.Minute
 	require.ErrorContains(t, c.Validate(), "at least 5m")
 	assert.Equal(t, "cx90", testConfig().ID())
@@ -182,10 +190,8 @@ func TestDiscovery(t *testing.T) {
 	ro := Discovery(testConfig(), "CX-90")
 	assert.Len(t, ro, len(all))
 	for topic, c := range ro {
-		if c != nil {
-			for k := range c {
-				assert.False(t, strings.HasPrefix(k, "command"), topic)
-			}
+		for k := range c {
+			assert.False(t, strings.HasPrefix(k, "command"), topic)
 		}
 	}
 	assert.Nil(t, ro["homeassistant/button/mcs_cx90/unlock/config"])
