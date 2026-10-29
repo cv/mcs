@@ -82,7 +82,40 @@ func NewRawCmd() *cobra.Command {
 		SilenceUsage: true,
 	})
 
+	rawCmd.AddCommand(&cobra.Command{
+		Use:          "health",
+		Short:        "Get the raw health report (oil life, maintenance, warnings)",
+		RunE:         func(cmd *cobra.Command, args []string) error { return runRawMap(cmd, (*api.Client).GetHealthReport) },
+		SilenceUsage: true,
+	})
+
+	rawCmd.AddCommand(&cobra.Command{
+		Use:          "hvac",
+		Short:        "Get the raw remote climate setting",
+		RunE:         func(cmd *cobra.Command, args []string) error { return runRawMap(cmd, (*api.Client).GetHVACSetting) },
+		SilenceUsage: true,
+	})
+
 	return rawCmd
+}
+
+// runRawMap prints a read without a typed response.
+func runRawMap(cmd *cobra.Command, read func(*api.Client, context.Context, string) (map[string]any, error)) error {
+	return withVehicleClient(cmd.Context(), func(ctx context.Context, client *api.Client, internalVIN api.InternalVIN) error {
+		data, err := read(client, ctx, string(internalVIN))
+		if err != nil {
+			return err
+		}
+
+		jsonBytes, err := json.MarshalIndent(data, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal JSON: %w", err)
+		}
+
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(jsonBytes))
+
+		return nil
+	})
 }
 
 // runRawStatus executes the raw status command.

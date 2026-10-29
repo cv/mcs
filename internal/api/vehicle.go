@@ -36,7 +36,7 @@ func (c *Client) GetVecBaseInfos(ctx context.Context) (*VecBaseInfosResponse, er
 func buildVehicleStatusParams(internalVIN string) map[string]any {
 	return map[string]any{
 		internalUserIDField: InternalUserID,
-		"internalvin":       internalVIN,
+		paramInternalVIN:    internalVIN,
 		"limit":             1,
 		"offset":            0,
 		"vecinfotype":       "0",

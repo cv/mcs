@@ -46,7 +46,7 @@ func (c *Client) controlEndpoint(ctx context.Context, endpoint, actionDesc, inte
 func (c *Client) controlResult(ctx context.Context, endpoint, actionDesc, internalVIN string, additionalParams map[string]any) (string, error) {
 	bodyParams := map[string]any{
 		internalUserIDField: InternalUserID,
-		"internalvin":       internalVIN,
+		paramInternalVIN:    internalVIN,
 	}
 
 	// Merge additional parameters if provided

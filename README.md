@@ -45,9 +45,15 @@ mcs climate on          # Turn on HVAC
 mcs climate off         # Turn off HVAC
 mcs climate set --temp 21   # Set temperature (Celsius)
 
+# Lights
+mcs lights on           # Hazard lights on (find the car)
+mcs lights off          # Hazard lights off
+
 # Debug
 mcs raw status          # Raw vehicle status JSON
 mcs raw ev              # Raw EV status JSON
+mcs raw health          # Raw health report (oil life, maintenance, warnings)
+mcs raw hvac            # Raw remote climate setting
 
 # Shell completions
 mcs completion bash     # Also: zsh, fish, powershell
