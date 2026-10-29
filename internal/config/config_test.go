@@ -197,3 +197,12 @@ func TestLoad_propagatesReadError(t *testing.T) {
 	assert.Nil(t, cfg)
 	require.Error(t, err, "expected error when reading unreadable config file")
 }
+
+func TestConfig_ValidateRefreshOnly(t *testing.T) {
+	t.Parallel()
+	cfg := &Config{Email: "test@example.com", Region: "MNAO"}
+	require.NoError(t, cfg.ValidateRefreshOnly(), "no password needed")
+	require.Error(t, cfg.Validate(), "a full client still needs one")
+	require.Error(t, (&Config{Region: "MNAO"}).ValidateRefreshOnly())
+	require.Error(t, (&Config{Email: "test@example.com", Region: "XX"}).ValidateRefreshOnly())
+}

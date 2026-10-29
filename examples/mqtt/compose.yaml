@@ -1,0 +1,30 @@
+# mcs mqtt with Docker Compose. See the README's "Home Assistant" section.
+#
+#   mkdir -p state/.config/mcs state/.cache/mcs
+#   cp ~/.config/mcs/config.toml state/.config/mcs/   # then delete its password line
+#   cp ~/.cache/mcs/token.json  state/.cache/mcs/     # the signed-in session
+#   echo 'MCS_MQTT_PASSWORD=...' > mcs.env && chmod 600 mcs.env
+#   docker compose up -d && docker compose logs -f
+services:
+  mcs:
+    build: ../..
+    container_name: mcs-mqtt
+    user: "1000:1000"            # the owner of ./state (id -u, id -g)
+    env_file: mcs.env           # MCS_MQTT_PASSWORD (and MCS_MQTT_HOME=LAT,LON if you like)
+    environment:
+      MCS_MQTT_BROKER: tcp://homeassistant.local:1883
+      MCS_MQTT_USERNAME: mcs
+      MCS_MQTT_PREFIX: mazda/my_car
+      # Nothing can move the car unless listed: lock, unlock, engine, charge,
+      # climate, lights, refresh, or all.
+      MCS_MQTT_CONTROLS: lock,climate,refresh
+      # Docker restarts whatever the exit status: on a lost session stay up
+      # (offline) instead of retrying a dead session in a loop.
+      MCS_MQTT_WAIT_ON_AUTH_LOSS: "true"
+    volumes:
+      - ./state:/state
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 64m

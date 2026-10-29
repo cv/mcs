@@ -1,0 +1,7 @@
+.git
+.agents
+.github
+docs
+examples
+/mcs
+*.md

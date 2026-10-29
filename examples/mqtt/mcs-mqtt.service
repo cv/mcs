@@ -1,0 +1,28 @@
+# mcs mqtt as a systemd service, for a user `mcs` whose home holds the
+# signed-in session (~/.cache/mcs/token.json) and the settings
+# (~/.config/mcs/config.toml, with an [mqtt] section; see config.toml here).
+#
+#   sudo cp mcs-mqtt.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now mcs-mqtt
+#   journalctl -u mcs-mqtt -f
+[Unit]
+Description=mcs mqtt: a Mazda on MQTT and in Home Assistant
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=mcs
+ExecStart=/usr/local/bin/mcs mqtt
+Restart=on-failure
+RestartSec=30
+# 2: bad configuration, 3: the Mazda session is lost (renew it by hand). A
+# restart would not help either, and retrying a dead session is pointless.
+RestartPreventExitStatus=2 3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/home/mcs
+PrivateTmp=yes
+MemoryMax=64M
+
+[Install]
+WantedBy=multi-user.target

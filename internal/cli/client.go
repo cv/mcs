@@ -28,7 +28,12 @@ func createAPIClient(ctx context.Context) (*api.Client, error) {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	if err := cfg.Validate(); err != nil {
+	refreshOnly := os.Getenv("MCS_REFRESH_ONLY") == "1"
+	validate := cfg.Validate
+	if refreshOnly {
+		validate = cfg.ValidateRefreshOnly
+	}
+	if err := validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
@@ -38,7 +43,7 @@ func createAPIClient(ctx context.Context) (*api.Client, error) {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}
 	client.SetCountry(cfg.Country)
-	client.SetRefreshOnly(os.Getenv("MCS_REFRESH_ONLY") == "1")
+	client.SetRefreshOnly(refreshOnly)
 	if os.Getenv("MCS_DEBUG") != "" {
 		client.SetDebug(true)
 	}

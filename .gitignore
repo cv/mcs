@@ -26,3 +26,7 @@ go.work
 *.swp
 *.swo
 *~
+
+# mcs mqtt example: secrets and the session
+examples/mqtt/state/
+examples/mqtt/mcs.env

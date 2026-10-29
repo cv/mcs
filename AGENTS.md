@@ -21,6 +21,9 @@ In practice: `t.Context()` instead of `context.Background()` in tests, `any` ins
 
 ```
 cmd/mcs/main.go              Entry point
+Dockerfile                   Container image (distroless; default command mcs mqtt)
+examples/mqtt/               mcs mqtt: Compose, systemd unit, config.toml
+docs/images/                 README screenshots (a real Home Assistant: no VIN, places or names)
 internal/
   api/
     auth.go                  Authentication, encryption keys, login

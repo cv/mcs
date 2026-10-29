@@ -89,6 +89,19 @@ func (c *Config) Validate() error {
 }
 
 // DefaultConfigPath returns the default configuration file path.
+// ValidateRefreshOnly is Validate without the password: a refresh-only client
+// (MCS_REFRESH_ONLY=1, mcs mqtt) never signs in, so a server needs no password.
+func (c *Config) ValidateRefreshOnly() error {
+	if c.Email == "" {
+		return errors.New("email is required")
+	}
+	if !c.Region.IsValid() {
+		return fmt.Errorf("invalid region: %s (must be one of: MNAO, MME, MJO)", c.Region)
+	}
+
+	return nil
+}
+
 func DefaultConfigPath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {

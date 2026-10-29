@@ -1,115 +1,85 @@
 # mcs
 
-A simple, unofficial CLI for [Mazda Connected Services](https://approval.mymazda.com/MyMazda/mazdaConnectedServices.action), ported from [pymazda](https://github.com/ungineer/pymazda).
+[![Release](https://img.shields.io/github/v/release/cv/mcs)](https://github.com/cv/mcs/releases/latest)
+[![CI](https://github.com/cv/mcs/actions/workflows/ci.yml/badge.svg)](https://github.com/cv/mcs/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+**Your Mazda from the terminal, and in Home Assistant.** `mcs` is an unofficial
+client for Mazda Connected Services (MyMazda): check the battery, lock the
+doors or warm up the cabin with one command. `mcs mqtt` puts the car on MQTT,
+and Home Assistant then finds it with its readings and controls ready to use.
+
+<p align="center">
+  <img src="docs/images/home-assistant-dashboard.png" width="360" alt="A Home Assistant dashboard with the car's battery, fuel, range, controls and climate setting">
+  &nbsp;
+  <img src="docs/images/home-assistant-device.png" width="430" alt="The car as a Home Assistant device, with its controls">
+</p>
+<p align="center"><sub>A CX-90 PHEV in Home Assistant: a dashboard built from the entities (left) and the device <code>mcs mqtt</code> creates (right).</sub></p>
+
+## Features
+
+- **Status at a glance**: battery, charging, range, fuel, odometer, tire
+  pressures, doors, locks, windows, hazards, cabin temperature, location.
+- **Remote control**: lock and unlock, engine start and stop, charging, climate
+  (with temperature and defrosters), hazard lights, a fresh report from the car.
+- **Health report**: oil change due, maintenance, oil level, tire pressure and
+  bulb warnings.
+- **Home Assistant, without an integration to install**: up to 67 entities
+  through MQTT discovery, plus a `device_tracker` for home / not home if you want one.
+- **Careful with your session**: reuses and refreshes one cached session, so a
+  server doesn't need your password and won't sign your phone out.
+- **Private by default**: what it publishes is an allowlist (no VIN, coordinates or
+  ids), and logs carry result codes, never tokens.
+- **Small**: one static binary; `mcs mqtt` uses about 7 MB of memory.
+- **Agent-ready**: a skill so coding agents can "warm up the car" for you.
 
 ## Install
 
 ```bash
-go build -o mcs ./cmd/mcs
-mv mcs /usr/local/bin/  # or anywhere in PATH
+brew install cv/taps/mcs                      # macOS and Linux
+go install github.com/cv/mcs/cmd/mcs@latest   # with Go 1.27+
 ```
 
-## Configuration
+Or download a binary for macOS, Linux or Windows from the
+[releases](https://github.com/cv/mcs/releases/latest), or build the container
+image: `docker build -t mcs .`
+
+## Sign in
 
 Create `~/.config/mcs/config.toml`:
 
 ```toml
-email = "your@email.com"
-password = "yourpassword"
-region = "MNAO"  # MNAO=North America, MME=Europe, MJO=Japan
-country = "CA"   # Account country; defaults: US, GB, JP respectively
+email = "you@example.com"
+password = "your MyMazda password"
+region = "MNAO"   # MNAO North America, MME Europe, MJO Japan
+country = "US"    # the account's country; defaults: US, GB, JP
 ```
 
-Or use environment variables: `MCS_EMAIL`, `MCS_PASSWORD`, `MCS_REGION`, `MCS_COUNTRY`
+(or set `MCS_EMAIL`, `MCS_PASSWORD`, `MCS_REGION`, `MCS_COUNTRY`), then run
+`mcs status`. The first command signs in and saves the session in
+`~/.cache/mcs/token.json`; later ones reuse and refresh it.
 
-## Usage
+> **One session at a time.** Signing in can sign the MyMazda app out on your
+> phone, so mcs signs in only when it has no session, and never in a loop.
+> Sign in again in the app if it asks; to sign mcs in again, delete the cache.
+
+## Command line
 
 ```bash
-# Status
-mcs status              # Full vehicle status
-mcs status --json       # JSON output
-mcs status --refresh    # Request fresh status from vehicle
+mcs status              # everything, with how old each report is
+mcs status --json       # the same, as JSON
+mcs status --refresh    # ask the car for a fresh report first (EV and PHEV)
 
-# Control
-mcs lock                # Lock doors
-mcs unlock              # Unlock doors
-mcs start               # Remote start engine
-mcs stop                # Stop engine
+mcs lock | unlock       # doors
+mcs start | stop        # remote engine start
+mcs charge start|stop   # charging
+mcs climate on|off      # climate
+mcs climate set --temp 21   # temperature (°C)
+mcs lights on|off       # hazard lights, to find the car
 
-# Charging
-mcs charge start        # Start charging
-mcs charge stop         # Stop charging
-
-# Climate
-mcs climate on          # Turn on HVAC
-mcs climate off         # Turn off HVAC
-mcs climate set --temp 21   # Set temperature (Celsius)
-
-# Lights
-mcs lights on           # Hazard lights on (find the car)
-mcs lights off          # Hazard lights off
-
-# Debug
-mcs raw status          # Raw vehicle status JSON
-mcs raw ev              # Raw EV status JSON
-mcs raw health          # Raw health report (oil life, maintenance, warnings)
-mcs raw hvac            # Raw remote climate setting
-
-# Shell completions
-mcs completion bash     # Also: zsh, fish, powershell
+mcs raw status|ev|health|hvac   # the API's raw JSON
+mcs completion bash     # also zsh, fish, powershell
 ```
-
-## MQTT and Home Assistant
-
-`mcs mqtt` runs until stopped: it polls the car every 5 minutes, publishes an
-allowlisted snapshot (no VIN, coordinates or ids) to `<prefix>/state`, announces
-every reading to Home Assistant through MQTT discovery and, only for the groups
-given in `--controls`, carries out commands. It never signs in with a password
-nor attaches a new session (as with `MCS_REFRESH_ONLY=1`), so the phone stays
-signed in.
-
-```bash
-mcs mqtt --prefix mazda/cx90 --once --dry-run      # one poll, printed, nothing sent
-mcs mqtt --broker tcp://127.0.0.1:1883 --username mazda \
-         --password-file /etc/mcs/mqtt.pw --prefix mazda/cx90   # read-only
-mcs mqtt --prefix mazda/cx90 --broker tcp://127.0.0.1:1883 \
-         --controls all --home 45.50,-73.57        # everything, with presence
-```
-
-The prefix and the broker have no default. Settings can also live in the config
-file (or `MCS_MQTT_<KEY>` variables; the password only in `MCS_MQTT_PASSWORD` or
-`password_file`):
-
-```toml
-[mqtt]
-broker = "tcp://127.0.0.1:1883"
-username = "mazda"
-password_file = "/etc/mcs/mqtt.pw"
-prefix = "mazda/cx90"
-controls = ["lock", "unlock", "climate", "refresh"]   # also engine, charge, lights; "all"
-home = "45.50,-73.57"      # home / not_home; coordinates are never published
-# discovery = "homeassistant" (or "off"), device_name, client_id, home_radius_m = 200,
-# poll = "5m", health = "30m", stale = "30m", command_interval = "1m",
-# engine_interval = "10m", refresh_interval = "30m", state_dir, wait_on_auth_loss
-```
-
-- Topics: `<prefix>/state` (JSON), `status` (`online`/`offline`, also the will),
-  `error`, `command_status`, `refresh_status`; commands on `<prefix>/cmd/<name>/set`
-  (`PRESS` for buttons; `climate_temperature` 16..28 °C; `front_defroster` /
-  `rear_defroster` `ON`/`OFF`) and `<prefix>/refresh/set` (a fresh EV report).
-  Retained command messages never run.
-- Locks, doors, windows and the climate state turn unavailable in Home Assistant
-  once their report is older than `stale`; battery, fuel, tires and the health
-  report keep their last value with its time as `reported_at`.
-- Each command goes out at most once per `command_interval` (engine start: per
-  `engine_interval`; fresh report: per `refresh_interval`), across restarts.
-- Exit status: 0 stopped, 1 error, 2 bad configuration, 3 the Mazda session is
-  lost (renew it with `mcs status` on a computer and copy the cache; do not
-  restart in a loop). Under Docker, which restarts whatever the status, set
-  `wait_on_auth_loss` to stay up offline instead. Network trouble never exits.
-- About 7 MB of memory (a 31 MB distroless image); 2 API calls per poll, 4 every 30 minutes.
-
-## Example
 
 ```
 $ mcs status
@@ -127,72 +97,155 @@ TIRES: FL:32.0 FR:32.0 RL:32.0 RR:32.0 PSI
 ODOMETER: 5,279.4 km
 ```
 
-Note: Tire pressures are color-coded based on deviation from target (36 PSI):
-- **Green**: within ±3 PSI (33-39)
-- **Yellow**: 4-6 PSI deviation
-- **Red**: >6 PSI deviation (potential safety issue)
+Tire pressures are coloured by how far they are from 36 psi: green within 3,
+yellow 4 to 6, red beyond.
 
-## Agent Integration
+## Home Assistant
 
-mcs ships an [Agent Skills](https://agentskills.io) skill (`SKILL.md`) for natural language vehicle control from any coding agent that supports skills. Install it once:
+`mcs mqtt` polls the car every 5 minutes and publishes it to an MQTT broker,
+with Home Assistant discovery. Home Assistant creates a device with sensors,
+binary sensors, buttons, a number, switches and a device tracker; nothing to
+install in Home Assistant besides its MQTT integration.
+
+### Setup
+
+1. **A broker.** If you don't have one, install Home Assistant's *Mosquitto
+   broker* add-on (or run [Mosquitto](https://mosquitto.org) anywhere) and give
+   `mcs` its own login. Make sure Home Assistant's MQTT integration is set up.
+
+2. **Sign in once** on your computer (see [Sign in](#sign-in)), with `mcs status`.
+
+3. **Try it**, without sending anything:
+
+   ```bash
+   mcs mqtt --prefix mazda/my_car --once --dry-run
+   ```
+
+   It polls once and prints every topic and payload it would publish.
+
+4. **Configure it.** Add an `[mqtt]` section to `~/.config/mcs/config.toml`
+   ([full example](examples/mqtt/config.toml)):
+
+   ```toml
+   [mqtt]
+   broker = "tcp://homeassistant.local:1883"
+   username = "mcs"
+   password_file = "/home/me/.config/mcs/mqtt.pw"   # or MCS_MQTT_PASSWORD
+   prefix = "mazda/my_car"                       # required: the topic root
+   controls = ["lock", "climate", "refresh"]    # leave out for read-only
+   # home = "40.7128,-74.0060"                   # adds home / not_home presence
+   ```
+
+   Every setting is also an `MCS_MQTT_<KEY>` variable (`MCS_MQTT_PREFIX`, ...)
+   and a flag (`--prefix`, ...). The prefix and the broker have no default.
+
+5. **Run it** wherever it can stay up:
+   - **Foreground**: `mcs mqtt`
+   - **systemd**: [examples/mqtt/mcs-mqtt.service](examples/mqtt/mcs-mqtt.service)
+   - **Docker Compose**: [examples/mqtt/compose.yaml](examples/mqtt/compose.yaml)
+
+   On another machine, copy `~/.cache/mcs/token.json` (the session) and the
+   config there, and remove the config's `password` line: `mcs mqtt` only
+   refreshes the session and never signs in. Keep a single copy in use: the
+   session's tokens rotate, so two copies would invalidate each other.
+
+The car appears in Home Assistant as a device (*Settings → Devices & services
+→ MQTT*), ready for dashboards and automations.
+
+### What you get
+
+| | Entities |
+|---|---|
+| EV report | battery, charging, plugged in, range, charge time left, battery heater, cabin temperature, climate and defrosters running |
+| Vehicle report | fuel, odometer, four tire pressures |
+| Doors report | locked (all and each door), each door and window, trunk, hood, fuel lid, hazards, presence |
+| Health report | oil change in (km), maintenance in, oil low / overfilled, tire pressure low, tire sensor fault, bulb out |
+| Controls (opt-in) | lock, unlock, start / stop engine, start / stop charging, climate on / off, hazards on / off, climate temperature, front / rear defroster, *ask car for a fresh report* |
+| Diagnostics | cloud connection, last poll, last command, each report's time |
+
+The car sends its reports separately, each when it was last used or asked, so
+each value carries its report's time. Locks, doors, windows and presence turn
+*unavailable* once their report is older than 30 minutes: an old "unlocked"
+never looks current. The rest keep their last value.
+
+### Controls and safety
+
+- **Nothing moves the car unless you enable it.** `controls` lists the groups
+  allowed: `lock`, `unlock`, `engine`, `charge`, `climate`, `lights`,
+  `refresh`, or `all`. The others get no entities.
+- Commands are live MQTT messages to `<prefix>/cmd/<name>/set`; retained ones
+  never run, so a reconnect can't replay an unlock.
+- Each command goes out at most once a minute (engine start once per 10 minutes,
+  a fresh report once per 30), across restarts. The outcome shows as *Last
+  command*. Mazda accepts the command and the car acts a few seconds later (the
+  MyMazda app notifies you).
+- Every command wakes the car's modem; Mazda allows two remote starts without
+  driving.
+
+### Reference
+
+| Setting | Default | |
+|---|---|---|
+| `broker` | (required) | `tcp://host:1883`, `ssl://host:8883` |
+| `prefix` | (required) | topic root, e.g. `mazda/my_car` |
+| `username`, `password_file` | | the password can also come from `MCS_MQTT_PASSWORD` |
+| `controls` | none | see above |
+| `home`, `home_radius_m` | off, 200 | `LAT,LON` for home / not_home; coordinates are never published |
+| `discovery` | `homeassistant` | discovery prefix, or `off` |
+| `device_name` | `Mazda <model>` | |
+| `poll`, `health`, `stale` | 5m, 30m, 30m | poll at least every 5m |
+| `command_interval`, `engine_interval`, `refresh_interval` | 1m, 10m, 30m | |
+| `state_dir` | `~/.local/state/mcs` | rate limits |
+| `wait_on_auth_loss` | false | for Docker, see below |
+
+Topics under the prefix: `state` (the JSON snapshot), `status` (`online` /
+`offline`, also the last will), `error`, `command_status`, `refresh_status`;
+commands on `cmd/<name>/set` (`PRESS`; `climate_temperature` 16 to 28 °C;
+`front_defroster` / `rear_defroster` `ON` / `OFF`) and `refresh/set`.
+
+Exit status: 0 stopped, 1 error, 2 bad configuration, 3 the Mazda session is
+lost. Network trouble never makes it exit; it retries. On 3, sign in again on
+a computer and copy the new cache: restarting won't help. systemd's
+`RestartPreventExitStatus=2 3` handles that; Docker restarts whatever the
+status, so set `wait_on_auth_loss` to stay up and *offline* instead.
+
+## Agent integration
+
+mcs ships an [Agent Skills](https://agentskills.io) skill for natural language
+vehicle control from any coding agent that supports skills:
 
 ```bash
-mcs skill install
+mcs skill install     # to ~/.agents/skills/mcs-control/ (or $MCS_SKILLS_DIR)
+mcs skill uninstall
+mcs skill path
 ```
 
-Then just tell your agent what you want:
-
 ```
-You: "warm up the car"
-Agent: runs `mcs climate on`
-
-You: "what's my battery level?"
-Agent: runs `mcs status` and shows battery info
-
-You: "lock the doors"
-Agent: runs `mcs lock`
+You: "warm up the car"           Agent: runs `mcs climate on`
+You: "what's my battery level?"  Agent: runs `mcs status`
+You: "lock the doors"            Agent: runs `mcs lock`
 ```
 
-**Supported phrases:**
-- Climate: "warm up the car", "cool it down", "set to 22 degrees"
-- Locks: "lock the car", "unlock the doors"
-- Engine: "start the car", "stop the engine"
-- Charging: "start charging", "stop the charge"
-- Status: "check the battery", "where is my car", "tire pressure"
+## How it works
 
-**Skill management:**
-```bash
-mcs skill install    # Install to ~/.agents/skills/mcs-control/
-mcs skill uninstall  # Remove the skill
-mcs skill path       # Show installation path
-```
+- mcs speaks the API the MyMazda app uses (reverse engineered, originally
+  ported from [pymazda](https://github.com/ungineer/pymazda)): MyMazda 9.5's
+  Azure AD B2C sign-in, then the regional Mazda Connected Services API, with the
+  app's request signing and encryption.
+- Tested with a Canadian CX-90 PHEV (region MNAO). The European and Japanese
+  settings come from the app but haven't been tested live.
+- The session (access and refresh tokens, device session) lives in
+  `~/.cache/mcs/token.json` (mode 0600, atomic writes). An expired access token is
+  refreshed; a refused refresh never falls back to a new sign-in. With
+  `MCS_REFRESH_ONLY=1` (always on in `mcs mqtt`) mcs never signs in nor attaches
+  a session, so a monitor can't take the session away from your phone.
+- `mcs status` reads Mazda's stored reports and doesn't wake the car;
+  `--refresh` does. `status --json` gives each report's time in `reported_at`.
+- `MCS_DEBUG=1` logs request metadata with tokens, session ids and bodies
+  redacted. Raw output (`mcs raw`, `status --json`) still has the VIN and
+  location: keep it private.
 
-The skill installs to `~/.agents/skills/` by default. If your agent reads skills from a different directory, set `MCS_SKILLS_DIR`:
+Developer documentation: [AGENTS.md](AGENTS.md).
 
-```bash
-MCS_SKILLS_DIR=/path/to/agent/skills mcs skill install
-```
-
-## Notes
-
-- Uses vehicle manufacturer's API (reverse-engineered from mobile app)
-- MyMazda 9.5 authentication: Azure AD B2C + the regional MC API. Tested with a
-  Canadian CX-90 PHEV; Europe/Japan settings come from the app but are not live-tested.
-- A new sign-in/session attachment can sign the phone app out. Access tokens,
-  refresh tokens and the device session are reused from `~/.cache/mcs/token.json`
-  (atomic writes, mode 0600). Expired access tokens use refresh, not password login.
-  A refused refresh does **not** fall back to another login. If the phone takes over,
-  do not run a login loop; choose which client should hold the session. To deliberately
-  sign in again, remove the cache and rerun the command.
-- For unattended monitoring set `MCS_REFRESH_ONLY=1`: cached sessions can refresh
-  access tokens, but no password login or session attachment is allowed. Provision
-  a cache interactively first; the service does not need the account password.
-- Plain `status` reads Mazda's cached reports; it does not request a wake-up/refresh.
-  `status --json` includes `reported_at.ev`, `reported_at.doors` and
-  `reported_at.vehicle` (Mazda's UTC `yyyyMMddHHmmss`). These reports can have very
-  different ages. A successful cloud poll does **not** make an old door report current.
-- `MCS_DEBUG=1` logs request metadata but redacts tokens, sessions, sensor-data,
-  query values and bodies. Raw status/JSON still contains VIN and location: keep it private.
-- Remote start limited to 2 consecutive starts without driving
-
-For developer documentation, see [AGENTS.md](AGENTS.md)
+*mcs is not affiliated with or endorsed by Mazda. Use it at your own risk; remote
+commands act on a real car.*

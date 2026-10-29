@@ -1,0 +1,22 @@
+# ~/.config/mcs/config.toml for mcs mqtt on a server.
+email = "you@example.com"
+region = "MNAO"      # MNAO North America, MME Europe, MJO Japan
+country = "US"
+# No password: mcs mqtt only refreshes the session you signed in with.
+
+[mqtt]
+broker = "tcp://homeassistant.local:1883"   # ssl://host:8883 for TLS
+username = "mcs"
+password_file = "/home/mcs/.config/mcs/mqtt.pw"  # or MCS_MQTT_PASSWORD
+prefix = "mazda/my_car"                     # required: the topic root
+controls = ["lock", "climate", "refresh"]  # lock, unlock, engine, charge, climate, lights, refresh, all
+# home = "40.7128,-74.0060"   # adds home / not_home presence; coordinates are never published
+# home_radius_m = 200
+# device_name = "My CX-90"    # default: Mazda <model>
+# discovery = "homeassistant" # Home Assistant's discovery prefix, or "off"
+# poll = "5m"                 # at least 5m
+# health = "30m"              # health report and climate setting
+# stale = "30m"               # locks, doors, windows: unavailable after this
+# command_interval = "1m"     # each command at most once per
+# engine_interval = "10m"
+# refresh_interval = "30m"    # "Ask car for a fresh report"
