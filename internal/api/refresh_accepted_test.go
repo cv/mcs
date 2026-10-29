@@ -17,15 +17,3 @@ func TestRefreshVehicleStatusAccepted(t *testing.T) {
 		server.Close()
 	}
 }
-
-// Other control commands still require the success code.
-func TestDoorLockStillRequiresSuccess(t *testing.T) {
-	t.Parallel()
-	server := createTestServer(t, map[string]any{"resultCode": ResultCodeRefreshAccepted, "message": "ok"},
-		WithPath("/"+EndpointDoorLock), WithMethod("POST"), WithBodyValidation())
-	defer server.Close()
-	client := createTestClient(t, server.URL)
-	if err := client.DoorLock(t.Context(), "vin"); err == nil {
-		t.Fatal("expected an error for a non-success result code")
-	}
-}

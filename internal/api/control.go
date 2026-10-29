@@ -38,6 +38,11 @@ func (c *Client) controlEndpoint(ctx context.Context, endpoint, actionDesc, inte
 	if err != nil {
 		return err
 	}
+	// The current API answers every remote command with MSG200001: accepted and
+	// passed to the vehicle, which carries it out seconds later.
+	if resultCode == ResultCodeRefreshAccepted {
+		return nil
+	}
 
 	return checkResultCode(resultCode, actionDesc)
 }
@@ -137,7 +142,8 @@ func (c *Client) RefreshVehicleStatus(ctx context.Context, internalVIN string) e
 	return checkResultCode(resultCode, desc)
 }
 
-// ResultCodeRefreshAccepted is the current API's answer to a status refresh.
+// ResultCodeRefreshAccepted is the current API's answer to a status refresh and to
+// every remote command (seen 2026-10-28: an unlock answered with it was carried out).
 const ResultCodeRefreshAccepted = "MSG200001"
 
 // SetHVACSetting sets HVAC temperature and defroster settings.
