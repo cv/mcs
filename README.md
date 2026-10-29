@@ -107,7 +107,7 @@ home = "45.50,-73.57"      # home / not_home; coordinates are never published
   lost (renew it with `mcs status` on a computer and copy the cache; do not
   restart in a loop). Under Docker, which restarts whatever the status, set
   `wait_on_auth_loss` to stay up offline instead. Network trouble never exits.
-- About 15 MB of memory; 3 API calls per poll, 5 every 30 minutes.
+- About 7 MB of memory (a 31 MB distroless image); 2 API calls per poll, 4 every 30 minutes.
 
 ## Example
 
